@@ -46,7 +46,7 @@ bits_init (FILE * f, char *name, int v, int s, int vb)
 
   if (name)
     {
-      sprintf (format, "%%s = 0x%%0%dX\n", s * 2);
+      snprintf (format, sizeof(format), "%%s = 0x%%0%dX\n", s * 2);
       fprintf (fp, format, name, value);
     }
 }
@@ -112,11 +112,11 @@ cc2400_fsctrl (unsigned short v)
   char description[64];
 
   bits (15, 6, "-", "W0", "");
-  sprintf (description, "periods=%d", 1 << (((v & 0x30) >> 4) + 6));
+  snprintf (description, sizeof(description), "periods=%d", 1 << (((v & 0x30) >> 4) + 6));
   bits (5, 4, "LOCK_THRESHOLD", "RW", description);
   bits (3, 3, "CAL_DONE", "RO", "");
   bits (2, 2, "CAL_RUNNING", "RO", "");
-  sprintf (description, "periods=%d", 2 + (v & 0x2));
+  snprintf (description, sizeof(description), "periods=%d", 2 + (v & 0x2));
   bits (1, 1, "LOCK_LENGTH", "RW", description);
   bits (0, 0, "LOCK_STATUS", "RO", "");
 }
@@ -126,7 +126,7 @@ cc2400_fsdiv (unsigned short v)
 {
   char description[64];
 
-  sprintf (description, "fc = %d MHz", v & 0xfff);
+  snprintf (description, sizeof(description), "fc = %d MHz", v & 0xfff);
 
   bits (15, 12, "-", "W0", "");
   bits (11, 10, "FREQ[11:10]", "RO", "");
@@ -139,9 +139,9 @@ cc2400_mdmctrl (unsigned short v)
   char description[64];
 
   bits (15, 13, "-", "W0", "");
-  sprintf (description, "%0.3f kHz", 15.625 * ((v >> 7) & 0x3F));
+  snprintf (description, sizeof(description), "%0.3f kHz", 15.625 * ((v >> 7) & 0x3F));
   bits (12, 7, "MOD_OFFSET", "RW", description);
-  sprintf (description, "%0.4f kHz", 3.9062 * (v & 0x7F));
+  snprintf (description, sizeof(description), "%0.4f kHz", 3.9062 * (v & 0x7F));
   bits (6, 0, "MOD_DEV", "RW", description);
 }
 
@@ -149,7 +149,7 @@ static void
 cc2400_agcctrl (unsigned short v)
 {
   char description[64];
-  sprintf (description, "%d", (v >> 8));
+  snprintf (description, sizeof(description), "%d", (v >> 8));
   bits (15, 8, "VGA_GAIN", "RW", description);
   bits (7, 4, "-", "W0", "");
   bits (3, 3, "AGC_LOCKED", "RO", "");
@@ -162,7 +162,7 @@ static void
 cc2400_frend (unsigned short v)
 {
   char description[64];
-  sprintf (description, "%d", (v & 0x7));
+  snprintf (description, sizeof(description), "%d", (v & 0x7));
   bits (15, 4, "-", "W0", "");
   bits (3, 3, "-", "W1", "");
   bits (2, 0, "PA_LEVEL", "RW", description);
@@ -173,11 +173,11 @@ cc2400_rssi (unsigned short v)
 {
   char description[64];
 
-  sprintf (description, "%d dB", ((signed short) v) >> 8);
+  snprintf (description, sizeof(description), "%d dB", ((signed short) v) >> 8);
   bits (15, 8, "RSSI_VAL", "RO", description);
-  sprintf (description, "%d dB", 4 * (((signed char) v) >> 2));
+  snprintf (description, sizeof(description), "%d dB", 4 * (((signed char) v) >> 2));
   bits (7, 2, "RSSI_CS_THRES", "RW", description);
-  sprintf (description, "%d bits", v & 0x3);
+  snprintf (description, sizeof(description), "%d bits", v & 0x3);
   bits (1, 0, "RSSI_FILT", "RW", description);
 }
 
@@ -186,7 +186,7 @@ cc2400_frequest (unsigned short v)
 {
   char description[64];
 
-  sprintf (description, "%d", ((signed short) v) >> 8);
+  snprintf (description, sizeof(description), "%d", ((signed short) v) >> 8);
   bits (15, 8, "RX_FREQ_OFFSET", "RO", description);
   bits (7, 0, "-", "W0", "");
 }
@@ -213,14 +213,14 @@ cc2400_fsmtc (unsigned short v)
 {
   char description[64];
 
-  sprintf (description, "%d us", 5 * ((v >> 13) & 0x7));
+  snprintf (description, sizeof(description), "%d us", 5 * ((v >> 13) & 0x7));
   bits (15, 13, "TC_RXON2AGCEN", "RW", description);
-  sprintf (description, "%d us", (v >> 10) & 0x7);
+  snprintf (description, sizeof(description), "%d us", (v >> 10) & 0x7);
   bits (12, 10, "TC_PAON2AGCEN", "RW", description);
   bits (9, 6, "-", "RW", "");
-  sprintf (description, "%d us", (v >> 3) & 0x7);
+  snprintf (description, sizeof(description), "%d us", (v >> 3) & 0x7);
   bits (5, 3, "END2SWITCH", "RW", description);
-  sprintf (description, "%d us", v & 0x7);
+  snprintf (description, sizeof(description), "%d us", v & 0x7);
   bits (5, 3, "TC_TXEND2PAOFF", "RW", description);
 }
 
@@ -270,10 +270,10 @@ cc2400_adctst (unsigned short v)
   char description[64];
 
   bits (15, 15, "-", "W0", "");
-  sprintf (description, "%d", (v >> 8) & 0x3F);
+  snprintf (description, sizeof(description), "%d", (v >> 8) & 0x3F);
   bits (14, 8, "ADC_I", "RO", description);
   bits (7, 7, "-", "W0", "");
-  sprintf (description, "%d", v & 0x3F);
+  snprintf (description, sizeof(description), "%d", v & 0x3F);
   bits (6, 0, "ADC_Q", "RO", description);
 }
 
@@ -283,9 +283,9 @@ cc2400_rxbpftst (unsigned short v)
   char description[64];
   bits (15, 15, "-", "W0", "");
   bits (14, 14, "RXBPF_CAP_OE", "RW", "");
-  sprintf(description,"%d",(v>>7)&0x7F);
+  snprintf(description, sizeof(description), "%d",(v>>7)&0x7F);
   bits (13, 7, "RXBPF_CAP_O", "RW", description);
-  sprintf(description,"%d",v&0x7F);
+  snprintf(description, sizeof(description), "%d",v&0x7F);
   bits (6, 0, "RXBPF_CAP_RES", "RW", description);
 }
 
@@ -294,7 +294,7 @@ cc2400_pamtst (unsigned short v)
 {
   char description[64];
   char *testmode[] = {"Output IQ from RxMIX", "Input IQ to BPF", "Output IQ from VGA", "Input IQ to ADC", "Output IQ from LPF", "Input IQ to TxMIX", "Output PN from Prescaler", "Connects TX IF to RX IF and simultaneously the ATEST1 pin to the internal VC node"};
-  char *current[] = {"1.72 mA", "1.88 mA", "2.05 mA", "2.21 mA"}; 
+  char *current[] = {"1.72 mA", "1.88 mA", "2.05 mA", "2.21 mA"};
 
   bits(15,13,"-","W0","");
   bits(12,12,"VC_IN_TEST_EN","RW","");
@@ -303,7 +303,7 @@ cc2400_pamtst (unsigned short v)
   bits(7,7,"-","W0","");
   bits(6,5,"TXMIX_CAP_ARRAY","RW","");
   bits(4,3,"TXMIX_CURRENT","RW",current[(v>>3)&3]);
-  sprintf(description,"%+d",(v&0x7)-3);
+  snprintf(description, sizeof(description), "%+d",(v&0x7)-3);
   bits(2,0,"PA_CURRENT","RW",description);
 }
 
@@ -313,9 +313,9 @@ cc2400_lmtst (unsigned short v)
   char description[64];
   bits(15,14,"-","W0","");
   bits(13,13,"RXMIX_HGM", "RW","");
-  sprintf(description,"%d uA",((v>>11)&0x3)*4+12);
+  snprintf(description, sizeof(description), "%d uA",((v>>11)&0x3)*4+12);
   bits(12,11,"RXMIX_TAIL", "RW",description);
-  sprintf(description,"%d uA",((v>>9)&0x3)*4+82);
+  snprintf(description, sizeof(description), "%d uA",((v>>9)&0x3)*4+82);
   bits(10,9,"RXMIX_CVM", "RW",description);
   switch ((v>>7)&0x3) {
      case 0:
@@ -406,9 +406,9 @@ cc2400_mdmtst0 (unsigned short v)
   bits(12,12,"TX_1MHZ_OFFSET_N","RW","");
   bits(11,11,"INVERT_DATA","RW","");
   bits(10,10,"AFC_ADJUST_ON_PACKET","RW","");
-  sprintf(description,"%d pairs",1<<((v>>8)&0x3));
+  snprintf(description, sizeof(description), "%d pairs",1<<((v>>8)&0x3));
   bits(9,8,"AFC_SETTLING","RW",description);
-  sprintf(description,"%d",v&0xff);
+  snprintf(description, sizeof(description), "%d",v&0xff);
   bits(7,0,"AFC_SETTLING","RW",description);
 }
 static void
@@ -416,7 +416,7 @@ cc2400_mdmtst1 (unsigned short v)
 {
   char description[64];
   bits(15,7,"-","W0","");
-  sprintf(description,"%d",v&0x7f);
+  snprintf(description, sizeof(description), "%d",v&0x7f);
   bits(6,0,"BSYNC_THRESHOLD","RW",description);
 }
 static void
@@ -426,9 +426,9 @@ cc2400_dactst (unsigned short v)
   char description[64];
   bits(15,15,"-","W0","");
   bits(14,12,"DAC_SRC","RW",src[(v>>12)&0x7]);
-  sprintf(description,"%d",(v>>6)&0x3F);
+  snprintf(description, sizeof(description), "%d",(v>>6)&0x3F);
   bits(11,6,"DAC_I_O","RW",description);
-  sprintf(description,"%d",v&0x3F);
+  snprintf(description, sizeof(description), "%d",v&0x3F);
   bits(5,0,"DAC_Q_O","RW",description);
 }
 static void
@@ -441,13 +441,13 @@ cc2400_agctst0 (unsigned short v)
   else
     snprintf(description, sizeof(description), "%d * 8 MHz clock cycles",(v>>13)&0x7);
   bits(15,13,"AGC_SETTLE_BLANK_DN","RW",description);
-  sprintf(description,"%d",(v>>11)&0x3);
+  snprintf(description, sizeof(description), "%d",(v>>11)&0x3);
   bits(12,11,"AGC_WIN_SIZE","RW",description);
-  sprintf(description,"%d",(v>>7)&0xF);
+  snprintf(description, sizeof(description), "%d",(v>>7)&0xF);
   bits(10,7,"AGC_SETTLE_PEAK","RW",description);
-  sprintf(description,"%d",(v>>3)&0xF);
+  snprintf(description, sizeof(description), "%d",(v>>3)&0xF);
   bits(6,3,"AGC_SETTLE_ADC","RW",description);
-  sprintf(description,"%d",(v)&0x3);
+  snprintf(description, sizeof(description), "%d",(v)&0x3);
   bits(2,0,"AGC_ATTEMPTS","RW",description);
 }
 static void
@@ -462,11 +462,11 @@ cc2400_agctst1 (unsigned short v)
     snprintf(description, sizeof(description), "%d * 8 MHz clock cycles",(v>>11)&7);
   bits(13,11,"AGC_SETTLE_BLANK_UP","RW",description);
   bits(10,10,"PEAKDET_CUR_BOOST","RW","");
-  sprintf(description,"%d",(v>>6)&7);
+  snprintf(description, sizeof(description), "%d",(v>>6)&7);
   bits(9,6,"AGC_MULT_SLOW","RW",description);
-  sprintf(description,"%d",(v>>2)&7);
+  snprintf(description, sizeof(description), "%d",(v>>2)&7);
   bits(5,2,"AGC_SETTLE_FIXED","RW",description);
-  sprintf(description,"%d",v&3);
+  snprintf(description, sizeof(description), "%d",v&3);
   bits(1,0,"AGC_SETTLE_VAR","RW",description);
 }
 static void
@@ -479,13 +479,13 @@ cc2400_agctst2 (unsigned short v)
   else
     snprintf(description, sizeof(description), "%d Fixed/Variable enable",(v>>12)&3);
   bits(13,12,"AGC_BACKEND_BLANKING","RW",description);
-  sprintf(description,"%d",(v>>9)&7);
+  snprintf(description, sizeof(description), "%d",(v>>9)&7);
   bits(11,9,"AGC_ADJUST_M3DB","RW",description);
-  sprintf(description,"%d",(v>>6)&7);
+  snprintf(description, sizeof(description), "%d",(v>>6)&7);
   bits(8,6,"AGC_ADJUST_M1DB","RW",description);
-  sprintf(description,"%d",(v>>3)&7);
+  snprintf(description, sizeof(description), "%d",(v>>3)&7);
   bits(5,3,"AGC_ADJUST_P3DB","RW",description);
-  sprintf(description,"%d",v&7);
+  snprintf(description, sizeof(description), "%d",v&7);
   bits(2,0,"AGC_ADJUST_P1DB","RW",description);
 }
 static void
@@ -498,9 +498,9 @@ cc2400_fstst0 (unsigned short v)
   bits(13,12,"TXMIXBUF_CUR","RW",rxmixbuf[(v>>12)&3]);
   bits(11,11,"VCO_ARRAY_SETTLE_LONG","RW","");
   bits(10,10,"VCO_ARRAY_OE","RW","");
-  sprintf(description,"%d",(v>>5)&0xF);
+  snprintf(description, sizeof(description), "%d",(v>>5)&0xF);
   bits(9,5,"VCO_ARRAY_O","RW",description);
-  sprintf(description,"%d",v&0xF);
+  snprintf(description, sizeof(description), "%d",v&0xF);
   bits(4,0,"VCO_ARRAY_RES","RO",description);
 }
 static void
@@ -509,12 +509,12 @@ cc2400_fstst1 (unsigned short v)
   char description[64];
   bits(15,15,"RXBPF_LOCUR","RW",(v&0x8000)?"3uA":"4uA");
   bits(14,14,"RXBPF_MIDCUR","RW",(v&0x4000)?"3uA":"4uA");
-  sprintf(description,"%d",(v>>10)&0xF);
+  snprintf(description, sizeof(description), "%d",(v>>10)&0xF);
   bits(13,10,"VCO_CURRENT_REF","RW",description);
-  sprintf(description,"%d",(v>>4)&0x3F);
+  snprintf(description, sizeof(description), "%d",(v>>4)&0x3F);
   bits(9,4,"VCO_CURRENT_K","RW",description);
   bits(3,3,"VCO_DAC_EN","RW","");
-  sprintf(description,"%d",v&0x3);
+  snprintf(description, sizeof(description), "%d",v&0x3);
   bits(2,0,"VCO_DAC_VAL","RW","");
 }
 static void
@@ -525,9 +525,9 @@ cc2400_fstst2 (unsigned short v)
   bits(15,15,"-","W0","");
   bits(14,13,"VCO_CURCAL_SPEED","RW",speed[(v>>13)&3]);
   bits(12,12,"VCO_CURRENT_OE","RW","");
-  sprintf(description,"%d",(v>>6)&0x3f);
+  snprintf(description, sizeof(description), "%d",(v>>6)&0x3f);
   bits(11,6,"VCO_CURRENT_O","RW",description);
-  sprintf(description,"%d",v&0x3f);
+  snprintf(description, sizeof(description), "%d",v&0x3f);
   bits(5,0,"VCO_CURRENT_RES","RO",description);
 }
 static void
@@ -541,27 +541,27 @@ cc2400_fstst3 (unsigned short v)
   bits(11,11,"CHP_DISABLE","RW","");
   bits(10,10,"PD_DELAY","RW",((v>>11)&1)?"Long":"Short");
   bits(9,8,"CHP_STEP_PERIOD","RW",period[(v>>8)&3]);
-  sprintf(description,"%d",(v>>4)&0xF);
+  snprintf(description, sizeof(description), "%d",(v>>4)&0xF);
   bits(7,4,"STOP_CHP_CURRENT","RW",description);
-  sprintf(description,"%d",v&0xF);
+  snprintf(description, sizeof(description), "%d",v&0xF);
   bits(3,0,"START_CHP_CURRENT","RW",description);
 }
 static void
 cc2400_manfidl (unsigned short v)
 {
   char description[64];
-  sprintf(description,"0x%X",(v>>12)&0xF);
+  snprintf(description, sizeof(description), "0x%X",(v>>12)&0xF);
   bits(15,12,"PARTNUM","RO",description);
-  sprintf(description,"0x%X",v&0xFFF);
+  snprintf(description, sizeof(description), "0x%X",v&0xFFF);
   bits(11,0,"MANFID","RO",description);
 }
 static void
 cc2400_manfidh (unsigned short v)
 {
   char description[64];
-  sprintf(description,"0x%X",(v>>12)&0xF);
+  snprintf(description, sizeof(description), "0x%X",(v>>12)&0xF);
   bits(15,12,"VERSION","RO",description);
-  sprintf(description,"0x%X",v&0xFFF);
+  snprintf(description, sizeof(description), "0x%X",v&0xFFF);
   bits(11,0,"PARTNUM","RO",description);
 }
 static void
@@ -573,7 +573,7 @@ cc2400_grmdm (unsigned short v)
   char *dataformat[] = {"NRZ","Manchester","8/10","Reserved"};
   char description[64];
   bits(15,15,"-","W0","");
-  sprintf(description,"%d",(v>>13)&3);
+  snprintf(description, sizeof(description), "%d",(v>>13)&3);
   bits(14,13,"SYNC_ERRBITS_ALLOWED","RW",description);
   bits(12,11,"PIN_MODE","RW",pinmode[(v>>11)&3]);
   bits(10,10,"PACKET_MODE","RW","");
@@ -594,7 +594,7 @@ cc2400_grdec (unsigned short v)
   bits(12,12,"IND_SATURATION","RO","");
   bits(11,10,"DEC_SHIFT","RW",decshift[(v>>10)&3]);
   bits(9,8,"CHANNEL_DEC","RW",channeldec[(v>>8)&3]);
-  sprintf(description,"%d",v&0xFF);
+  snprintf(description, sizeof(description), "%d",v&0xFF);
   bits(7,0,"DEC_VAL","RW",description);
 }
 static void
@@ -615,21 +615,21 @@ cc2400_int (unsigned short v)
   bits(7,7,"-","RW","");
   bits(6,6,"PKT_POLARITY","RW","");
   bits(5,5,"FIFO_POLARITY","RW","");
-  sprintf(description,"%d",v&0x1F);
+  snprintf(description, sizeof(description), "%d",v&0x1F);
   bits(4,0,"FIFO_THRESHOLD","RW",description);
 }
 static void
 cc2400_syncl (unsigned short v)
 {
   char description[64];
-  sprintf(description,"0x%04X",v);
+  snprintf(description, sizeof(description), "0x%04X",v);
   bits(15,0,"SYNCWORD_LOWER","RW",description);
 }
 static void
 cc2400_synch (unsigned short v)
 {
   char description[64];
-  sprintf(description,"0x%04X",v);
+  snprintf(description, sizeof(description), "0x%04X",v);
   bits(15,0,"SYNCWORD_UPPER","RW",description);
 }
 
@@ -638,11 +638,11 @@ cc2400_res24 (unsigned short v)
 {
   char description[64];
   bits(15,14,"-","W0","");
-  sprintf(description,"%d",(v>>10)&0xF);
+  snprintf(description, sizeof(description), "%d",(v>>10)&0xF);
   bits(13,10,"-","RW",description);
-  sprintf(description,"%d",(v>>7)&0x7);
+  snprintf(description, sizeof(description), "%d",(v>>7)&0x7);
   bits(9,7,"-","RW",description);
-  sprintf(description,"%d",v&0x3F);
+  snprintf(description, sizeof(description), "%d",v&0x3F);
   bits(6,0,"-","RW",description);
 }
 static void
@@ -650,27 +650,27 @@ cc2400_res25 (unsigned short v)
 {
   char description[64];
   bits(15,12,"-","W0","");
-  sprintf(description,"%d",v&0xFFF);
+  snprintf(description, sizeof(description), "%d",v&0xFFF);
   bits(11,0,"-","RW",description);
 }
 static void
 cc2400_res26 (unsigned short v)
 {
   char description[64];
-  sprintf(description,"%d",(v>>10)&0x3F);
+  snprintf(description, sizeof(description), "%d",(v>>10)&0x3F);
   bits(15,10,"-","RW",description);
-  sprintf(description,"%d",v&0x1FF);
+  snprintf(description, sizeof(description), "%d",v&0x1FF);
   bits(9,0,"-","RW",description);
 }
 static void
 cc2400_res27 (unsigned short v)
 {
   char description[64];
-  sprintf(description,"%d",(v>>8)&0xFF);
+  snprintf(description, sizeof(description), "%d",(v>>8)&0xFF);
   bits(15,8,"-","RO",description);
-  sprintf(description,"%d",(v>>3)&0xF);
+  snprintf(description, sizeof(description), "%d",(v>>3)&0xF);
   bits(7,3,"-","RW",description);
-  sprintf(description,"%d",v&7);
+  snprintf(description, sizeof(description), "%d",v&7);
   bits(2,0,"-","RW",description);
 }
 static void
@@ -678,11 +678,11 @@ cc2400_res28 (unsigned short v)
 {
   char description[64];
   bits(15,15,"-","RW","");
-  sprintf(description,"%d",(v>>13)&3);
+  snprintf(description, sizeof(description), "%d",(v>>13)&3);
   bits(14,13,"-","RW",description);
-  sprintf(description,"%d",(v>>7)&0x3F);
+  snprintf(description, sizeof(description), "%d",(v>>7)&0x3F);
   bits(12,7,"-","RW",description);
-  sprintf(description,"%d",v&0x3F);
+  snprintf(description, sizeof(description), "%d",v&0x3F);
   bits(6,0,"-","RW",description);
 }
 static void
@@ -690,9 +690,9 @@ cc2400_res29 (unsigned short v)
 {
   char description[64];
   bits(15,8,"-","W0","");
-  sprintf(description,"%d",(v>>3)&0x1F);
+  snprintf(description, sizeof(description), "%d",(v>>3)&0x1F);
   bits(7,3,"-","RW",description);
-  sprintf(description,"%d",v&7);
+  snprintf(description, sizeof(description), "%d",v&7);
   bits(2,0,"-","RW",description);
 }
 static void
@@ -701,7 +701,7 @@ cc2400_res2a (unsigned short v)
   char description[64];
   bits(15,11,"-","W0","");
   bits(10,10,"-","RW","");
-  sprintf(description,"%d",v&0x3FF);
+  snprintf(description, sizeof(description), "%d",v&0x3FF);
   bits(9,0,"-","RW",description);
 }
 static void
@@ -711,7 +711,7 @@ cc2400_res2b (unsigned short v)
   bits(15,14,"-","W0","");
   bits(13,13,"-","RW","");
   bits(12,12,"-","RO","");
-  sprintf(description,"%d",v&0x7FF);
+  snprintf(description, sizeof(description), "%d",v&0x7FF);
   bits(11,0,"-","RO",description);
 }
 static struct reg_t cc2400[] = {

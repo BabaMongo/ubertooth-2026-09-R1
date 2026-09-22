@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 		btbb_init_piconet(pn, lap);
 		btbb_piconet_set_uap(pn, uap);
 		printf("Address given, assuming address is remote\n");
-		sprintf(addr, "00:00:%02X:%02X:%02X:%02X",
+		snprintf(addr, sizeof(addr), "00:00:%02X:%02X:%02X:%02X",
 			uap,
 			(lap >> 16) & 0xFF,
 			(lap >> 8) & 0xFF,

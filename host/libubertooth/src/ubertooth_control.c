@@ -557,7 +557,7 @@ void cmd_get_rev_num(struct libusb_device_handle* devh, char *version, u8 len)
 
 	result_ver = result[0] | (result[1] << 8);
 	if (r == 2) { // old-style SVN rev
-		sprintf(version, "%u", result_ver);
+		snprintf(version, len, "%u", result_ver);
 	} else {
 		len = MIN(r - 3, MIN(len - 1, result[2]));
 		memcpy(version, &result[3], len);
