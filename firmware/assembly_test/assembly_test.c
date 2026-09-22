@@ -881,8 +881,7 @@ void cc2400_repeater()
 
 	mode = MODE_REPEATER;
 
-	//FIXME allow to be turned off
-	while (1) {
+	while (requested_mode == MODE_REPEATER) {
 		cc2400_set(MANAND,  0x7fff);
 		cc2400_set(LMTST,   0x2b22);
 		cc2400_set(MDMTST0, 0x134b);
@@ -987,7 +986,7 @@ void bt_stream_rx()
 		rx_tc = 0;
 		rx_err = 0;
 	}
-	//FIXME turn off rx
+	cc2400_strobe(SRFOFF);
 	RXLED_CLR;
 }
 
@@ -1012,7 +1011,7 @@ void specan()
 	cc2400_set(MDMTST0, 0x134b); // without PRNG
 	cc2400_set(GRMDM,   0x0101); // un-buffered mode, GFSK
 	cc2400_set(MDMCTRL, 0x0029); // 160 kHz frequency deviation
-	//FIXME maybe set RSSI.RSSI_FILT
+	cc2400_set(RSSI,    0x0003); // enable RSSI filtering
 	while (!(cc2400_status() & XOSC16M_STABLE));
 	while ((cc2400_status() & FS_LOCK));
 
@@ -1023,13 +1022,12 @@ void specan()
 			while (!(cc2400_status() & FS_LOCK));
 			cc2400_strobe(SRX);
 
-			//u32 j = 100; while (--j); //FIXME crude delay
+			u32 j = 100; while (--j);
 			buf[3 * i] = (f >> 8) & 0xFF;
 			buf[(3 * i) + 1] = f  & 0xFF;
 			buf[(3 * i) + 2] = cc2400_get(RSSI) >> 8;
 			i++;
 			if (i == 16) {
-				//FIXME ought to use different packet type
 				enqueue(buf);
 				i = 0;
 				/* send via USB */
@@ -1123,7 +1121,7 @@ void bt_test_rx()
 		rx_tc = 0;
 		rx_err = 0;
 	}
-	//FIXME turn off rx
+	cc2400_strobe(SRFOFF);
 }
 
 /* delay a number of milliseconds while on internal oscillator (4 MHz) */
@@ -1199,6 +1197,5 @@ int main()
 			cc2400_repeater();
 		else if (requested_mode == MODE_SPECAN && mode != MODE_SPECAN)
 			specan();
-		//FIXME do other modes like this
 	}
 }

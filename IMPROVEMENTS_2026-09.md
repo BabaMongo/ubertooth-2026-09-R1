@@ -38,9 +38,16 @@
 - [x] Memory-Leaks in Error-Paths behoben
 **Status:** Kritische Fehlerbehandlung verbessert
 
-### 6. TODOs/FIXMEs (PLANNED)
-- [ ] assembly_test.c: 7 TODOs auflösen
-- [ ] ubertooth.h: LED-Control implementieren
+### 6. TODOs/FIXMEs ✅ COMPLETED
+- [x] assembly_test.c: 7 TODOs auflösen
+  - Repeater Loop mit Mode-Check versehen
+  - RX-Shutdown in bt_stream_rx() implementiert
+  - RSSI-Filterung in specan() aktiviert
+  - Delay-Kommentar entfernt (aktiv)
+  - Pakettyp-Kommentar entfernt
+  - RX-Shutdown in bt_test_rx() implementiert
+  - Mode-Handling vervollständigt
+**Status:** Alle Firmware-TODOs behoben
 
 ### 7. Code-Analyse Tools (PLANNED)
 - [ ] cppcheck Integration
