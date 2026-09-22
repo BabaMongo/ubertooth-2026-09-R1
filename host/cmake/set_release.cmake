@@ -6,7 +6,7 @@
 # tagged
 
 if(NOT DEFINED RELEASE_STRING)
-	set(LATEST_RELEASE "2020-12-R1")
+	set(LATEST_RELEASE "2026-09-R1 (mikeryan@steel/BabaMongo) Tue Sep 22 20:44 PST 2026")
 
 	execute_process(
 		COMMAND git log -n 1 --format=%h

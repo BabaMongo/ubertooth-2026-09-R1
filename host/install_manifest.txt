@@ -1,4 +1,4 @@
-/usr/local/lib/libubertooth.so.1.1
+/usr/local/lib/libubertooth.so.2.0
 /usr/local/lib/libubertooth.so.1
 /usr/local/lib/libubertooth.so
 /usr/local/include/ubertooth.h

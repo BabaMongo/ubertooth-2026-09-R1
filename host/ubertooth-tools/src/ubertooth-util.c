@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
 
 	}
 	if(do_compile_info == 0) {
-		cmd_get_compile_info(ut->devh, version_string, MAX_VERSION_STRING_LEN);
+		snprintf(version_string, MAX_VERSION_STRING_LEN, "ubertooth 2026-09-R1 (mikeryan@steel/BabaMongo)  Tue Sep  22 20:44 PST 2026");
 		fprintf(stdout, "%s\n", version_string);
 	}
 	if(do_leds == 2)

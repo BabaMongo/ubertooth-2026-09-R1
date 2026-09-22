@@ -1,45 +1,38 @@
 # Build artifacts
-build/
-CMakeCache.txt
+/build/
+/cmake-build-*/
 CMakeFiles/
-Makefile
 cmake_install.cmake
-cmake_uninstall.cmake
-*.o
-*.a
-*.so
-*.dylib
-*.exe
-*.out
+CMakeCache.txt
+*.cmake
+
+# Compiled binaries
+host/ubertooth-tools/src/ubertooth-*
+!host/ubertooth-tools/src/ubertooth-*.c
+host/libubertooth/src/*.so*
+host/libubertooth/src/*.a
+
+# Installation manifests
+install_manifest.txt
+host/install_manifest.txt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
 
 # IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
+
+# OS
 .DS_Store
-
-# Python
-__pycache__/
-*.pyc
-*.pyo
-*.egg-info/
-dist/
-build/
-
-# Generated files
-*.lo
-*.la
-.libs/
-.deps/
+.gitignore~
 
 # Test outputs
 *.log
-.coverage
-htmlcov/
-
-# Temporary files
-*.tmp
-*.bak
-*.orig
+*.bin
+*.pcap
