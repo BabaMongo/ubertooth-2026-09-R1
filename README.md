@@ -99,6 +99,9 @@ bash verify-improvements.sh
 - **@BabaMongo** - Security hardening, build improvements, CI/CD setup
 - **Claude Code** - Code analysis, refactoring, documentation
 
+### Tools & GUI Components
+- **[Brunoido90](https://github.com/Brunoido90/ubertooth_hack)** - Original `ubertooth_tool.py` GUI implementation
+
 ---
 
 ## ⚠️ Disclaimer
