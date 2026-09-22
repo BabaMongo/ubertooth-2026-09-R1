@@ -36,6 +36,19 @@ Project Ubertooth is an open source wireless development platform suitable for B
 - All 15 tools verified & working
 - Better error handling
 
+### GUI Tool (ubertooth_tool.py) 🎨
+- **Internationalization (i18n)** - Full support for German & English with live language switching
+- **Dynamic Language Packs** - Auto-load language JSON files from `langs/` directory
+- **Complete Tool Integration** - GUI control for all 15 Ubertooth tools
+- **Command Preview** - Real-time command line preview before execution
+- **Auto-Stop Timer** - Configurable timeout for long-running operations
+- **Detached Mode** - Background execution for GUI-external tools (Wireshark, etc.)
+- **Wireshark Integration** - Live FIFO pipe for real-time packet analysis
+- **Radio Auto-Reset** - Automatic reset after tool execution
+- **Log Export** - Save execution logs to file
+- **Command Copy** - Copy generated commands to clipboard
+- **Comprehensive Error Handling** - Missing tool detection and user-friendly messages
+
 ### Testing & Verification ✅
 - 9/9 verification tests PASS
 - Full security audit completed
@@ -59,6 +72,38 @@ sudo make install
 cd ubertooth-2026-09-R1
 bash verify-improvements.sh
 ```
+
+---
+
+## Usage: Ubertooth GUI Tool
+
+### Launch the GUI
+
+```bash
+sudo python3 ubertooth_tool.py
+```
+
+### Features
+
+**6 Tab-Based Control:**
+1. **Device & Radio** - Device info, firmware, channel/PA settings, LED control
+2. **BLE Sniffing** - Follow capture, promiscuous mode, advertising scan, faux-slave injection
+3. **Classic BR/EDR** - Survey mode, piconet following, AFH mapping, active scans
+4. **Spectrum & Raw Data** - Spectrum sweep, 3D visualization, raw bitstream dumps, register debugging
+5. **Firmware** - Write/read firmware, DFU operations, binary suffix management
+6. **Analysis & Workflow** - crackle integration, Wireshark live pipe, pcap analysis
+
+**Language Support:**
+- Built-in: Deutsch (German), English
+- Load custom language packs: Button "Pack laden…" or auto-load from `langs/` folder
+- Live language switching without restart
+
+**Advanced Features:**
+- Copy any command to clipboard for manual execution
+- Auto-stop timeout configuration per command
+- Device index selection for multiple Ubertooth devices
+- Radio auto-reset after operations
+- Export full logs to `.log` files
 
 ---
 
