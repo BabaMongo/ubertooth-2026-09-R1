@@ -42,7 +42,7 @@ class Ubertooth(object):
 
         low = int(round(low_frequency / 1e6))
         high = int(round(high_frequency / 1e6))
-        args = ["ubertooth-specan", "-d", "-", "-l %d" % low, "-u %d" % high, "-U %d" % ubertooth_device]
+        args = ["ubertooth-specan", "-d", "-", "-l", str(low), "-u", str(high), "-U%d" % ubertooth_device]
         self.proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
         default_raw_rssi = -128
@@ -73,9 +73,9 @@ class Ubertooth(object):
                     rssi_values[index] = raw_rssi_value + rssi_offset
 
     def close(self):
-        if self.proc and not self.proc.poll():
+        if self.proc and self.proc.poll() is None:
             self.proc.terminate()
-            if self.proc.poll() is not None:
+            if self.proc.poll() is None:
                 self.proc.kill()
         self.proc = None
 

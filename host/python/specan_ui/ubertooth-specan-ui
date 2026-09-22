@@ -468,4 +468,4 @@ if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     window = Window(ubertooth_device=ubertooth_device, lower_freq=lower_freq, upper_freq=upper_freq)
     window.show()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
