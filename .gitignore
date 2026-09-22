@@ -1,0 +1,45 @@
+# Build artifacts
+build/
+CMakeCache.txt
+CMakeFiles/
+Makefile
+cmake_install.cmake
+cmake_uninstall.cmake
+*.o
+*.a
+*.so
+*.dylib
+*.exe
+*.out
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Generated files
+*.lo
+*.la
+.libs/
+.deps/
+
+# Test outputs
+*.log
+.coverage
+htmlcov/
+
+# Temporary files
+*.tmp
+*.bak
+*.orig

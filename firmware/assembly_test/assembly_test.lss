@@ -1,0 +1,4392 @@
+
+assembly_test.elf:     file format elf32-littlearm
+
+Sections:
+Idx Name          Size      VMA       LMA       File off  Algn
+  0 .text         00001d48  00000000  00000000  00010000  2**2
+                  CONTENTS, ALLOC, LOAD, READONLY, CODE
+  1 .persistent   00000020  10000000  10000000  00030000  2**0
+                  ALLOC
+  2 .data         000000b4  10000020  00001d48  00020020  2**2
+                  CONTENTS, ALLOC, LOAD, DATA
+  3 .bss          0000215d  100000d4  00001dfc  000200d4  2**2
+                  ALLOC
+  4 .ARM.attributes 0000002f  00000000  00000000  000200d4  2**0
+                  CONTENTS, READONLY
+  5 .comment      00000026  00000000  00000000  00020103  2**0
+                  CONTENTS, READONLY
+  6 .debug_line   0000384d  00000000  00000000  00020129  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  7 .debug_line_str 0000003a  00000000  00000000  00023976  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  8 .debug_info   00004d37  00000000  00000000  000239b0  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+  9 .debug_abbrev 00001802  00000000  00000000  000286e7  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 10 .debug_aranges 00000450  00000000  00000000  00029ef0  2**3
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 11 .debug_str    00001b5f  00000000  00000000  0002a340  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 12 .debug_frame  00000a3c  00000000  00000000  0002bea0  2**2
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 13 .debug_loclists 00001fb4  00000000  00000000  0002c8dc  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+ 14 .debug_rnglists 000003bc  00000000  00000000  0002e890  2**0
+                  CONTENTS, READONLY, DEBUGGING, OCTETS
+
+Disassembly of section .text:
+
+00000000 <_NVIC_Handler_Functions>:
+/* delay a number of milliseconds while on internal oscillator (4 MHz) */
+void waitms(u8 ms)
+{
+	u32 i = 400 * ms;
+	while (--i);
+}
+       0:	e0 3f 00 10 a5 10 00 00 f9 10 00 00 f9 10 00 00     .?..............
+
+	// register descriptors
+	USBRegisterDescriptors(abDescriptors);
+
+	// register class request handler
+	USBRegisterRequestHandler(REQTYPE_TYPE_CLASS, HandleClassRequest, abClassReqData);
+      10:	f9 10 00 00 f9 10 00 00 f9 10 00 00 00 00 00 00     ................
+
+	// register endpoint handlers
+	USBHwRegisterEPIntHandler(INT_IN_EP, NULL);
+	USBHwRegisterEPIntHandler(BULK_IN_EP, BulkIn);
+      20:	00 00 00 00 00 00 00 00 00 00 00 00 f9 10 00 00     ................
+	USBHwRegisterEPIntHandler(BULK_OUT_EP, BulkOut);
+
+	// register frame handler
+	USBHwRegisterFrameHandler(USBFrameHandler);
+      30:	f9 10 00 00 00 00 00 00 f9 10 00 00 f9 10 00 00     ................
+
+	// initialise VCOM
+	VCOM_init();
+
+	// enable USB interrupts
+	ISER0 |= ISER0_ISE_USB;
+      40:	f9 10 00 00 b1 06 00 00 f9 10 00 00 f9 10 00 00     ................
+
+	// connect to bus
+	USBHwConnect(TRUE);
+}
+      50:	f9 10 00 00 f9 10 00 00 f9 10 00 00 f9 10 00 00     ................
+	USBHwConnect(TRUE);
+      60:	f9 10 00 00 f9 10 00 00 f9 10 00 00 f9 10 00 00     ................
+      70:	f9 10 00 00 f9 10 00 00 f9 10 00 00 f9 10 00 00     ................
+    // get length
+    dwLen &= PKT_LNGTH_MASK;
+
+    // get data
+    dwData = 0;
+    for (i = 0; i < dwLen; i++) {
+      80:	f9 10 00 00 f9 10 00 00 f9 10 00 00 f9 10 00 00     ................
+      90:	f9 10 00 00 f9 10 00 00 f9 10 00 00 f9 10 00 00     ................
+      a0:	a1 10 00 00 f9 10 00 00 d5 06 00 00 f9 10 00 00     ................
+      b0:	f9 10 00 00 f9 10 00 00 f9 10 00 00 f9 10 00 00     ................
+      c0:	f9 10 00 00 f9 10 00 00 f9 10 00 00                 ............
+
+000000cc <__aeabi_memcpy>:
+      cc:	4684      	mov	ip, r0
+      ce:	ea41 0300 	orr.w	r3, r1, r0
+      d2:	f013 0303 	ands.w	r3, r3, #3
+      d6:	d149      	bne.n	16c <__aeabi_memcpy+0xa0>
+      d8:	3a40      	subs	r2, #64	@ 0x40
+      da:	d323      	bcc.n	124 <__aeabi_memcpy+0x58>
+      dc:	680b      	ldr	r3, [r1, #0]
+      de:	6003      	str	r3, [r0, #0]
+      e0:	684b      	ldr	r3, [r1, #4]
+      e2:	6043      	str	r3, [r0, #4]
+      e4:	688b      	ldr	r3, [r1, #8]
+      e6:	6083      	str	r3, [r0, #8]
+      e8:	68cb      	ldr	r3, [r1, #12]
+      ea:	60c3      	str	r3, [r0, #12]
+      ec:	690b      	ldr	r3, [r1, #16]
+      ee:	6103      	str	r3, [r0, #16]
+      f0:	694b      	ldr	r3, [r1, #20]
+      f2:	6143      	str	r3, [r0, #20]
+      f4:	698b      	ldr	r3, [r1, #24]
+      f6:	6183      	str	r3, [r0, #24]
+      f8:	69cb      	ldr	r3, [r1, #28]
+      fa:	61c3      	str	r3, [r0, #28]
+      fc:	6a0b      	ldr	r3, [r1, #32]
+      fe:	6203      	str	r3, [r0, #32]
+     100:	6a4b      	ldr	r3, [r1, #36]	@ 0x24
+     102:	6243      	str	r3, [r0, #36]	@ 0x24
+     104:	6a8b      	ldr	r3, [r1, #40]	@ 0x28
+     106:	6283      	str	r3, [r0, #40]	@ 0x28
+     108:	6acb      	ldr	r3, [r1, #44]	@ 0x2c
+     10a:	62c3      	str	r3, [r0, #44]	@ 0x2c
+     10c:	6b0b      	ldr	r3, [r1, #48]	@ 0x30
+     10e:	6303      	str	r3, [r0, #48]	@ 0x30
+     110:	6b4b      	ldr	r3, [r1, #52]	@ 0x34
+     112:	6343      	str	r3, [r0, #52]	@ 0x34
+     114:	6b8b      	ldr	r3, [r1, #56]	@ 0x38
+     116:	6383      	str	r3, [r0, #56]	@ 0x38
+     118:	6bcb      	ldr	r3, [r1, #60]	@ 0x3c
+     11a:	63c3      	str	r3, [r0, #60]	@ 0x3c
+     11c:	3040      	adds	r0, #64	@ 0x40
+     11e:	3140      	adds	r1, #64	@ 0x40
+     120:	3a40      	subs	r2, #64	@ 0x40
+     122:	d2db      	bcs.n	dc <__aeabi_memcpy+0x10>
+     124:	3230      	adds	r2, #48	@ 0x30
+     126:	d30b      	bcc.n	140 <__aeabi_memcpy+0x74>
+     128:	680b      	ldr	r3, [r1, #0]
+     12a:	6003      	str	r3, [r0, #0]
+     12c:	684b      	ldr	r3, [r1, #4]
+     12e:	6043      	str	r3, [r0, #4]
+     130:	688b      	ldr	r3, [r1, #8]
+     132:	6083      	str	r3, [r0, #8]
+     134:	68cb      	ldr	r3, [r1, #12]
+     136:	60c3      	str	r3, [r0, #12]
+     138:	3010      	adds	r0, #16
+     13a:	3110      	adds	r1, #16
+     13c:	3a10      	subs	r2, #16
+     13e:	d2f3      	bcs.n	128 <__aeabi_memcpy+0x5c>
+     140:	320c      	adds	r2, #12
+     142:	d305      	bcc.n	150 <__aeabi_memcpy+0x84>
+     144:	f851 3b04 	ldr.w	r3, [r1], #4
+     148:	f840 3b04 	str.w	r3, [r0], #4
+     14c:	3a04      	subs	r2, #4
+     14e:	d2f9      	bcs.n	144 <__aeabi_memcpy+0x78>
+     150:	3204      	adds	r2, #4
+     152:	d008      	beq.n	166 <__aeabi_memcpy+0x9a>
+     154:	07d2      	lsls	r2, r2, #31
+     156:	bf1c      	itt	ne
+     158:	f811 3b01 	ldrbne.w	r3, [r1], #1
+     15c:	f800 3b01 	strbne.w	r3, [r0], #1
+     160:	d301      	bcc.n	166 <__aeabi_memcpy+0x9a>
+     162:	880b      	ldrh	r3, [r1, #0]
+     164:	8003      	strh	r3, [r0, #0]
+     166:	4660      	mov	r0, ip
+     168:	4770      	bx	lr
+     16a:	bf00      	nop
+     16c:	2a08      	cmp	r2, #8
+     16e:	d313      	bcc.n	198 <__aeabi_memcpy+0xcc>
+     170:	078b      	lsls	r3, r1, #30
+     172:	d0b1      	beq.n	d8 <__aeabi_memcpy+0xc>
+     174:	f010 0303 	ands.w	r3, r0, #3
+     178:	d0ae      	beq.n	d8 <__aeabi_memcpy+0xc>
+     17a:	f1c3 0304 	rsb	r3, r3, #4
+     17e:	1ad2      	subs	r2, r2, r3
+     180:	07db      	lsls	r3, r3, #31
+     182:	bf1c      	itt	ne
+     184:	f811 3b01 	ldrbne.w	r3, [r1], #1
+     188:	f800 3b01 	strbne.w	r3, [r0], #1
+     18c:	d3a4      	bcc.n	d8 <__aeabi_memcpy+0xc>
+     18e:	f831 3b02 	ldrh.w	r3, [r1], #2
+     192:	f820 3b02 	strh.w	r3, [r0], #2
+     196:	e79f      	b.n	d8 <__aeabi_memcpy+0xc>
+     198:	3a04      	subs	r2, #4
+     19a:	d3d9      	bcc.n	150 <__aeabi_memcpy+0x84>
+     19c:	3a01      	subs	r2, #1
+     19e:	f811 3b01 	ldrb.w	r3, [r1], #1
+     1a2:	f800 3b01 	strb.w	r3, [r0], #1
+     1a6:	d2f9      	bcs.n	19c <__aeabi_memcpy+0xd0>
+     1a8:	780b      	ldrb	r3, [r1, #0]
+     1aa:	7003      	strb	r3, [r0, #0]
+     1ac:	784b      	ldrb	r3, [r1, #1]
+     1ae:	7043      	strb	r3, [r0, #1]
+     1b0:	788b      	ldrb	r3, [r1, #2]
+     1b2:	7083      	strb	r3, [r0, #2]
+     1b4:	4660      	mov	r0, ip
+     1b6:	4770      	bx	lr
+
+000001b8 <__libc_init_array>:
+     1b8:	b538      	push	{r3, r4, r5, lr}
+     1ba:	4c05      	ldr	r4, [pc, #20]	@ (1d0 <__libc_init_array+0x18>)
+     1bc:	4d05      	ldr	r5, [pc, #20]	@ (1d4 <__libc_init_array+0x1c>)
+     1be:	42ac      	cmp	r4, r5
+     1c0:	d004      	beq.n	1cc <__libc_init_array+0x14>
+     1c2:	f854 3b04 	ldr.w	r3, [r4], #4
+     1c6:	4798      	blx	r3
+     1c8:	42ac      	cmp	r4, r5
+     1ca:	d1fa      	bne.n	1c2 <__libc_init_array+0xa>
+     1cc:	bd38      	pop	{r3, r4, r5, pc}
+     1ce:	bf00      	nop
+     1d0:	00000000 	.word	0x00000000
+     1d4:	00000000 	.word	0x00000000
+
+000001d8 <dma_init>:
+	PCONP |= PCONP_PCGPDMA;
+     1d8:	4a27      	ldr	r2, [pc, #156]	@ (278 <dma_init+0xa0>)
+	rx_dma_lli1.src = (u32)&(DIO_SSP_DR);
+     1da:	4828      	ldr	r0, [pc, #160]	@ (27c <dma_init+0xa4>)
+	PCONP |= PCONP_PCGPDMA;
+     1dc:	f8d2 30c4 	ldr.w	r3, [r2, #196]	@ 0xc4
+     1e0:	f043 5300 	orr.w	r3, r3, #536870912	@ 0x20000000
+     1e4:	f8c2 30c4 	str.w	r3, [r2, #196]	@ 0xc4
+	DMACC0Config = 0;
+     1e8:	2300      	movs	r3, #0
+     1ea:	4a25      	ldr	r2, [pc, #148]	@ (280 <dma_init+0xa8>)
+     1ec:	f8c2 3110 	str.w	r3, [r2, #272]	@ 0x110
+	DMACC1Config = 0;
+     1f0:	f8c2 3130 	str.w	r3, [r2, #304]	@ 0x130
+	DMACC2Config = 0;
+     1f4:	f8c2 3150 	str.w	r3, [r2, #336]	@ 0x150
+	DMACC3Config = 0;
+     1f8:	f8c2 3170 	str.w	r3, [r2, #368]	@ 0x170
+	DMACC4Config = 0;
+     1fc:	f8c2 3190 	str.w	r3, [r2, #400]	@ 0x190
+	DMACC5Config = 0;
+     200:	f8c2 31b0 	str.w	r3, [r2, #432]	@ 0x1b0
+	DMACC6Config = 0;
+     204:	f8c2 31d0 	str.w	r3, [r2, #464]	@ 0x1d0
+	DMACC7Config = 0;
+     208:	f8c2 31f0 	str.w	r3, [r2, #496]	@ 0x1f0
+	DMACIntTCClear = 0xFF;
+     20c:	23ff      	movs	r3, #255	@ 0xff
+     20e:	6093      	str	r3, [r2, #8]
+	DMACIntErrClr = 0xFF;
+     210:	6113      	str	r3, [r2, #16]
+	rx_dma_lli1.src = (u32)&(DIO_SSP_DR);
+     212:	4b1c      	ldr	r3, [pc, #112]	@ (284 <dma_init+0xac>)
+     214:	4619      	mov	r1, r3
+	rx_dma_lli2.src = (u32)&(DIO_SSP_DR);
+     216:	6458      	str	r0, [r3, #68]	@ 0x44
+	rx_dma_lli1.src = (u32)&(DIO_SSP_DR);
+     218:	f841 0b10 	str.w	r0, [r1], #16
+	rx_dma_lli2.dest = (u32)&rxbuf2[0];
+     21c:	f103 0054 	add.w	r0, r3, #84	@ 0x54
+	rx_dma_lli2.next_lli = (u32)&rx_dma_lli1;
+     220:	e9c3 0312 	strd	r0, r3, [r3, #72]	@ 0x48
+	ISER0 &= ~ISER0_ISE_DMA;
+     224:	f04f 20e0 	mov.w	r0, #3758153728	@ 0xe000e000
+	rx_dma_lli1.dest = (u32)&rxbuf1[0];
+     228:	6059      	str	r1, [r3, #4]
+	rx_dma_lli1.next_lli = (u32)&rx_dma_lli2;
+     22a:	f103 0144 	add.w	r1, r3, #68	@ 0x44
+     22e:	6099      	str	r1, [r3, #8]
+	rx_dma_lli1.control = (DMA_SIZE) |
+     230:	4915      	ldr	r1, [pc, #84]	@ (288 <dma_init+0xb0>)
+     232:	60d9      	str	r1, [r3, #12]
+	rx_dma_lli2.control = (DMA_SIZE) |
+     234:	6519      	str	r1, [r3, #80]	@ 0x50
+	ISER0 &= ~ISER0_ISE_DMA;
+     236:	f8d0 1100 	ldr.w	r1, [r0, #256]	@ 0x100
+     23a:	f021 6180 	bic.w	r1, r1, #67108864	@ 0x4000000
+     23e:	f8c0 1100 	str.w	r1, [r0, #256]	@ 0x100
+	DMACConfig = DMACConfig_E;
+     242:	2101      	movs	r1, #1
+     244:	6311      	str	r1, [r2, #48]	@ 0x30
+	while (!(DMACConfig & DMACConfig_E));
+     246:	6b11      	ldr	r1, [r2, #48]	@ 0x30
+     248:	07c9      	lsls	r1, r1, #31
+     24a:	d5fc      	bpl.n	246 <dma_init+0x6e>
+	DMACC0SrcAddr = rx_dma_lli1.src;
+     24c:	6819      	ldr	r1, [r3, #0]
+     24e:	f8c2 1100 	str.w	r1, [r2, #256]	@ 0x100
+	DMACC0DestAddr = rx_dma_lli1.dest;
+     252:	6859      	ldr	r1, [r3, #4]
+     254:	f8c2 1104 	str.w	r1, [r2, #260]	@ 0x104
+	DMACC0LLI = rx_dma_lli1.next_lli;
+     258:	6899      	ldr	r1, [r3, #8]
+     25a:	f8c2 1108 	str.w	r1, [r2, #264]	@ 0x108
+	DMACC0Control = rx_dma_lli1.control;
+     25e:	68d9      	ldr	r1, [r3, #12]
+     260:	f8c2 110c 	str.w	r1, [r2, #268]	@ 0x10c
+	DMACC0Config =
+     264:	f24d 0106 	movw	r1, #53254	@ 0xd006
+     268:	f8c2 1110 	str.w	r1, [r2, #272]	@ 0x110
+	rx_tc = 0;
+     26c:	2200      	movs	r2, #0
+     26e:	f8c3 2088 	str.w	r2, [r3, #136]	@ 0x88
+	rx_err = 0;
+     272:	f8c3 208c 	str.w	r2, [r3, #140]	@ 0x8c
+}
+     276:	4770      	bx	lr
+     278:	400fc000 	.word	0x400fc000
+     27c:	40030008 	.word	0x40030008
+     280:	50004000 	.word	0x50004000
+     284:	100000d4 	.word	0x100000d4
+     288:	88009032 	.word	0x88009032
+
+0000028c <dio_ssp_start>:
+	DIO_SSEL_SET;
+     28c:	f04f 5080 	mov.w	r0, #268435456	@ 0x10000000
+     290:	490e      	ldr	r1, [pc, #56]	@ (2cc <dio_ssp_start+0x40>)
+	DIO_SSP_DMACR |= SSPDMACR_RXDMAE;
+     292:	4b0f      	ldr	r3, [pc, #60]	@ (2d0 <dio_ssp_start+0x44>)
+	DIO_SSEL_SET;
+     294:	f8c1 0098 	str.w	r0, [r1, #152]	@ 0x98
+	DIO_SSP_DMACR |= SSPDMACR_RXDMAE;
+     298:	6a5a      	ldr	r2, [r3, #36]	@ 0x24
+     29a:	f042 0201 	orr.w	r2, r2, #1
+     29e:	625a      	str	r2, [r3, #36]	@ 0x24
+	DIO_SSP_CR1 |= SSPCR1_SSE;
+     2a0:	685a      	ldr	r2, [r3, #4]
+     2a2:	f042 0202 	orr.w	r2, r2, #2
+     2a6:	605a      	str	r2, [r3, #4]
+	DMACC0Config |= DMACCxConfig_E;
+     2a8:	4a0a      	ldr	r2, [pc, #40]	@ (2d4 <dio_ssp_start+0x48>)
+     2aa:	f8d2 3110 	ldr.w	r3, [r2, #272]	@ 0x110
+     2ae:	f043 0301 	orr.w	r3, r3, #1
+     2b2:	f8c2 3110 	str.w	r3, [r2, #272]	@ 0x110
+	ISER0 |= ISER0_ISE_DMA;
+     2b6:	f04f 22e0 	mov.w	r2, #3758153728	@ 0xe000e000
+     2ba:	f8d2 3100 	ldr.w	r3, [r2, #256]	@ 0x100
+     2be:	f043 6380 	orr.w	r3, r3, #67108864	@ 0x4000000
+     2c2:	f8c2 3100 	str.w	r3, [r2, #256]	@ 0x100
+	DIO_SSEL_CLR;
+     2c6:	f8c1 009c 	str.w	r0, [r1, #156]	@ 0x9c
+}
+     2ca:	4770      	bx	lr
+     2cc:	2009c000 	.word	0x2009c000
+     2d0:	40030000 	.word	0x40030000
+     2d4:	50004000 	.word	0x50004000
+
+000002d8 <usb_vendor_request_handler>:
+{
+     2d8:	b570      	push	{r4, r5, r6, lr}
+     2da:	b08a      	sub	sp, #40	@ 0x28
+	switch (pSetup->bRequest) {
+     2dc:	7843      	ldrb	r3, [r0, #1]
+{
+     2de:	460d      	mov	r5, r1
+	u8 *pbData = *ppbData;
+     2e0:	6814      	ldr	r4, [r2, #0]
+	switch (pSetup->bRequest) {
+     2e2:	2b21      	cmp	r3, #33	@ 0x21
+     2e4:	f200 8150 	bhi.w	588 <usb_vendor_request_handler+0x2b0>
+     2e8:	e8df f013 	tbh	[pc, r3, lsl #1]
+     2ec:	00220030 	.word	0x00220030
+     2f0:	0032014e 	.word	0x0032014e
+     2f4:	00410039 	.word	0x00410039
+     2f8:	004a0046 	.word	0x004a0046
+     2fc:	0054004f 	.word	0x0054004f
+     300:	00fa0059 	.word	0x00fa0059
+     304:	01230102 	.word	0x01230102
+     308:	00600076 	.word	0x00600076
+     30c:	00b300ae 	.word	0x00b300ae
+     310:	00bc00b9 	.word	0x00bc00b9
+     314:	00ee00c3 	.word	0x00ee00c3
+     318:	00f500f1 	.word	0x00f500f1
+     31c:	01200118 	.word	0x01200118
+     320:	0126014e 	.word	0x0126014e
+     324:	00cf00c8 	.word	0x00cf00c8
+     328:	00d800db 	.word	0x00d800db
+     32c:	013e00de 	.word	0x013e00de
+		rx_pkts += pSetup->wValue;
+     330:	4b96      	ldr	r3, [pc, #600]	@ (58c <usb_vendor_request_handler+0x2b4>)
+     332:	8842      	ldrh	r2, [r0, #2]
+     334:	f8d3 1090 	ldr.w	r1, [r3, #144]	@ 0x90
+     338:	440a      	add	r2, r1
+     33a:	f8c3 2090 	str.w	r2, [r3, #144]	@ 0x90
+		if (rx_pkts == 0)
+     33e:	f8d3 2090 	ldr.w	r2, [r3, #144]	@ 0x90
+     342:	b91a      	cbnz	r2, 34c <usb_vendor_request_handler+0x74>
+			rx_pkts = 0xFFFFFFFF;
+     344:	f04f 32ff 	mov.w	r2, #4294967295	@ 0xffffffff
+     348:	f8c3 2090 	str.w	r2, [r3, #144]	@ 0x90
+		*piLen = 0;
+     34c:	2300      	movs	r3, #0
+     34e:	e079      	b.n	444 <usb_vendor_request_handler+0x16c>
+		pbData[0] = (USRLED) ? 1 : 0;
+     350:	4b8f      	ldr	r3, [pc, #572]	@ (590 <usb_vendor_request_handler+0x2b8>)
+     352:	6b5b      	ldr	r3, [r3, #52]	@ 0x34
+     354:	f3c3 0340 	ubfx	r3, r3, #1, #1
+		pbData[0] = (PAEN) ? 1 : 0;
+     358:	7023      	strb	r3, [r4, #0]
+		*piLen = 1;
+     35a:	2301      	movs	r3, #1
+     35c:	e072      	b.n	444 <usb_vendor_request_handler+0x16c>
+		if (pSetup->wValue)
+     35e:	2202      	movs	r2, #2
+     360:	8841      	ldrh	r1, [r0, #2]
+     362:	4b8b      	ldr	r3, [pc, #556]	@ (590 <usb_vendor_request_handler+0x2b8>)
+		if (pSetup->wValue)
+     364:	b301      	cbz	r1, 3a8 <usb_vendor_request_handler+0xd0>
+			CC1V8_SET;
+     366:	639a      	str	r2, [r3, #56]	@ 0x38
+	return TRUE;
+     368:	2001      	movs	r0, #1
+}
+     36a:	b00a      	add	sp, #40	@ 0x28
+     36c:	bd70      	pop	{r4, r5, r6, pc}
+		pbData[0] = (RXLED) ? 1 : 0;
+     36e:	4b88      	ldr	r3, [pc, #544]	@ (590 <usb_vendor_request_handler+0x2b8>)
+     370:	6b5b      	ldr	r3, [r3, #52]	@ 0x34
+     372:	f3c3 1300 	ubfx	r3, r3, #4, #1
+     376:	e7ef      	b.n	358 <usb_vendor_request_handler+0x80>
+		if (pSetup->wValue)
+     378:	2210      	movs	r2, #16
+     37a:	8841      	ldrh	r1, [r0, #2]
+     37c:	4b84      	ldr	r3, [pc, #528]	@ (590 <usb_vendor_request_handler+0x2b8>)
+     37e:	e7f1      	b.n	364 <usb_vendor_request_handler+0x8c>
+		pbData[0] = (TXLED) ? 1 : 0;
+     380:	4b83      	ldr	r3, [pc, #524]	@ (590 <usb_vendor_request_handler+0x2b8>)
+     382:	6b5b      	ldr	r3, [r3, #52]	@ 0x34
+		pbData[0] = (HGM) ? 1 : 0;
+     384:	f3c3 2300 	ubfx	r3, r3, #8, #1
+     388:	e7e6      	b.n	358 <usb_vendor_request_handler+0x80>
+		if (pSetup->wValue)
+     38a:	f44f 7280 	mov.w	r2, #256	@ 0x100
+     38e:	8841      	ldrh	r1, [r0, #2]
+     390:	4b7f      	ldr	r3, [pc, #508]	@ (590 <usb_vendor_request_handler+0x2b8>)
+     392:	e7e7      	b.n	364 <usb_vendor_request_handler+0x8c>
+		pbData[0] = (CC1V8) ? 1 : 0;
+     394:	4b7e      	ldr	r3, [pc, #504]	@ (590 <usb_vendor_request_handler+0x2b8>)
+     396:	6b5b      	ldr	r3, [r3, #52]	@ 0x34
+     398:	f3c3 2340 	ubfx	r3, r3, #9, #1
+     39c:	e7dc      	b.n	358 <usb_vendor_request_handler+0x80>
+		if (pSetup->wValue)
+     39e:	f44f 7200 	mov.w	r2, #512	@ 0x200
+     3a2:	8841      	ldrh	r1, [r0, #2]
+     3a4:	4b7a      	ldr	r3, [pc, #488]	@ (590 <usb_vendor_request_handler+0x2b8>)
+     3a6:	e7dd      	b.n	364 <usb_vendor_request_handler+0x8c>
+			CC1V8_CLR;
+     3a8:	63da      	str	r2, [r3, #60]	@ 0x3c
+     3aa:	e7dd      	b.n	368 <usb_vendor_request_handler+0x90>
+		command[0] = 54; /* read part number */
+     3ac:	2336      	movs	r3, #54	@ 0x36
+     3ae:	9300      	str	r3, [sp, #0]
+		iap_entry(command, result);
+     3b0:	4b78      	ldr	r3, [pc, #480]	@ (594 <usb_vendor_request_handler+0x2bc>)
+     3b2:	4668      	mov	r0, sp
+     3b4:	681b      	ldr	r3, [r3, #0]
+     3b6:	a905      	add	r1, sp, #20
+     3b8:	4798      	blx	r3
+		pbData[0] = result[0] & 0xFF; /* status */
+     3ba:	9b05      	ldr	r3, [sp, #20]
+     3bc:	7023      	strb	r3, [r4, #0]
+		pbData[1] = result[1] & 0xFF;
+     3be:	9b06      	ldr	r3, [sp, #24]
+     3c0:	7063      	strb	r3, [r4, #1]
+		pbData[2] = (result[1] >> 8) & 0xFF;
+     3c2:	9b06      	ldr	r3, [sp, #24]
+     3c4:	0a1b      	lsrs	r3, r3, #8
+     3c6:	70a3      	strb	r3, [r4, #2]
+		pbData[3] = (result[1] >> 16) & 0xFF;
+     3c8:	f8bd 301a 	ldrh.w	r3, [sp, #26]
+     3cc:	70e3      	strb	r3, [r4, #3]
+		pbData[4] = (result[1] >> 24) & 0xFF;
+     3ce:	f89d 301b 	ldrb.w	r3, [sp, #27]
+		pbData[4] = rr.reply_num;
+     3d2:	7123      	strb	r3, [r4, #4]
+		*piLen = 5;
+     3d4:	2305      	movs	r3, #5
+     3d6:	e035      	b.n	444 <usb_vendor_request_handler+0x16c>
+		command[0] = 58; /* read device serial number */
+     3d8:	233a      	movs	r3, #58	@ 0x3a
+     3da:	9300      	str	r3, [sp, #0]
+		iap_entry(command, result);
+     3dc:	4b6d      	ldr	r3, [pc, #436]	@ (594 <usb_vendor_request_handler+0x2bc>)
+     3de:	4668      	mov	r0, sp
+     3e0:	681b      	ldr	r3, [r3, #0]
+     3e2:	a905      	add	r1, sp, #20
+     3e4:	4798      	blx	r3
+		pbData[0] = result[0] & 0xFF; /* status */
+     3e6:	9b05      	ldr	r3, [sp, #20]
+     3e8:	7023      	strb	r3, [r4, #0]
+		pbData[1] = result[1] & 0xFF;
+     3ea:	9b06      	ldr	r3, [sp, #24]
+     3ec:	7063      	strb	r3, [r4, #1]
+		pbData[2] = (result[1] >> 8) & 0xFF;
+     3ee:	9b06      	ldr	r3, [sp, #24]
+     3f0:	0a1b      	lsrs	r3, r3, #8
+     3f2:	70a3      	strb	r3, [r4, #2]
+		pbData[3] = (result[1] >> 16) & 0xFF;
+     3f4:	f8bd 301a 	ldrh.w	r3, [sp, #26]
+     3f8:	70e3      	strb	r3, [r4, #3]
+		pbData[4] = (result[1] >> 24) & 0xFF;
+     3fa:	f89d 301b 	ldrb.w	r3, [sp, #27]
+     3fe:	7123      	strb	r3, [r4, #4]
+		pbData[5] = result[2] & 0xFF;
+     400:	9b07      	ldr	r3, [sp, #28]
+     402:	7163      	strb	r3, [r4, #5]
+		pbData[6] = (result[2] >> 8) & 0xFF;
+     404:	9b07      	ldr	r3, [sp, #28]
+     406:	0a1b      	lsrs	r3, r3, #8
+     408:	71a3      	strb	r3, [r4, #6]
+		pbData[7] = (result[2] >> 16) & 0xFF;
+     40a:	f8bd 301e 	ldrh.w	r3, [sp, #30]
+     40e:	71e3      	strb	r3, [r4, #7]
+		pbData[8] = (result[2] >> 24) & 0xFF;
+     410:	f89d 301f 	ldrb.w	r3, [sp, #31]
+     414:	7223      	strb	r3, [r4, #8]
+		pbData[9] = result[3] & 0xFF;
+     416:	9b08      	ldr	r3, [sp, #32]
+     418:	7263      	strb	r3, [r4, #9]
+		pbData[10] = (result[3] >> 8) & 0xFF;
+     41a:	9b08      	ldr	r3, [sp, #32]
+     41c:	0a1b      	lsrs	r3, r3, #8
+     41e:	72a3      	strb	r3, [r4, #10]
+		pbData[11] = (result[3] >> 16) & 0xFF;
+     420:	f8bd 3022 	ldrh.w	r3, [sp, #34]	@ 0x22
+     424:	72e3      	strb	r3, [r4, #11]
+		pbData[12] = (result[3] >> 24) & 0xFF;
+     426:	f89d 3023 	ldrb.w	r3, [sp, #35]	@ 0x23
+     42a:	7323      	strb	r3, [r4, #12]
+		pbData[13] = result[4] & 0xFF;
+     42c:	9b09      	ldr	r3, [sp, #36]	@ 0x24
+     42e:	7363      	strb	r3, [r4, #13]
+		pbData[14] = (result[4] >> 8) & 0xFF;
+     430:	9b09      	ldr	r3, [sp, #36]	@ 0x24
+     432:	0a1b      	lsrs	r3, r3, #8
+     434:	73a3      	strb	r3, [r4, #14]
+		pbData[15] = (result[4] >> 16) & 0xFF;
+     436:	f8bd 3026 	ldrh.w	r3, [sp, #38]	@ 0x26
+     43a:	73e3      	strb	r3, [r4, #15]
+		pbData[16] = (result[4] >> 24) & 0xFF;
+     43c:	f89d 3027 	ldrb.w	r3, [sp, #39]	@ 0x27
+     440:	7423      	strb	r3, [r4, #16]
+		*piLen = 17;
+     442:	2311      	movs	r3, #17
+		*piLen = 1;
+     444:	602b      	str	r3, [r5, #0]
+		break;
+     446:	e78f      	b.n	368 <usb_vendor_request_handler+0x90>
+		pbData[0] = (PAEN) ? 1 : 0;
+     448:	4b51      	ldr	r3, [pc, #324]	@ (590 <usb_vendor_request_handler+0x2b8>)
+     44a:	6d5b      	ldr	r3, [r3, #84]	@ 0x54
+     44c:	f3c3 13c0 	ubfx	r3, r3, #7, #1
+     450:	e782      	b.n	358 <usb_vendor_request_handler+0x80>
+		if (pSetup->wValue)
+     452:	2280      	movs	r2, #128	@ 0x80
+     454:	8841      	ldrh	r1, [r0, #2]
+     456:	4b4e      	ldr	r3, [pc, #312]	@ (590 <usb_vendor_request_handler+0x2b8>)
+		if (pSetup->wValue)
+     458:	b149      	cbz	r1, 46e <usb_vendor_request_handler+0x196>
+			HGM_SET;
+     45a:	659a      	str	r2, [r3, #88]	@ 0x58
+     45c:	e784      	b.n	368 <usb_vendor_request_handler+0x90>
+		pbData[0] = (HGM) ? 1 : 0;
+     45e:	4b4c      	ldr	r3, [pc, #304]	@ (590 <usb_vendor_request_handler+0x2b8>)
+     460:	6d5b      	ldr	r3, [r3, #84]	@ 0x54
+     462:	e78f      	b.n	384 <usb_vendor_request_handler+0xac>
+		if (pSetup->wValue)
+     464:	f44f 7280 	mov.w	r2, #256	@ 0x100
+     468:	8841      	ldrh	r1, [r0, #2]
+     46a:	4b49      	ldr	r3, [pc, #292]	@ (590 <usb_vendor_request_handler+0x2b8>)
+     46c:	e7f4      	b.n	458 <usb_vendor_request_handler+0x180>
+			HGM_CLR;
+     46e:	65da      	str	r2, [r3, #92]	@ 0x5c
+     470:	e77a      	b.n	368 <usb_vendor_request_handler+0x90>
+		requested_mode = MODE_TX_TEST;
+     472:	2203      	movs	r2, #3
+     474:	4b45      	ldr	r3, [pc, #276]	@ (58c <usb_vendor_request_handler+0x2b4>)
+		requested_mode = MODE_IDLE;
+     476:	f8c3 2094 	str.w	r2, [r3, #148]	@ 0x94
+		break;
+     47a:	e775      	b.n	368 <usb_vendor_request_handler+0x90>
+		pbData[0] = cc2400_get(FREND) & 0x7;
+     47c:	2005      	movs	r0, #5
+     47e:	f000 ff13 	bl	12a8 <cc2400_get>
+     482:	f000 0007 	and.w	r0, r0, #7
+     486:	7020      	strb	r0, [r4, #0]
+		*piLen = 1;
+     488:	e767      	b.n	35a <usb_vendor_request_handler+0x82>
+		if( pSetup->wValue < 8 ) {
+     48a:	8841      	ldrh	r1, [r0, #2]
+     48c:	2907      	cmp	r1, #7
+     48e:	d87b      	bhi.n	588 <usb_vendor_request_handler+0x2b0>
+			cc2400_set(FREND, 8 | pSetup->wValue);
+     490:	2005      	movs	r0, #5
+     492:	f041 0108 	orr.w	r1, r1, #8
+     496:	f000 ff10 	bl	12ba <cc2400_set>
+		break;
+     49a:	e765      	b.n	368 <usb_vendor_request_handler+0x90>
+		requested_mode = MODE_RANGE_TEST;
+     49c:	2205      	movs	r2, #5
+     49e:	4b3b      	ldr	r3, [pc, #236]	@ (58c <usb_vendor_request_handler+0x2b4>)
+     4a0:	e7e9      	b.n	476 <usb_vendor_request_handler+0x19e>
+		requested_mode = MODE_REPEATER;
+     4a2:	2206      	movs	r2, #6
+     4a4:	4b39      	ldr	r3, [pc, #228]	@ (58c <usb_vendor_request_handler+0x2b4>)
+     4a6:	e7e6      	b.n	476 <usb_vendor_request_handler+0x19e>
+		pbData[0] = rr.valid;
+     4a8:	4b38      	ldr	r3, [pc, #224]	@ (58c <usb_vendor_request_handler+0x2b4>)
+     4aa:	f893 2098 	ldrb.w	r2, [r3, #152]	@ 0x98
+     4ae:	7022      	strb	r2, [r4, #0]
+		pbData[1] = rr.request_pa;
+     4b0:	f893 2099 	ldrb.w	r2, [r3, #153]	@ 0x99
+     4b4:	7062      	strb	r2, [r4, #1]
+		pbData[2] = rr.request_num;
+     4b6:	f893 209a 	ldrb.w	r2, [r3, #154]	@ 0x9a
+     4ba:	70a2      	strb	r2, [r4, #2]
+		pbData[3] = rr.reply_pa;
+     4bc:	f893 209b 	ldrb.w	r2, [r3, #155]	@ 0x9b
+     4c0:	70e2      	strb	r2, [r4, #3]
+		pbData[4] = rr.reply_num;
+     4c2:	f893 309c 	ldrb.w	r3, [r3, #156]	@ 0x9c
+     4c6:	e784      	b.n	3d2 <usb_vendor_request_handler+0xfa>
+		requested_mode = MODE_IDLE;
+     4c8:	2200      	movs	r2, #0
+     4ca:	4b30      	ldr	r3, [pc, #192]	@ (58c <usb_vendor_request_handler+0x2b4>)
+     4cc:	e7d3      	b.n	476 <usb_vendor_request_handler+0x19e>
+		pbData[0] = modulation;
+     4ce:	4b2f      	ldr	r3, [pc, #188]	@ (58c <usb_vendor_request_handler+0x2b4>)
+     4d0:	f8d3 30a0 	ldr.w	r3, [r3, #160]	@ 0xa0
+     4d4:	e740      	b.n	358 <usb_vendor_request_handler+0x80>
+		modulation = pSetup->wValue;
+     4d6:	8842      	ldrh	r2, [r0, #2]
+     4d8:	4b2c      	ldr	r3, [pc, #176]	@ (58c <usb_vendor_request_handler+0x2b4>)
+     4da:	f8c3 20a0 	str.w	r2, [r3, #160]	@ 0xa0
+		break;
+     4de:	e743      	b.n	368 <usb_vendor_request_handler+0x90>
+		pbData[0] = channel & 0xFF;
+     4e0:	4b2d      	ldr	r3, [pc, #180]	@ (598 <usb_vendor_request_handler+0x2c0>)
+     4e2:	881a      	ldrh	r2, [r3, #0]
+     4e4:	7022      	strb	r2, [r4, #0]
+		pbData[1] = (channel >> 8) & 0xFF;
+     4e6:	881b      	ldrh	r3, [r3, #0]
+     4e8:	0a1b      	lsrs	r3, r3, #8
+     4ea:	7063      	strb	r3, [r4, #1]
+		*piLen = 2;
+     4ec:	2302      	movs	r3, #2
+     4ee:	e7a9      	b.n	444 <usb_vendor_request_handler+0x16c>
+		channel = pSetup->wValue;
+     4f0:	4b29      	ldr	r3, [pc, #164]	@ (598 <usb_vendor_request_handler+0x2c0>)
+     4f2:	8842      	ldrh	r2, [r0, #2]
+     4f4:	801a      	strh	r2, [r3, #0]
+		channel = MAX(channel, MIN_FREQ);
+     4f6:	f640 02dc 	movw	r2, #2268	@ 0x8dc
+     4fa:	8819      	ldrh	r1, [r3, #0]
+     4fc:	b289      	uxth	r1, r1
+     4fe:	4291      	cmp	r1, r2
+		channel = MIN(channel, MAX_FREQ);
+     500:	f640 21e9 	movw	r1, #2793	@ 0xae9
+		channel = MAX(channel, MIN_FREQ);
+     504:	bf88      	it	hi
+     506:	881a      	ldrhhi	r2, [r3, #0]
+     508:	801a      	strh	r2, [r3, #0]
+		channel = MIN(channel, MAX_FREQ);
+     50a:	881a      	ldrh	r2, [r3, #0]
+     50c:	b292      	uxth	r2, r2
+     50e:	428a      	cmp	r2, r1
+     510:	bf8c      	ite	hi
+     512:	f640 22ea 	movwhi	r2, #2794	@ 0xaea
+     516:	881a      	ldrhls	r2, [r3, #0]
+     518:	801a      	strh	r2, [r3, #0]
+		break;
+     51a:	e725      	b.n	368 <usb_vendor_request_handler+0x90>
+		command[0] = 57;
+     51c:	2339      	movs	r3, #57	@ 0x39
+     51e:	9300      	str	r3, [sp, #0]
+		iap_entry(command, result);
+     520:	4b1c      	ldr	r3, [pc, #112]	@ (594 <usb_vendor_request_handler+0x2bc>)
+     522:	4668      	mov	r0, sp
+     524:	681b      	ldr	r3, [r3, #0]
+     526:	a905      	add	r1, sp, #20
+     528:	4798      	blx	r3
+		*piLen = 0; /* should never return */
+     52a:	e70f      	b.n	34c <usb_vendor_request_handler+0x74>
+		bootloader_ctrl = DFU_MODE;
+     52c:	4b1b      	ldr	r3, [pc, #108]	@ (59c <usb_vendor_request_handler+0x2c4>)
+     52e:	4a1c      	ldr	r2, [pc, #112]	@ (5a0 <usb_vendor_request_handler+0x2c8>)
+     530:	601a      	str	r2, [r3, #0]
+		reset();
+     532:	f000 ffa5 	bl	1480 <reset>
+		break;
+     536:	e717      	b.n	368 <usb_vendor_request_handler+0x90>
+		if (pSetup->wValue < 2049 || pSetup->wValue > 3072 || 
+     538:	f46f 6400 	mvn.w	r4, #2048	@ 0x800
+     53c:	8842      	ldrh	r2, [r0, #2]
+     53e:	1913      	adds	r3, r2, r4
+     540:	f5b3 6f80 	cmp.w	r3, #1024	@ 0x400
+     544:	d220      	bcs.n	588 <usb_vendor_request_handler+0x2b0>
+     546:	f46f 6100 	mvn.w	r1, #2048	@ 0x800
+				pSetup->wIndex < 2049 || pSetup->wIndex > 3072 ||
+     54a:	8883      	ldrh	r3, [r0, #4]
+		if (pSetup->wValue < 2049 || pSetup->wValue > 3072 || 
+     54c:	1859      	adds	r1, r3, r1
+     54e:	f5b1 6f80 	cmp.w	r1, #1024	@ 0x400
+     552:	d219      	bcs.n	588 <usb_vendor_request_handler+0x2b0>
+				pSetup->wIndex < 2049 || pSetup->wIndex > 3072 ||
+     554:	429a      	cmp	r2, r3
+     556:	d817      	bhi.n	588 <usb_vendor_request_handler+0x2b0>
+		low_freq = pSetup->wValue;
+     558:	490f      	ldr	r1, [pc, #60]	@ (598 <usb_vendor_request_handler+0x2c0>)
+     55a:	804a      	strh	r2, [r1, #2]
+		requested_mode = MODE_SPECAN;
+     55c:	2204      	movs	r2, #4
+		high_freq = pSetup->wIndex;
+     55e:	808b      	strh	r3, [r1, #4]
+		requested_mode = MODE_SPECAN;
+     560:	4b0a      	ldr	r3, [pc, #40]	@ (58c <usb_vendor_request_handler+0x2b4>)
+     562:	f8c3 2094 	str.w	r2, [r3, #148]	@ 0x94
+     566:	e6f1      	b.n	34c <usb_vendor_request_handler+0x74>
+		pbData[0] = 0x00;
+     568:	2300      	movs	r3, #0
+		length = (u8)strlen(GIT_REVISION);
+     56a:	480e      	ldr	r0, [pc, #56]	@ (5a4 <usb_vendor_request_handler+0x2cc>)
+		pbData[0] = 0x00;
+     56c:	7023      	strb	r3, [r4, #0]
+		pbData[1] = 0x00;
+     56e:	7063      	strb	r3, [r4, #1]
+		length = (u8)strlen(GIT_REVISION);
+     570:	f001 fb24 	bl	1bbc <strlen>
+		pbData[2] = length;
+     574:	b2c6      	uxtb	r6, r0
+		memcpy(&pbData[3], GIT_REVISION, length);
+     576:	4632      	mov	r2, r6
+		length = (u8)strlen(GIT_REVISION);
+     578:	70a0      	strb	r0, [r4, #2]
+		memcpy(&pbData[3], GIT_REVISION, length);
+     57a:	490a      	ldr	r1, [pc, #40]	@ (5a4 <usb_vendor_request_handler+0x2cc>)
+     57c:	1ce0      	adds	r0, r4, #3
+		*piLen = 2 + 1 + length;
+     57e:	3603      	adds	r6, #3
+		memcpy(&pbData[3], GIT_REVISION, length);
+     580:	f7ff fda4 	bl	cc <__aeabi_memcpy>
+		*piLen = 2 + 1 + length;
+     584:	602e      	str	r6, [r5, #0]
+		break;
+     586:	e6ef      	b.n	368 <usb_vendor_request_handler+0x90>
+			return FALSE;
+     588:	2000      	movs	r0, #0
+     58a:	e6ee      	b.n	36a <usb_vendor_request_handler+0x92>
+     58c:	100000d4 	.word	0x100000d4
+     590:	2009c000 	.word	0x2009c000
+     594:	00001d18 	.word	0x00001d18
+     598:	10000020 	.word	0x10000020
+     59c:	1000001c 	.word	0x1000001c
+     5a0:	4305bb21 	.word	0x4305bb21
+     5a4:	00001c18 	.word	0x00001c18
+
+000005a8 <queue_init>:
+	head = 0;
+     5a8:	2200      	movs	r2, #0
+     5aa:	4b03      	ldr	r3, [pc, #12]	@ (5b8 <queue_init+0x10>)
+     5ac:	f8c3 20a4 	str.w	r2, [r3, #164]	@ 0xa4
+	tail = 0;
+     5b0:	f8c3 20a8 	str.w	r2, [r3, #168]	@ 0xa8
+}
+     5b4:	4770      	bx	lr
+     5b6:	bf00      	nop
+     5b8:	100000d4 	.word	0x100000d4
+
+000005bc <enqueue>:
+{
+     5bc:	b570      	push	{r4, r5, r6, lr}
+	u8 h = head & 0x7F;
+     5be:	4a1b      	ldr	r2, [pc, #108]	@ (62c <enqueue+0x70>)
+     5c0:	f8d2 40a4 	ldr.w	r4, [r2, #164]	@ 0xa4
+	u8 t = tail & 0x7F;
+     5c4:	f8d2 10a8 	ldr.w	r1, [r2, #168]	@ 0xa8
+     5c8:	f001 017f 	and.w	r1, r1, #127	@ 0x7f
+	u8 n = (t + 1) & 0x7F;
+     5cc:	1c4b      	adds	r3, r1, #1
+	if (h == n)
+     5ce:	4063      	eors	r3, r4
+     5d0:	f013 037f 	ands.w	r3, r3, #127	@ 0x7f
+     5d4:	d027      	beq.n	626 <enqueue+0x6a>
+	fifo[t].clkn_high = clkn_high;
+     5d6:	4b16      	ldr	r3, [pc, #88]	@ (630 <enqueue+0x74>)
+     5d8:	f892 50ac 	ldrb.w	r5, [r2, #172]	@ 0xac
+     5dc:	eb03 1481 	add.w	r4, r3, r1, lsl #6
+     5e0:	70e5      	strb	r5, [r4, #3]
+	fifo[t].clk100ns = CLK100NS;
+     5e2:	f04f 2540 	mov.w	r5, #1073758208	@ 0x40004000
+     5e6:	68ad      	ldr	r5, [r5, #8]
+     5e8:	6065      	str	r5, [r4, #4]
+	USRLED_SET;
+     5ea:	2502      	movs	r5, #2
+     5ec:	4c11      	ldr	r4, [pc, #68]	@ (634 <enqueue+0x78>)
+     5ee:	63a5      	str	r5, [r4, #56]	@ 0x38
+	for (i = 0; i < DMA_SIZE; i++)
+     5f0:	f103 040d 	add.w	r4, r3, #13
+     5f4:	1e45      	subs	r5, r0, #1
+     5f6:	eb04 1481 	add.w	r4, r4, r1, lsl #6
+     5fa:	3031      	adds	r0, #49	@ 0x31
+		fifo[t].data[i] = buf[i];
+     5fc:	f815 6f01 	ldrb.w	r6, [r5, #1]!
+	for (i = 0; i < DMA_SIZE; i++)
+     600:	4285      	cmp	r5, r0
+		fifo[t].data[i] = buf[i];
+     602:	f804 6f01 	strb.w	r6, [r4, #1]!
+	for (i = 0; i < DMA_SIZE; i++)
+     606:	d1f9      	bne.n	5fc <enqueue+0x40>
+	fifo[t].status = status;
+     608:	f892 00ad 	ldrb.w	r0, [r2, #173]	@ 0xad
+     60c:	eb03 1381 	add.w	r3, r3, r1, lsl #6
+     610:	7058      	strb	r0, [r3, #1]
+	status = 0;
+     612:	2300      	movs	r3, #0
+	return 1;
+     614:	2001      	movs	r0, #1
+	status = 0;
+     616:	f882 30ad 	strb.w	r3, [r2, #173]	@ 0xad
+	++tail;
+     61a:	f8d2 30a8 	ldr.w	r3, [r2, #168]	@ 0xa8
+     61e:	3301      	adds	r3, #1
+     620:	f8c2 30a8 	str.w	r3, [r2, #168]	@ 0xa8
+}
+     624:	bd70      	pop	{r4, r5, r6, pc}
+		return 0;
+     626:	4618      	mov	r0, r3
+     628:	e7fc      	b.n	624 <enqueue+0x68>
+     62a:	bf00      	nop
+     62c:	100000d4 	.word	0x100000d4
+     630:	10000198 	.word	0x10000198
+     634:	2009c000 	.word	0x2009c000
+
+00000638 <dequeue>:
+{
+     638:	b510      	push	{r4, lr}
+	u8 h = head & 0x7F;
+     63a:	4c0f      	ldr	r4, [pc, #60]	@ (678 <dequeue+0x40>)
+     63c:	f8d4 30a4 	ldr.w	r3, [r4, #164]	@ 0xa4
+	u8 t = tail & 0x7F;
+     640:	f8d4 20a8 	ldr.w	r2, [r4, #168]	@ 0xa8
+	u8 h = head & 0x7F;
+     644:	f003 037f 	and.w	r3, r3, #127	@ 0x7f
+	if (h == t) {
+     648:	f002 027f 	and.w	r2, r2, #127	@ 0x7f
+     64c:	4293      	cmp	r3, r2
+     64e:	d104      	bne.n	65a <dequeue+0x22>
+		USRLED_CLR;
+     650:	2202      	movs	r2, #2
+		return 0;
+     652:	2000      	movs	r0, #0
+		USRLED_CLR;
+     654:	4b09      	ldr	r3, [pc, #36]	@ (67c <dequeue+0x44>)
+     656:	63da      	str	r2, [r3, #60]	@ 0x3c
+}
+     658:	bd10      	pop	{r4, pc}
+	USBHwEPWrite(BULK_IN_EP, (u8 *)&fifo[h], sizeof(usb_pkt_rx));
+     65a:	4909      	ldr	r1, [pc, #36]	@ (680 <dequeue+0x48>)
+     65c:	2240      	movs	r2, #64	@ 0x40
+     65e:	eb01 1183 	add.w	r1, r1, r3, lsl #6
+     662:	2082      	movs	r0, #130	@ 0x82
+     664:	f001 f88a 	bl	177c <USBHwEPWrite>
+	++head;
+     668:	f8d4 30a4 	ldr.w	r3, [r4, #164]	@ 0xa4
+	return 1;
+     66c:	2001      	movs	r0, #1
+	++head;
+     66e:	3301      	adds	r3, #1
+     670:	f8c4 30a4 	str.w	r3, [r4, #164]	@ 0xa4
+	return 1;
+     674:	e7f0      	b.n	658 <dequeue+0x20>
+     676:	bf00      	nop
+     678:	100000d4 	.word	0x100000d4
+     67c:	2009c000 	.word	0x2009c000
+     680:	10000198 	.word	0x10000198
+
+00000684 <ubertooth_usb_init>:
+{
+     684:	b508      	push	{r3, lr}
+	USBInit();
+     686:	f000 ffab 	bl	15e0 <USBInit>
+	USBRegisterDescriptors(abDescriptors);
+     68a:	4806      	ldr	r0, [pc, #24]	@ (6a4 <ubertooth_usb_init+0x20>)
+     68c:	f001 f9ba 	bl	1a04 <USBRegisterDescriptors>
+	USBRegisterRequestHandler(REQTYPE_TYPE_VENDOR, usb_vendor_request_handler, abVendorReqData);
+     690:	4a05      	ldr	r2, [pc, #20]	@ (6a8 <ubertooth_usb_init+0x24>)
+     692:	4906      	ldr	r1, [pc, #24]	@ (6ac <ubertooth_usb_init+0x28>)
+     694:	2002      	movs	r0, #2
+     696:	f000 ff99 	bl	15cc <USBRegisterRequestHandler>
+	USBHwConnect(TRUE);
+     69a:	2001      	movs	r0, #1
+     69c:	f001 f83f 	bl	171e <USBHwConnect>
+}
+     6a0:	2000      	movs	r0, #0
+     6a2:	bd08      	pop	{r3, pc}
+     6a4:	00001c23 	.word	0x00001c23
+     6a8:	10000182 	.word	0x10000182
+     6ac:	000002d9 	.word	0x000002d9
+
+000006b0 <TIMER0_IRQHandler>:
+	if (T0IR & TIR_MR0_Interrupt) {
+     6b0:	f04f 2340 	mov.w	r3, #1073758208	@ 0x40004000
+     6b4:	681a      	ldr	r2, [r3, #0]
+     6b6:	07d2      	lsls	r2, r2, #31
+     6b8:	d509      	bpl.n	6ce <TIMER0_IRQHandler+0x1e>
+		++clkn_high;
+     6ba:	4905      	ldr	r1, [pc, #20]	@ (6d0 <TIMER0_IRQHandler+0x20>)
+     6bc:	f891 20ac 	ldrb.w	r2, [r1, #172]	@ 0xac
+     6c0:	3201      	adds	r2, #1
+     6c2:	f881 20ac 	strb.w	r2, [r1, #172]	@ 0xac
+		T0IR |= TIR_MR0_Interrupt;
+     6c6:	681a      	ldr	r2, [r3, #0]
+     6c8:	f042 0201 	orr.w	r2, r2, #1
+     6cc:	601a      	str	r2, [r3, #0]
+}
+     6ce:	4770      	bx	lr
+     6d0:	100000d4 	.word	0x100000d4
+
+000006d4 <DMA_IRQHandler>:
+	if (DMACIntStat & (1 << 0)) {
+     6d4:	4b0f      	ldr	r3, [pc, #60]	@ (714 <DMA_IRQHandler+0x40>)
+     6d6:	681a      	ldr	r2, [r3, #0]
+     6d8:	07d0      	lsls	r0, r2, #31
+     6da:	d519      	bpl.n	710 <DMA_IRQHandler+0x3c>
+		if (DMACIntTCStat & (1 << 0)) {
+     6dc:	685a      	ldr	r2, [r3, #4]
+     6de:	07d1      	lsls	r1, r2, #31
+     6e0:	d509      	bpl.n	6f6 <DMA_IRQHandler+0x22>
+			DMACIntTCClear |= (1 << 0);
+     6e2:	689a      	ldr	r2, [r3, #8]
+			++rx_tc;
+     6e4:	490c      	ldr	r1, [pc, #48]	@ (718 <DMA_IRQHandler+0x44>)
+			DMACIntTCClear |= (1 << 0);
+     6e6:	f042 0201 	orr.w	r2, r2, #1
+     6ea:	609a      	str	r2, [r3, #8]
+			++rx_tc;
+     6ec:	f8d1 2088 	ldr.w	r2, [r1, #136]	@ 0x88
+     6f0:	3201      	adds	r2, #1
+     6f2:	f8c1 2088 	str.w	r2, [r1, #136]	@ 0x88
+		if (DMACIntErrStat & (1 << 0)) {
+     6f6:	68da      	ldr	r2, [r3, #12]
+     6f8:	07d2      	lsls	r2, r2, #31
+     6fa:	d509      	bpl.n	710 <DMA_IRQHandler+0x3c>
+			DMACIntErrClr |= (1 << 0);
+     6fc:	691a      	ldr	r2, [r3, #16]
+     6fe:	f042 0201 	orr.w	r2, r2, #1
+     702:	611a      	str	r2, [r3, #16]
+			++rx_err;
+     704:	4a04      	ldr	r2, [pc, #16]	@ (718 <DMA_IRQHandler+0x44>)
+     706:	f8d2 308c 	ldr.w	r3, [r2, #140]	@ 0x8c
+     70a:	3301      	adds	r3, #1
+     70c:	f8c2 308c 	str.w	r3, [r2, #140]	@ 0x8c
+}
+     710:	4770      	bx	lr
+     712:	bf00      	nop
+     714:	50004000 	.word	0x50004000
+     718:	100000d4 	.word	0x100000d4
+
+0000071c <cc2400_rx>:
+{
+     71c:	b508      	push	{r3, lr}
+	if (modulation == MOD_BT_BASIC_RATE) {
+     71e:	4b2c      	ldr	r3, [pc, #176]	@ (7d0 <cc2400_rx+0xb4>)
+     720:	f8d3 20a0 	ldr.w	r2, [r3, #160]	@ 0xa0
+     724:	bb9a      	cbnz	r2, 78e <cc2400_rx+0x72>
+		cc2400_set(MANAND,  0x7fff);
+     726:	f647 71ff 	movw	r1, #32767	@ 0x7fff
+     72a:	200d      	movs	r0, #13
+     72c:	f000 fdc5 	bl	12ba <cc2400_set>
+		cc2400_set(LMTST,   0x2b22);
+     730:	f642 3122 	movw	r1, #11042	@ 0x2b22
+     734:	2012      	movs	r0, #18
+     736:	f000 fdc0 	bl	12ba <cc2400_set>
+		cc2400_set(MDMTST0, 0x134b); // without PRNG
+     73a:	f241 314b 	movw	r1, #4939	@ 0x134b
+     73e:	2014      	movs	r0, #20
+     740:	f000 fdbb 	bl	12ba <cc2400_set>
+		cc2400_set(GRMDM,   0x0101); // un-buffered mode, GFSK
+     744:	f240 1101 	movw	r1, #257	@ 0x101
+     748:	2020      	movs	r0, #32
+     74a:	f000 fdb6 	bl	12ba <cc2400_set>
+		cc2400_set(FSDIV,   channel - 1); // 1 MHz IF
+     74e:	4b21      	ldr	r3, [pc, #132]	@ (7d4 <cc2400_rx+0xb8>)
+     750:	2002      	movs	r0, #2
+     752:	8819      	ldrh	r1, [r3, #0]
+     754:	3901      	subs	r1, #1
+     756:	b289      	uxth	r1, r1
+     758:	f000 fdaf 	bl	12ba <cc2400_set>
+		cc2400_set(MDMCTRL, 0x0029); // 160 kHz frequency deviation
+     75c:	2129      	movs	r1, #41	@ 0x29
+		cc2400_set(MDMCTRL, 0x0040); // 250 kHz frequency deviation
+     75e:	2003      	movs	r0, #3
+     760:	f000 fdab 	bl	12ba <cc2400_set>
+	while (!(cc2400_status() & XOSC16M_STABLE));
+     764:	f000 fdbc 	bl	12e0 <cc2400_status>
+     768:	0642      	lsls	r2, r0, #25
+     76a:	d5fb      	bpl.n	764 <cc2400_rx+0x48>
+	cc2400_strobe(SFSON);
+     76c:	2061      	movs	r0, #97	@ 0x61
+     76e:	f000 fdbe 	bl	12ee <cc2400_strobe>
+	while (!(cc2400_status() & FS_LOCK));
+     772:	f000 fdb5 	bl	12e0 <cc2400_status>
+     776:	0743      	lsls	r3, r0, #29
+     778:	d5fb      	bpl.n	772 <cc2400_rx+0x56>
+	cc2400_strobe(SRX);
+     77a:	2062      	movs	r0, #98	@ 0x62
+     77c:	f000 fdb7 	bl	12ee <cc2400_strobe>
+	PAEN_SET;
+     780:	2280      	movs	r2, #128	@ 0x80
+     782:	4b15      	ldr	r3, [pc, #84]	@ (7d8 <cc2400_rx+0xbc>)
+     784:	659a      	str	r2, [r3, #88]	@ 0x58
+	HGM_SET;
+     786:	f44f 7280 	mov.w	r2, #256	@ 0x100
+     78a:	659a      	str	r2, [r3, #88]	@ 0x58
+}
+     78c:	bd08      	pop	{r3, pc}
+	} else if (modulation == MOD_BT_LOW_ENERGY) {
+     78e:	f8d3 30a0 	ldr.w	r3, [r3, #160]	@ 0xa0
+     792:	2b01      	cmp	r3, #1
+     794:	d1fa      	bne.n	78c <cc2400_rx+0x70>
+		cc2400_set(MANAND,  0x7fff);
+     796:	f647 71ff 	movw	r1, #32767	@ 0x7fff
+     79a:	200d      	movs	r0, #13
+     79c:	f000 fd8d 	bl	12ba <cc2400_set>
+		cc2400_set(LMTST,   0x2b22);
+     7a0:	f642 3122 	movw	r1, #11042	@ 0x2b22
+     7a4:	2012      	movs	r0, #18
+     7a6:	f000 fd88 	bl	12ba <cc2400_set>
+		cc2400_set(MDMTST0, 0x134b); // without PRNG
+     7aa:	f241 314b 	movw	r1, #4939	@ 0x134b
+     7ae:	2014      	movs	r0, #20
+     7b0:	f000 fd83 	bl	12ba <cc2400_set>
+		cc2400_set(GRMDM,   0x0101); // un-buffered mode, GFSK
+     7b4:	f240 1101 	movw	r1, #257	@ 0x101
+     7b8:	2020      	movs	r0, #32
+     7ba:	f000 fd7e 	bl	12ba <cc2400_set>
+		cc2400_set(FSDIV,   channel - 1); // 1 MHz IF
+     7be:	4b05      	ldr	r3, [pc, #20]	@ (7d4 <cc2400_rx+0xb8>)
+     7c0:	2002      	movs	r0, #2
+     7c2:	8819      	ldrh	r1, [r3, #0]
+     7c4:	3901      	subs	r1, #1
+     7c6:	b289      	uxth	r1, r1
+     7c8:	f000 fd77 	bl	12ba <cc2400_set>
+		cc2400_set(MDMCTRL, 0x0040); // 250 kHz frequency deviation
+     7cc:	2140      	movs	r1, #64	@ 0x40
+     7ce:	e7c6      	b.n	75e <cc2400_rx+0x42>
+     7d0:	100000d4 	.word	0x100000d4
+     7d4:	10000020 	.word	0x10000020
+     7d8:	2009c000 	.word	0x2009c000
+
+000007dc <cc2400_txtest>:
+{
+     7dc:	b538      	push	{r3, r4, r5, lr}
+	if (modulation == MOD_BT_BASIC_RATE) {
+     7de:	4c28      	ldr	r4, [pc, #160]	@ (880 <cc2400_txtest+0xa4>)
+     7e0:	f8d4 30a0 	ldr.w	r3, [r4, #160]	@ 0xa0
+     7e4:	bb83      	cbnz	r3, 848 <cc2400_txtest+0x6c>
+		cc2400_set(MANAND,  0x7fff);
+     7e6:	f647 71ff 	movw	r1, #32767	@ 0x7fff
+     7ea:	200d      	movs	r0, #13
+     7ec:	f000 fd65 	bl	12ba <cc2400_set>
+		cc2400_set(LMTST,   0x2b22);
+     7f0:	f642 3122 	movw	r1, #11042	@ 0x2b22
+     7f4:	2012      	movs	r0, #18
+     7f6:	f000 fd60 	bl	12ba <cc2400_set>
+		cc2400_set(MDMTST0, 0x334b); // with PRNG
+     7fa:	f243 314b 	movw	r1, #13131	@ 0x334b
+     7fe:	2014      	movs	r0, #20
+     800:	f000 fd5b 	bl	12ba <cc2400_set>
+		cc2400_set(FSDIV,   channel);
+     804:	4b1f      	ldr	r3, [pc, #124]	@ (884 <cc2400_txtest+0xa8>)
+     806:	2002      	movs	r0, #2
+     808:	8819      	ldrh	r1, [r3, #0]
+     80a:	b289      	uxth	r1, r1
+     80c:	f000 fd55 	bl	12ba <cc2400_set>
+		cc2400_set(MDMCTRL, 0x0029); // 160 kHz frequency deviation
+     810:	2129      	movs	r1, #41	@ 0x29
+		cc2400_set(MDMCTRL, 0x0040); // 250 kHz frequency deviation
+     812:	2003      	movs	r0, #3
+     814:	f000 fd51 	bl	12ba <cc2400_set>
+	while (!(cc2400_status() & XOSC16M_STABLE));
+     818:	f000 fd62 	bl	12e0 <cc2400_status>
+     81c:	0642      	lsls	r2, r0, #25
+     81e:	d5fb      	bpl.n	818 <cc2400_txtest+0x3c>
+	cc2400_strobe(SFSON);
+     820:	2061      	movs	r0, #97	@ 0x61
+     822:	f000 fd64 	bl	12ee <cc2400_strobe>
+	while (!(cc2400_status() & FS_LOCK));
+     826:	f000 fd5b 	bl	12e0 <cc2400_status>
+     82a:	0743      	lsls	r3, r0, #29
+     82c:	d5fb      	bpl.n	826 <cc2400_txtest+0x4a>
+	TXLED_SET;
+     82e:	f44f 7380 	mov.w	r3, #256	@ 0x100
+     832:	4d15      	ldr	r5, [pc, #84]	@ (888 <cc2400_txtest+0xac>)
+	cc2400_strobe(STX);
+     834:	2063      	movs	r0, #99	@ 0x63
+	TXLED_SET;
+     836:	63ab      	str	r3, [r5, #56]	@ 0x38
+	cc2400_strobe(STX);
+     838:	f000 fd59 	bl	12ee <cc2400_strobe>
+	PAEN_SET;
+     83c:	2380      	movs	r3, #128	@ 0x80
+     83e:	65ab      	str	r3, [r5, #88]	@ 0x58
+	mode = MODE_TX_TEST;
+     840:	2303      	movs	r3, #3
+     842:	f8c4 30c0 	str.w	r3, [r4, #192]	@ 0xc0
+}
+     846:	bd38      	pop	{r3, r4, r5, pc}
+	} else if (modulation == MOD_BT_LOW_ENERGY) {
+     848:	f8d4 30a0 	ldr.w	r3, [r4, #160]	@ 0xa0
+     84c:	2b01      	cmp	r3, #1
+     84e:	d1fa      	bne.n	846 <cc2400_txtest+0x6a>
+		cc2400_set(MANAND,  0x7fff);
+     850:	f647 71ff 	movw	r1, #32767	@ 0x7fff
+     854:	200d      	movs	r0, #13
+     856:	f000 fd30 	bl	12ba <cc2400_set>
+		cc2400_set(LMTST,   0x2b22);
+     85a:	f642 3122 	movw	r1, #11042	@ 0x2b22
+     85e:	2012      	movs	r0, #18
+     860:	f000 fd2b 	bl	12ba <cc2400_set>
+		cc2400_set(MDMTST0, 0x334b); // with PRNG
+     864:	f243 314b 	movw	r1, #13131	@ 0x334b
+     868:	2014      	movs	r0, #20
+     86a:	f000 fd26 	bl	12ba <cc2400_set>
+		cc2400_set(FSDIV,   channel);
+     86e:	4b05      	ldr	r3, [pc, #20]	@ (884 <cc2400_txtest+0xa8>)
+     870:	2002      	movs	r0, #2
+     872:	8819      	ldrh	r1, [r3, #0]
+     874:	b289      	uxth	r1, r1
+     876:	f000 fd20 	bl	12ba <cc2400_set>
+		cc2400_set(MDMCTRL, 0x0040); // 250 kHz frequency deviation
+     87a:	2140      	movs	r1, #64	@ 0x40
+     87c:	e7c9      	b.n	812 <cc2400_txtest+0x36>
+     87e:	bf00      	nop
+     880:	100000d4 	.word	0x100000d4
+     884:	10000020 	.word	0x10000020
+     888:	2009c000 	.word	0x2009c000
+
+0000088c <cc2400_rangetest>:
+{
+     88c:	e92d 43f0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, lr}
+     890:	b097      	sub	sp, #92	@ 0x5c
+	mode = MODE_RANGE_TEST;
+     892:	2505      	movs	r5, #5
+     894:	4b9b      	ldr	r3, [pc, #620]	@ (b04 <cc2400_rangetest+0x278>)
+	iap_entry(command, result);
+     896:	4668      	mov	r0, sp
+	mode = MODE_RANGE_TEST;
+     898:	f8c3 50c0 	str.w	r5, [r3, #192]	@ 0xc0
+	txbuf[0] = len - 1; // length of data (rest of payload)
+     89c:	2315      	movs	r3, #21
+     89e:	f8ad 3028 	strh.w	r3, [sp, #40]	@ 0x28
+	command[0] = 58;
+     8a2:	233a      	movs	r3, #58	@ 0x3a
+     8a4:	9300      	str	r3, [sp, #0]
+	iap_entry(command, result);
+     8a6:	4b98      	ldr	r3, [pc, #608]	@ (b08 <cc2400_rangetest+0x27c>)
+     8a8:	a905      	add	r1, sp, #20
+     8aa:	681b      	ldr	r3, [r3, #0]
+     8ac:	4798      	blx	r3
+	if ((result[0] & 0xFF) != 0) //status check
+     8ae:	f89d 4014 	ldrb.w	r4, [sp, #20]
+     8b2:	2c00      	cmp	r4, #0
+     8b4:	f040 8123 	bne.w	afe <cc2400_rangetest+0x272>
+	txbuf[2] = (result[1] >> 24) & 0xFF;
+     8b8:	9b06      	ldr	r3, [sp, #24]
+     8ba:	f8bd 2018 	ldrh.w	r2, [sp, #24]
+     8be:	0e19      	lsrs	r1, r3, #24
+	txbuf[3] = (result[1] >> 16) & 0xFF;
+     8c0:	0c1b      	lsrs	r3, r3, #16
+     8c2:	f88d 302b 	strb.w	r3, [sp, #43]	@ 0x2b
+	txbuf[6] = (result[2] >> 24) & 0xFF;
+     8c6:	9b07      	ldr	r3, [sp, #28]
+	txbuf[2] = (result[1] >> 24) & 0xFF;
+     8c8:	f88d 102a 	strb.w	r1, [sp, #42]	@ 0x2a
+	txbuf[6] = (result[2] >> 24) & 0xFF;
+     8cc:	0e19      	lsrs	r1, r3, #24
+	txbuf[7] = (result[2] >> 16) & 0xFF;
+     8ce:	0c1b      	lsrs	r3, r3, #16
+     8d0:	f88d 302f 	strb.w	r3, [sp, #47]	@ 0x2f
+	txbuf[10] = (result[3] >> 24) & 0xFF;
+     8d4:	9b08      	ldr	r3, [sp, #32]
+	txbuf[6] = (result[2] >> 24) & 0xFF;
+     8d6:	f88d 102e 	strb.w	r1, [sp, #46]	@ 0x2e
+	txbuf[10] = (result[3] >> 24) & 0xFF;
+     8da:	0e19      	lsrs	r1, r3, #24
+	txbuf[11] = (result[3] >> 16) & 0xFF;
+     8dc:	0c1b      	lsrs	r3, r3, #16
+     8de:	f88d 3033 	strb.w	r3, [sp, #51]	@ 0x33
+	txbuf[14] = (result[4] >> 24) & 0xFF;
+     8e2:	9b09      	ldr	r3, [sp, #36]	@ 0x24
+	txbuf[10] = (result[3] >> 24) & 0xFF;
+     8e4:	f88d 1032 	strb.w	r1, [sp, #50]	@ 0x32
+	txbuf[14] = (result[4] >> 24) & 0xFF;
+     8e8:	0e19      	lsrs	r1, r3, #24
+	txbuf[15] = (result[4] >> 16) & 0xFF;
+     8ea:	0c1b      	lsrs	r3, r3, #16
+     8ec:	f88d 3037 	strb.w	r3, [sp, #55]	@ 0x37
+	txbuf[20] = 0xff; // reply pa
+     8f0:	f64f 73ff 	movw	r3, #65535	@ 0xffff
+     8f4:	ba52      	rev16	r2, r2
+	txbuf[4] = (result[1] >> 8) & 0xFF;
+     8f6:	f8ad 202c 	strh.w	r2, [sp, #44]	@ 0x2c
+	txbuf[9] = result[2] & 0xFF;
+     8fa:	f8bd 201c 	ldrh.w	r2, [sp, #28]
+	cc2400_set(MANAND,  0x7fff);
+     8fe:	200d      	movs	r0, #13
+     900:	ba52      	rev16	r2, r2
+	txbuf[8] = (result[2] >> 8) & 0xFF;
+     902:	f8ad 2030 	strh.w	r2, [sp, #48]	@ 0x30
+	txbuf[13] = result[3] & 0xFF;
+     906:	f8bd 2020 	ldrh.w	r2, [sp, #32]
+	txbuf[14] = (result[4] >> 24) & 0xFF;
+     90a:	f88d 1036 	strb.w	r1, [sp, #54]	@ 0x36
+     90e:	ba52      	rev16	r2, r2
+	txbuf[12] = (result[3] >> 8) & 0xFF;
+     910:	f8ad 2034 	strh.w	r2, [sp, #52]	@ 0x34
+	txbuf[17] = result[4] & 0xFF;
+     914:	f8bd 2024 	ldrh.w	r2, [sp, #36]	@ 0x24
+	cc2400_set(MANAND,  0x7fff);
+     918:	f647 71ff 	movw	r1, #32767	@ 0x7fff
+     91c:	ba52      	rev16	r2, r2
+	txbuf[16] = (result[4] >> 8) & 0xFF;
+     91e:	f8ad 2038 	strh.w	r2, [sp, #56]	@ 0x38
+	txbuf[20] = 0xff; // reply pa
+     922:	f8ad 303c 	strh.w	r3, [sp, #60]	@ 0x3c
+	cc2400_set(FSDIV,   channel);
+     926:	f8df 81e4 	ldr.w	r8, [pc, #484]	@ b0c <cc2400_rangetest+0x280>
+	cc2400_set(MANAND,  0x7fff);
+     92a:	f000 fcc6 	bl	12ba <cc2400_set>
+	cc2400_set(LMTST,   0x2b22);
+     92e:	f642 3122 	movw	r1, #11042	@ 0x2b22
+     932:	2012      	movs	r0, #18
+     934:	f000 fcc1 	bl	12ba <cc2400_set>
+	cc2400_set(MDMTST0, 0x134b);
+     938:	f241 314b 	movw	r1, #4939	@ 0x134b
+     93c:	2014      	movs	r0, #20
+     93e:	f000 fcbc 	bl	12ba <cc2400_set>
+	cc2400_set(FSDIV,   channel);
+     942:	f8b8 1000 	ldrh.w	r1, [r8]
+     946:	2002      	movs	r0, #2
+     948:	b289      	uxth	r1, r1
+     94a:	f000 fcb6 	bl	12ba <cc2400_set>
+	cc2400_set(SYNCH,   0xf9ae);
+     94e:	f64f 11ae 	movw	r1, #63918	@ 0xf9ae
+     952:	202d      	movs	r0, #45	@ 0x2d
+     954:	f000 fcb1 	bl	12ba <cc2400_set>
+	cc2400_set(SYNCL,   0x1584);
+     958:	f241 5184 	movw	r1, #5508	@ 0x1584
+     95c:	202c      	movs	r0, #44	@ 0x2c
+     95e:	f000 fcac 	bl	12ba <cc2400_set>
+	cc2400_set(FREND,   8 | pa);
+     962:	2108      	movs	r1, #8
+     964:	4628      	mov	r0, r5
+     966:	f000 fca8 	bl	12ba <cc2400_set>
+	cc2400_set(MDMCTRL, 0x0029);
+     96a:	2129      	movs	r1, #41	@ 0x29
+     96c:	2003      	movs	r0, #3
+     96e:	f000 fca4 	bl	12ba <cc2400_set>
+	while (!(cc2400_status() & XOSC16M_STABLE));
+     972:	f000 fcb5 	bl	12e0 <cc2400_status>
+     976:	0646      	lsls	r6, r0, #25
+     978:	d5fb      	bpl.n	972 <cc2400_rangetest+0xe6>
+	cc2400_strobe(SFSON);
+     97a:	2061      	movs	r0, #97	@ 0x61
+     97c:	f000 fcb7 	bl	12ee <cc2400_strobe>
+	while (!(cc2400_status() & FS_LOCK));
+     980:	f000 fcae 	bl	12e0 <cc2400_status>
+     984:	0745      	lsls	r5, r0, #29
+     986:	d5fb      	bpl.n	980 <cc2400_rangetest+0xf4>
+	TXLED_SET;
+     988:	f44f 7280 	mov.w	r2, #256	@ 0x100
+     98c:	4b60      	ldr	r3, [pc, #384]	@ (b10 <cc2400_rangetest+0x284>)
+     98e:	639a      	str	r2, [r3, #56]	@ 0x38
+	PAEN_SET;
+     990:	2280      	movs	r2, #128	@ 0x80
+     992:	659a      	str	r2, [r3, #88]	@ 0x58
+		for (i = 0; i < 16; i++) {
+     994:	2500      	movs	r5, #0
+		cc2400_set(FREND, 8 | pa);
+     996:	f044 0108 	orr.w	r1, r4, #8
+     99a:	2005      	movs	r0, #5
+     99c:	b2c9      	uxtb	r1, r1
+     99e:	f000 fc8c 	bl	12ba <cc2400_set>
+		txbuf[18] = pa;
+     9a2:	f88d 403a 	strb.w	r4, [sp, #58]	@ 0x3a
+			txbuf[19] = i;
+     9a6:	f88d 503b 	strb.w	r5, [sp, #59]	@ 0x3b
+			while ((cc2400_get(FSMSTATE) & 0x1f) != STATE_STROBE_FS_ON);
+     9aa:	200e      	movs	r0, #14
+     9ac:	f000 fc7c 	bl	12a8 <cc2400_get>
+     9b0:	f000 001f 	and.w	r0, r0, #31
+     9b4:	280f      	cmp	r0, #15
+     9b6:	d1f8      	bne.n	9aa <cc2400_rangetest+0x11e>
+     9b8:	ae0a      	add	r6, sp, #40	@ 0x28
+     9ba:	46b1      	mov	r9, r6
+			for (j = 0; j < len; j++)
+     9bc:	2700      	movs	r7, #0
+				cc2400_set8(FIFOREG, txbuf[j]);
+     9be:	2070      	movs	r0, #112	@ 0x70
+     9c0:	f819 1b01 	ldrb.w	r1, [r9], #1
+			for (j = 0; j < len; j++)
+     9c4:	3701      	adds	r7, #1
+				cc2400_set8(FIFOREG, txbuf[j]);
+     9c6:	f000 fc86 	bl	12d6 <cc2400_set8>
+			for (j = 0; j < len; j++)
+     9ca:	2f16      	cmp	r7, #22
+     9cc:	d1f7      	bne.n	9be <cc2400_rangetest+0x132>
+			cc2400_strobe(STX);
+     9ce:	2063      	movs	r0, #99	@ 0x63
+		for (i = 0; i < 16; i++) {
+     9d0:	3501      	adds	r5, #1
+			cc2400_strobe(STX);
+     9d2:	f000 fc8c 	bl	12ee <cc2400_strobe>
+		for (i = 0; i < 16; i++) {
+     9d6:	2d10      	cmp	r5, #16
+     9d8:	d1e5      	bne.n	9a6 <cc2400_rangetest+0x11a>
+	for (pa = 0; pa < 8; pa++) {
+     9da:	3401      	adds	r4, #1
+     9dc:	2c08      	cmp	r4, #8
+     9de:	d1d9      	bne.n	994 <cc2400_rangetest+0x108>
+	while ((cc2400_get(FSMSTATE) & 0x1f) != STATE_STROBE_FS_ON);
+     9e0:	200e      	movs	r0, #14
+     9e2:	f000 fc61 	bl	12a8 <cc2400_get>
+     9e6:	f000 001f 	and.w	r0, r0, #31
+     9ea:	280f      	cmp	r0, #15
+     9ec:	d1f8      	bne.n	9e0 <cc2400_rangetest+0x154>
+	TXLED_CLR;
+     9ee:	f44f 7280 	mov.w	r2, #256	@ 0x100
+     9f2:	4b47      	ldr	r3, [pc, #284]	@ (b10 <cc2400_rangetest+0x284>)
+	cc2400_strobe(SRFOFF);
+     9f4:	2064      	movs	r0, #100	@ 0x64
+	TXLED_CLR;
+     9f6:	63da      	str	r2, [r3, #60]	@ 0x3c
+	cc2400_strobe(SRFOFF);
+     9f8:	f000 fc79 	bl	12ee <cc2400_strobe>
+	while ((cc2400_status() & FS_LOCK));
+     9fc:	f000 fc70 	bl	12e0 <cc2400_status>
+     a00:	0744      	lsls	r4, r0, #29
+     a02:	d4fb      	bmi.n	9fc <cc2400_rangetest+0x170>
+	cc2400_set(FSDIV, channel - 1);
+     a04:	f8b8 1000 	ldrh.w	r1, [r8]
+     a08:	2002      	movs	r0, #2
+     a0a:	3901      	subs	r1, #1
+     a0c:	b289      	uxth	r1, r1
+     a0e:	f000 fc54 	bl	12ba <cc2400_set>
+	while (!(cc2400_status() & XOSC16M_STABLE));
+     a12:	f000 fc65 	bl	12e0 <cc2400_status>
+     a16:	0640      	lsls	r0, r0, #25
+     a18:	d5fb      	bpl.n	a12 <cc2400_rangetest+0x186>
+	cc2400_strobe(SFSON);
+     a1a:	2061      	movs	r0, #97	@ 0x61
+     a1c:	f000 fc67 	bl	12ee <cc2400_strobe>
+	while (!(cc2400_status() & FS_LOCK));
+     a20:	f000 fc5e 	bl	12e0 <cc2400_status>
+     a24:	0741      	lsls	r1, r0, #29
+     a26:	d5fb      	bpl.n	a20 <cc2400_rangetest+0x194>
+	RXLED_SET;
+     a28:	2310      	movs	r3, #16
+     a2a:	4d39      	ldr	r5, [pc, #228]	@ (b10 <cc2400_rangetest+0x284>)
+     a2c:	63ab      	str	r3, [r5, #56]	@ 0x38
+		while ((cc2400_get(FSMSTATE) & 0x1f) != STATE_STROBE_FS_ON);
+     a2e:	200e      	movs	r0, #14
+     a30:	f000 fc3a 	bl	12a8 <cc2400_get>
+     a34:	f000 001f 	and.w	r0, r0, #31
+     a38:	280f      	cmp	r0, #15
+     a3a:	d1f8      	bne.n	a2e <cc2400_rangetest+0x1a2>
+		cc2400_strobe(SRX);
+     a3c:	2062      	movs	r0, #98	@ 0x62
+     a3e:	f000 fc56 	bl	12ee <cc2400_strobe>
+		while (!(cc2400_status() & SYNC_RECEIVED));
+     a42:	f000 fc4d 	bl	12e0 <cc2400_status>
+     a46:	06c2      	lsls	r2, r0, #27
+     a48:	d5fb      	bpl.n	a42 <cc2400_rangetest+0x1b6>
+		USRLED_SET;
+     a4a:	2302      	movs	r3, #2
+     a4c:	ac10      	add	r4, sp, #64	@ 0x40
+     a4e:	46a0      	mov	r8, r4
+		for (j = 0; j < len; j++)
+     a50:	2700      	movs	r7, #0
+		USRLED_SET;
+     a52:	63ab      	str	r3, [r5, #56]	@ 0x38
+			rxbuf[j] = cc2400_get8(FIFOREG);
+     a54:	2070      	movs	r0, #112	@ 0x70
+     a56:	f000 fc35 	bl	12c4 <cc2400_get8>
+		for (j = 0; j < len; j++)
+     a5a:	3701      	adds	r7, #1
+     a5c:	2f16      	cmp	r7, #22
+			rxbuf[j] = cc2400_get8(FIFOREG);
+     a5e:	f808 0b01 	strb.w	r0, [r8], #1
+		for (j = 0; j < len; j++)
+     a62:	d1f7      	bne.n	a54 <cc2400_rangetest+0x1c8>
+		if (cc2400_status() & STATUS_CRC_OK)
+     a64:	f000 fc3c 	bl	12e0 <cc2400_status>
+     a68:	0703      	lsls	r3, r0, #28
+     a6a:	d402      	bmi.n	a72 <cc2400_rangetest+0x1e6>
+		USRLED_CLR;
+     a6c:	2302      	movs	r3, #2
+     a6e:	63eb      	str	r3, [r5, #60]	@ 0x3c
+		while ((cc2400_get(FSMSTATE) & 0x1f) != STATE_STROBE_FS_ON);
+     a70:	e7dd      	b.n	a2e <cc2400_rangetest+0x1a2>
+	while ((cc2400_get(FSMSTATE) & 0x1f) != STATE_STROBE_FS_ON);
+     a72:	200e      	movs	r0, #14
+     a74:	f000 fc18 	bl	12a8 <cc2400_get>
+     a78:	f000 001f 	and.w	r0, r0, #31
+     a7c:	280f      	cmp	r0, #15
+     a7e:	d1f8      	bne.n	a72 <cc2400_rangetest+0x1e6>
+	cc2400_strobe(SRFOFF);
+     a80:	2064      	movs	r0, #100	@ 0x64
+     a82:	f000 fc34 	bl	12ee <cc2400_strobe>
+	while ((cc2400_status() & FS_LOCK));
+     a86:	f000 fc2b 	bl	12e0 <cc2400_status>
+     a8a:	f010 0004 	ands.w	r0, r0, #4
+     a8e:	d1fa      	bne.n	a86 <cc2400_rangetest+0x1fa>
+	PAEN_CLR;
+     a90:	2280      	movs	r2, #128	@ 0x80
+     a92:	4b1f      	ldr	r3, [pc, #124]	@ (b10 <cc2400_rangetest+0x284>)
+     a94:	65da      	str	r2, [r3, #92]	@ 0x5c
+	RXLED_CLR;
+     a96:	2210      	movs	r2, #16
+     a98:	63da      	str	r2, [r3, #60]	@ 0x3c
+	rr.valid       = 1;
+     a9a:	2201      	movs	r2, #1
+     a9c:	4b19      	ldr	r3, [pc, #100]	@ (b04 <cc2400_rangetest+0x278>)
+	txbuf[1] = 1; // expected value in rxbuf
+     a9e:	f88d 2029 	strb.w	r2, [sp, #41]	@ 0x29
+	rr.valid       = 1;
+     aa2:	f883 2098 	strb.w	r2, [r3, #152]	@ 0x98
+	for (i = 0; i < 18; i++)
+     aa6:	4602      	mov	r2, r0
+	rr.request_pa  = rxbuf[18];
+     aa8:	f89d 1052 	ldrb.w	r1, [sp, #82]	@ 0x52
+     aac:	f883 1099 	strb.w	r1, [r3, #153]	@ 0x99
+	rr.request_num = rxbuf[19];
+     ab0:	f89d 1053 	ldrb.w	r1, [sp, #83]	@ 0x53
+     ab4:	f883 109a 	strb.w	r1, [r3, #154]	@ 0x9a
+	rr.reply_pa    = rxbuf[20];
+     ab8:	f89d 1054 	ldrb.w	r1, [sp, #84]	@ 0x54
+     abc:	f883 109b 	strb.w	r1, [r3, #155]	@ 0x9b
+	rr.reply_num   = rxbuf[21];
+     ac0:	f89d 1055 	ldrb.w	r1, [sp, #85]	@ 0x55
+     ac4:	f883 109c 	strb.w	r1, [r3, #156]	@ 0x9c
+		if (rxbuf[i] != txbuf[i])
+     ac8:	f814 5b01 	ldrb.w	r5, [r4], #1
+     acc:	f816 1b01 	ldrb.w	r1, [r6], #1
+	for (i = 0; i < 18; i++)
+     ad0:	3201      	adds	r2, #1
+		if (rxbuf[i] != txbuf[i])
+     ad2:	428d      	cmp	r5, r1
+     ad4:	bf18      	it	ne
+     ad6:	f040 0001 	orrne.w	r0, r0, #1
+	for (i = 0; i < 18; i++)
+     ada:	2a12      	cmp	r2, #18
+     adc:	d1f4      	bne.n	ac8 <cc2400_rangetest+0x23c>
+     ade:	b110      	cbz	r0, ae6 <cc2400_rangetest+0x25a>
+     ae0:	2200      	movs	r2, #0
+     ae2:	f883 2098 	strb.w	r2, [r3, #152]	@ 0x98
+	USRLED_CLR;
+     ae6:	2102      	movs	r1, #2
+     ae8:	4a09      	ldr	r2, [pc, #36]	@ (b10 <cc2400_rangetest+0x284>)
+     aea:	63d1      	str	r1, [r2, #60]	@ 0x3c
+	mode = MODE_IDLE;
+     aec:	2200      	movs	r2, #0
+     aee:	f8c3 20c0 	str.w	r2, [r3, #192]	@ 0xc0
+	if (requested_mode == MODE_RANGE_TEST)
+     af2:	f8d3 1094 	ldr.w	r1, [r3, #148]	@ 0x94
+     af6:	2905      	cmp	r1, #5
+		requested_mode = MODE_IDLE;
+     af8:	bf08      	it	eq
+     afa:	f8c3 2094 	streq.w	r2, [r3, #148]	@ 0x94
+}
+     afe:	b017      	add	sp, #92	@ 0x5c
+     b00:	e8bd 83f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, pc}
+     b04:	100000d4 	.word	0x100000d4
+     b08:	00001d18 	.word	0x00001d18
+     b0c:	10000020 	.word	0x10000020
+     b10:	2009c000 	.word	0x2009c000
+
+00000b14 <cc2400_repeater>:
+{
+     b14:	e92d 43f0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, lr}
+     b18:	b087      	sub	sp, #28
+	mode = MODE_REPEATER;
+     b1a:	2206      	movs	r2, #6
+		cc2400_set(FSDIV,   channel - 1);
+     b1c:	2602      	movs	r6, #2
+	mode = MODE_REPEATER;
+     b1e:	4b59      	ldr	r3, [pc, #356]	@ (c84 <cc2400_repeater+0x170>)
+		RXLED_SET;
+     b20:	4c59      	ldr	r4, [pc, #356]	@ (c88 <cc2400_repeater+0x174>)
+	mode = MODE_REPEATER;
+     b22:	f8c3 20c0 	str.w	r2, [r3, #192]	@ 0xc0
+		cc2400_set(MANAND,  0x7fff);
+     b26:	f647 71ff 	movw	r1, #32767	@ 0x7fff
+     b2a:	200d      	movs	r0, #13
+     b2c:	f000 fbc5 	bl	12ba <cc2400_set>
+		cc2400_set(FSDIV,   channel - 1);
+     b30:	4f56      	ldr	r7, [pc, #344]	@ (c8c <cc2400_repeater+0x178>)
+		cc2400_set(LMTST,   0x2b22);
+     b32:	f642 3122 	movw	r1, #11042	@ 0x2b22
+     b36:	2012      	movs	r0, #18
+     b38:	f000 fbbf 	bl	12ba <cc2400_set>
+		cc2400_set(MDMTST0, 0x134b);
+     b3c:	f241 314b 	movw	r1, #4939	@ 0x134b
+     b40:	2014      	movs	r0, #20
+     b42:	f000 fbba 	bl	12ba <cc2400_set>
+		cc2400_set(FSDIV,   channel - 1);
+     b46:	8839      	ldrh	r1, [r7, #0]
+     b48:	2002      	movs	r0, #2
+     b4a:	3901      	subs	r1, #1
+     b4c:	b289      	uxth	r1, r1
+     b4e:	f000 fbb4 	bl	12ba <cc2400_set>
+		cc2400_set(SYNCH,   0xf9ae);
+     b52:	f64f 11ae 	movw	r1, #63918	@ 0xf9ae
+     b56:	202d      	movs	r0, #45	@ 0x2d
+     b58:	f000 fbaf 	bl	12ba <cc2400_set>
+		cc2400_set(SYNCL,   0x1584);
+     b5c:	f241 5184 	movw	r1, #5508	@ 0x1584
+     b60:	202c      	movs	r0, #44	@ 0x2c
+     b62:	f000 fbaa 	bl	12ba <cc2400_set>
+		cc2400_set(FREND,   0x0008); // minimum tx power
+     b66:	2108      	movs	r1, #8
+     b68:	2005      	movs	r0, #5
+     b6a:	f000 fba6 	bl	12ba <cc2400_set>
+		cc2400_set(MDMCTRL, 0x0029); // 160 kHz frequency deviation
+     b6e:	2129      	movs	r1, #41	@ 0x29
+     b70:	2003      	movs	r0, #3
+     b72:	f000 fba2 	bl	12ba <cc2400_set>
+		while (!(cc2400_status() & XOSC16M_STABLE));
+     b76:	f000 fbb3 	bl	12e0 <cc2400_status>
+     b7a:	0641      	lsls	r1, r0, #25
+     b7c:	d5fb      	bpl.n	b76 <cc2400_repeater+0x62>
+		cc2400_strobe(SFSON);
+     b7e:	2061      	movs	r0, #97	@ 0x61
+     b80:	f000 fbb5 	bl	12ee <cc2400_strobe>
+		while (!(cc2400_status() & FS_LOCK));
+     b84:	f000 fbac 	bl	12e0 <cc2400_status>
+     b88:	0742      	lsls	r2, r0, #29
+     b8a:	d5fb      	bpl.n	b84 <cc2400_repeater+0x70>
+		RXLED_SET;
+     b8c:	2310      	movs	r3, #16
+     b8e:	63a3      	str	r3, [r4, #56]	@ 0x38
+		TXLED_CLR;
+     b90:	f44f 7380 	mov.w	r3, #256	@ 0x100
+     b94:	63e3      	str	r3, [r4, #60]	@ 0x3c
+		PAEN_SET;
+     b96:	2380      	movs	r3, #128	@ 0x80
+		USRLED_CLR;
+     b98:	63e6      	str	r6, [r4, #60]	@ 0x3c
+		PAEN_SET;
+     b9a:	65a3      	str	r3, [r4, #88]	@ 0x58
+			while ((cc2400_get(FSMSTATE) & 0x1f) != STATE_STROBE_FS_ON);
+     b9c:	200e      	movs	r0, #14
+     b9e:	f000 fb83 	bl	12a8 <cc2400_get>
+     ba2:	f000 001f 	and.w	r0, r0, #31
+     ba6:	280f      	cmp	r0, #15
+     ba8:	d1f8      	bne.n	b9c <cc2400_repeater+0x88>
+			cc2400_strobe(SRX);
+     baa:	2062      	movs	r0, #98	@ 0x62
+			USRLED_CLR;
+     bac:	63e6      	str	r6, [r4, #60]	@ 0x3c
+			cc2400_strobe(SRX);
+     bae:	f000 fb9e 	bl	12ee <cc2400_strobe>
+			while (!(cc2400_status() & SYNC_RECEIVED));
+     bb2:	f000 fb95 	bl	12e0 <cc2400_status>
+     bb6:	06c3      	lsls	r3, r0, #27
+     bb8:	d5fb      	bpl.n	bb2 <cc2400_repeater+0x9e>
+			USRLED_SET;
+     bba:	46e8      	mov	r8, sp
+			for (i = 0; i < len; i++)
+     bbc:	2500      	movs	r5, #0
+			USRLED_SET;
+     bbe:	63a6      	str	r6, [r4, #56]	@ 0x38
+				buf[i] = cc2400_get8(FIFOREG);
+     bc0:	2070      	movs	r0, #112	@ 0x70
+     bc2:	f000 fb7f 	bl	12c4 <cc2400_get8>
+			for (i = 0; i < len; i++)
+     bc6:	3501      	adds	r5, #1
+     bc8:	2d16      	cmp	r5, #22
+				buf[i] = cc2400_get8(FIFOREG);
+     bca:	f808 0b01 	strb.w	r0, [r8], #1
+			for (i = 0; i < len; i++)
+     bce:	d1f7      	bne.n	bc0 <cc2400_repeater+0xac>
+			if (cc2400_status() & STATUS_CRC_OK)
+     bd0:	f000 fb86 	bl	12e0 <cc2400_status>
+     bd4:	0705      	lsls	r5, r0, #28
+     bd6:	d5e1      	bpl.n	b9c <cc2400_repeater+0x88>
+		RXLED_CLR;
+     bd8:	2310      	movs	r3, #16
+		USRLED_CLR;
+     bda:	63e6      	str	r6, [r4, #60]	@ 0x3c
+		cc2400_strobe(SRFOFF);
+     bdc:	2064      	movs	r0, #100	@ 0x64
+		RXLED_CLR;
+     bde:	63e3      	str	r3, [r4, #60]	@ 0x3c
+		cc2400_strobe(SRFOFF);
+     be0:	f000 fb85 	bl	12ee <cc2400_strobe>
+		while ((cc2400_status() & FS_LOCK));
+     be4:	f000 fb7c 	bl	12e0 <cc2400_status>
+     be8:	0740      	lsls	r0, r0, #29
+     bea:	d4fb      	bmi.n	be4 <cc2400_repeater+0xd0>
+		while (!(cc2400_status() & XOSC16M_STABLE));
+     bec:	f000 fb78 	bl	12e0 <cc2400_status>
+     bf0:	0641      	lsls	r1, r0, #25
+     bf2:	d5fb      	bpl.n	bec <cc2400_repeater+0xd8>
+		cc2400_set(FSDIV, channel);
+     bf4:	8839      	ldrh	r1, [r7, #0]
+     bf6:	2002      	movs	r0, #2
+     bf8:	b289      	uxth	r1, r1
+     bfa:	f000 fb5e 	bl	12ba <cc2400_set>
+		while (!(cc2400_status() & XOSC16M_STABLE));
+     bfe:	f000 fb6f 	bl	12e0 <cc2400_status>
+     c02:	0642      	lsls	r2, r0, #25
+     c04:	d5fb      	bpl.n	bfe <cc2400_repeater+0xea>
+		cc2400_strobe(SFSON);
+     c06:	2061      	movs	r0, #97	@ 0x61
+     c08:	f000 fb71 	bl	12ee <cc2400_strobe>
+		TXLED_SET;
+     c0c:	f44f 7380 	mov.w	r3, #256	@ 0x100
+     c10:	63a3      	str	r3, [r4, #56]	@ 0x38
+		buf[0] = len - 1; // length of data (rest of payload)
+     c12:	f240 1315 	movw	r3, #277	@ 0x115
+     c16:	2500      	movs	r5, #0
+     c18:	f8ad 3000 	strh.w	r3, [sp]
+			for (i = 0; i < 16; i++) {
+     c1c:	2700      	movs	r7, #0
+			cc2400_set(FREND, 8 | pa);
+     c1e:	f045 0108 	orr.w	r1, r5, #8
+     c22:	2005      	movs	r0, #5
+     c24:	b2c9      	uxtb	r1, r1
+     c26:	f000 fb48 	bl	12ba <cc2400_set>
+			buf[20] = pa;
+     c2a:	f88d 5014 	strb.w	r5, [sp, #20]
+				buf[21] = i;
+     c2e:	f88d 7015 	strb.w	r7, [sp, #21]
+				while ((cc2400_get(FSMSTATE) & 0x1f) != STATE_STROBE_FS_ON);
+     c32:	200e      	movs	r0, #14
+     c34:	f000 fb38 	bl	12a8 <cc2400_get>
+     c38:	f000 001f 	and.w	r0, r0, #31
+     c3c:	280f      	cmp	r0, #15
+     c3e:	d1f8      	bne.n	c32 <cc2400_repeater+0x11e>
+     c40:	46e9      	mov	r9, sp
+					for (j = 0; j < len; j++)
+     c42:	f04f 0800 	mov.w	r8, #0
+						cc2400_set8(FIFOREG, buf[j]);
+     c46:	2070      	movs	r0, #112	@ 0x70
+     c48:	f819 1b01 	ldrb.w	r1, [r9], #1
+					for (j = 0; j < len; j++)
+     c4c:	f108 0801 	add.w	r8, r8, #1
+						cc2400_set8(FIFOREG, buf[j]);
+     c50:	f000 fb41 	bl	12d6 <cc2400_set8>
+					for (j = 0; j < len; j++)
+     c54:	f1b8 0f16 	cmp.w	r8, #22
+     c58:	d1f5      	bne.n	c46 <cc2400_repeater+0x132>
+				cc2400_strobe(STX);
+     c5a:	2063      	movs	r0, #99	@ 0x63
+			for (i = 0; i < 16; i++) {
+     c5c:	3701      	adds	r7, #1
+				cc2400_strobe(STX);
+     c5e:	f000 fb46 	bl	12ee <cc2400_strobe>
+			for (i = 0; i < 16; i++) {
+     c62:	2f10      	cmp	r7, #16
+     c64:	d1e3      	bne.n	c2e <cc2400_repeater+0x11a>
+		for (pa = 0; pa < 8; pa++) {
+     c66:	3501      	adds	r5, #1
+     c68:	2d08      	cmp	r5, #8
+     c6a:	d1d7      	bne.n	c1c <cc2400_repeater+0x108>
+		TXLED_CLR;
+     c6c:	f44f 7380 	mov.w	r3, #256	@ 0x100
+		cc2400_strobe(SRFOFF);
+     c70:	2064      	movs	r0, #100	@ 0x64
+		TXLED_CLR;
+     c72:	63e3      	str	r3, [r4, #60]	@ 0x3c
+		cc2400_strobe(SRFOFF);
+     c74:	f000 fb3b 	bl	12ee <cc2400_strobe>
+		while ((cc2400_status() & FS_LOCK));
+     c78:	f000 fb32 	bl	12e0 <cc2400_status>
+     c7c:	0743      	lsls	r3, r0, #29
+     c7e:	d4fb      	bmi.n	c78 <cc2400_repeater+0x164>
+     c80:	e751      	b.n	b26 <cc2400_repeater+0x12>
+     c82:	bf00      	nop
+     c84:	100000d4 	.word	0x100000d4
+     c88:	2009c000 	.word	0x2009c000
+     c8c:	10000020 	.word	0x10000020
+
+00000c90 <bt_stream_rx>:
+{
+     c90:	b570      	push	{r4, r5, r6, lr}
+	RXLED_SET;
+     c92:	2210      	movs	r2, #16
+     c94:	4b2e      	ldr	r3, [pc, #184]	@ (d50 <bt_stream_rx+0xc0>)
+	while (rx_pkts) {
+     c96:	4c2f      	ldr	r4, [pc, #188]	@ (d54 <bt_stream_rx+0xc4>)
+	RXLED_SET;
+     c98:	639a      	str	r2, [r3, #56]	@ 0x38
+	queue_init();
+     c9a:	f7ff fc85 	bl	5a8 <queue_init>
+	dio_ssp_init();
+     c9e:	f000 fa87 	bl	11b0 <dio_ssp_init>
+	dma_init();
+     ca2:	f7ff fa99 	bl	1d8 <dma_init>
+	dio_ssp_start();
+     ca6:	f7ff faf1 	bl	28c <dio_ssp_start>
+	cc2400_rx();
+     caa:	f7ff fd37 	bl	71c <cc2400_rx>
+			tmp = active_rxbuf;
+     cae:	4d2a      	ldr	r5, [pc, #168]	@ (d58 <bt_stream_rx+0xc8>)
+	while (rx_pkts) {
+     cb0:	f8d4 3090 	ldr.w	r3, [r4, #144]	@ 0x90
+     cb4:	b91b      	cbnz	r3, cbe <bt_stream_rx+0x2e>
+	RXLED_CLR;
+     cb6:	2210      	movs	r2, #16
+     cb8:	4b25      	ldr	r3, [pc, #148]	@ (d50 <bt_stream_rx+0xc0>)
+     cba:	63da      	str	r2, [r3, #60]	@ 0x3c
+}
+     cbc:	bd70      	pop	{r4, r5, r6, pc}
+		while ((rx_tc == 0) && (rx_err == 0));
+     cbe:	f8d4 3088 	ldr.w	r3, [r4, #136]	@ 0x88
+     cc2:	b91b      	cbnz	r3, ccc <bt_stream_rx+0x3c>
+     cc4:	f8d4 308c 	ldr.w	r3, [r4, #140]	@ 0x8c
+     cc8:	2b00      	cmp	r3, #0
+     cca:	d0f8      	beq.n	cbe <bt_stream_rx+0x2e>
+		if (rx_tc % 2) {
+     ccc:	f8d4 3088 	ldr.w	r3, [r4, #136]	@ 0x88
+     cd0:	07d9      	lsls	r1, r3, #31
+			active_rxbuf = idle_rxbuf;
+     cd2:	bf44      	itt	mi
+     cd4:	e9d5 3202 	ldrdmi	r3, r2, [r5, #8]
+			idle_rxbuf = tmp;
+     cd8:	e9c5 2302 	strdmi	r2, r3, [r5, #8]
+		if (rx_err)
+     cdc:	f8d4 308c 	ldr.w	r3, [r4, #140]	@ 0x8c
+     ce0:	b12b      	cbz	r3, cee <bt_stream_rx+0x5e>
+			status |= DMA_ERROR;
+     ce2:	f894 30ad 	ldrb.w	r3, [r4, #173]	@ 0xad
+     ce6:	f043 0302 	orr.w	r3, r3, #2
+     cea:	f884 30ad 	strb.w	r3, [r4, #173]	@ 0xad
+		if (rx_tc) {
+     cee:	f8d4 3088 	ldr.w	r3, [r4, #136]	@ 0x88
+     cf2:	b193      	cbz	r3, d1a <bt_stream_rx+0x8a>
+			if (rx_tc > 1)
+     cf4:	f8d4 3088 	ldr.w	r3, [r4, #136]	@ 0x88
+			if (enqueue(idle_rxbuf))
+     cf8:	68e8      	ldr	r0, [r5, #12]
+			if (rx_tc > 1)
+     cfa:	2b01      	cmp	r3, #1
+				status |= DMA_OVERFLOW;
+     cfc:	bf82      	ittt	hi
+     cfe:	f894 30ad 	ldrbhi.w	r3, [r4, #173]	@ 0xad
+     d02:	f043 0301 	orrhi.w	r3, r3, #1
+     d06:	f884 30ad 	strbhi.w	r3, [r4, #173]	@ 0xad
+			if (enqueue(idle_rxbuf))
+     d0a:	f7ff fc57 	bl	5bc <enqueue>
+     d0e:	b1c0      	cbz	r0, d42 <bt_stream_rx+0xb2>
+				--rx_pkts;
+     d10:	f8d4 3090 	ldr.w	r3, [r4, #144]	@ 0x90
+     d14:	3b01      	subs	r3, #1
+     d16:	f8c4 3090 	str.w	r3, [r4, #144]	@ 0x90
+		epstat = USBHwEPGetStatus(BULK_IN_EP);
+     d1a:	2082      	movs	r0, #130	@ 0x82
+     d1c:	f000 fd0a 	bl	1734 <USBHwEPGetStatus>
+		if (!(epstat & EPSTAT_B1FULL))
+     d20:	0682      	lsls	r2, r0, #26
+		epstat = USBHwEPGetStatus(BULK_IN_EP);
+     d22:	4606      	mov	r6, r0
+		if (!(epstat & EPSTAT_B1FULL))
+     d24:	d401      	bmi.n	d2a <bt_stream_rx+0x9a>
+			dequeue();
+     d26:	f7ff fc87 	bl	638 <dequeue>
+		if (!(epstat & EPSTAT_B2FULL))
+     d2a:	0673      	lsls	r3, r6, #25
+     d2c:	d401      	bmi.n	d32 <bt_stream_rx+0xa2>
+			dequeue();
+     d2e:	f7ff fc83 	bl	638 <dequeue>
+		USBHwISR();
+     d32:	f000 fd89 	bl	1848 <USBHwISR>
+		rx_tc = 0;
+     d36:	2300      	movs	r3, #0
+     d38:	f8c4 3088 	str.w	r3, [r4, #136]	@ 0x88
+		rx_err = 0;
+     d3c:	f8c4 308c 	str.w	r3, [r4, #140]	@ 0x8c
+     d40:	e7b6      	b.n	cb0 <bt_stream_rx+0x20>
+				status |= FIFO_OVERFLOW;
+     d42:	f894 30ad 	ldrb.w	r3, [r4, #173]	@ 0xad
+     d46:	f043 0304 	orr.w	r3, r3, #4
+     d4a:	f884 30ad 	strb.w	r3, [r4, #173]	@ 0xad
+     d4e:	e7e4      	b.n	d1a <bt_stream_rx+0x8a>
+     d50:	2009c000 	.word	0x2009c000
+     d54:	100000d4 	.word	0x100000d4
+     d58:	10000020 	.word	0x10000020
+
+00000d5c <specan>:
+{
+     d5c:	e92d 41f0 	stmdb	sp!, {r4, r5, r6, r7, r8, lr}
+     d60:	b08e      	sub	sp, #56	@ 0x38
+	RXLED_SET;
+     d62:	2310      	movs	r3, #16
+     d64:	493e      	ldr	r1, [pc, #248]	@ (e60 <specan+0x104>)
+	cc2400_set(MANAND,  0x7fff);
+     d66:	200d      	movs	r0, #13
+	RXLED_SET;
+     d68:	638b      	str	r3, [r1, #56]	@ 0x38
+	queue_init();
+     d6a:	f7ff fc1d 	bl	5a8 <queue_init>
+	PAEN_SET;
+     d6e:	2380      	movs	r3, #128	@ 0x80
+     d70:	658b      	str	r3, [r1, #88]	@ 0x58
+	cc2400_set(MANAND,  0x7fff);
+     d72:	f647 71ff 	movw	r1, #32767	@ 0x7fff
+     d76:	f000 faa0 	bl	12ba <cc2400_set>
+	cc2400_set(LMTST,   0x2b22);
+     d7a:	f642 3122 	movw	r1, #11042	@ 0x2b22
+     d7e:	2012      	movs	r0, #18
+     d80:	f000 fa9b 	bl	12ba <cc2400_set>
+	cc2400_set(MDMTST0, 0x134b); // without PRNG
+     d84:	f241 314b 	movw	r1, #4939	@ 0x134b
+     d88:	2014      	movs	r0, #20
+     d8a:	f000 fa96 	bl	12ba <cc2400_set>
+	cc2400_set(GRMDM,   0x0101); // un-buffered mode, GFSK
+     d8e:	f240 1101 	movw	r1, #257	@ 0x101
+     d92:	2020      	movs	r0, #32
+     d94:	f000 fa91 	bl	12ba <cc2400_set>
+	cc2400_set(MDMCTRL, 0x0029); // 160 kHz frequency deviation
+     d98:	2129      	movs	r1, #41	@ 0x29
+     d9a:	2003      	movs	r0, #3
+     d9c:	f000 fa8d 	bl	12ba <cc2400_set>
+	while (!(cc2400_status() & XOSC16M_STABLE));
+     da0:	f000 fa9e 	bl	12e0 <cc2400_status>
+     da4:	0644      	lsls	r4, r0, #25
+     da6:	d5fb      	bpl.n	da0 <specan+0x44>
+	while ((cc2400_status() & FS_LOCK));
+     da8:	f000 fa9a 	bl	12e0 <cc2400_status>
+     dac:	f010 0404 	ands.w	r4, r0, #4
+     db0:	d1fa      	bne.n	da8 <specan+0x4c>
+	while (requested_mode == MODE_SPECAN) {
+     db2:	4f2c      	ldr	r7, [pc, #176]	@ (e64 <specan+0x108>)
+		for (f = low_freq; f < high_freq + 1; f++) {
+     db4:	f8df 80b0 	ldr.w	r8, [pc, #176]	@ e68 <specan+0x10c>
+	while (requested_mode == MODE_SPECAN) {
+     db8:	f8d7 3094 	ldr.w	r3, [r7, #148]	@ 0x94
+     dbc:	2b04      	cmp	r3, #4
+     dbe:	d008      	beq.n	dd2 <specan+0x76>
+	mode = MODE_IDLE;
+     dc0:	2300      	movs	r3, #0
+	RXLED_CLR;
+     dc2:	2210      	movs	r2, #16
+	mode = MODE_IDLE;
+     dc4:	f8c7 30c0 	str.w	r3, [r7, #192]	@ 0xc0
+	RXLED_CLR;
+     dc8:	4b25      	ldr	r3, [pc, #148]	@ (e60 <specan+0x104>)
+     dca:	63da      	str	r2, [r3, #60]	@ 0x3c
+}
+     dcc:	b00e      	add	sp, #56	@ 0x38
+     dce:	e8bd 81f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, pc}
+		for (f = low_freq; f < high_freq + 1; f++) {
+     dd2:	f8b8 5002 	ldrh.w	r5, [r8, #2]
+     dd6:	f8b8 3004 	ldrh.w	r3, [r8, #4]
+     dda:	b2ad      	uxth	r5, r5
+     ddc:	b29b      	uxth	r3, r3
+     dde:	42ab      	cmp	r3, r5
+     de0:	d3ea      	bcc.n	db8 <specan+0x5c>
+			cc2400_set(FSDIV, f - 1);
+     de2:	1e69      	subs	r1, r5, #1
+     de4:	2002      	movs	r0, #2
+     de6:	b289      	uxth	r1, r1
+     de8:	f000 fa67 	bl	12ba <cc2400_set>
+			cc2400_strobe(SFSON);
+     dec:	2061      	movs	r0, #97	@ 0x61
+     dee:	f000 fa7e 	bl	12ee <cc2400_strobe>
+			while (!(cc2400_status() & FS_LOCK));
+     df2:	f000 fa75 	bl	12e0 <cc2400_status>
+     df6:	0740      	lsls	r0, r0, #29
+     df8:	d5fb      	bpl.n	df2 <specan+0x96>
+			buf[3 * i] = (f >> 8) & 0xFF;
+     dfa:	eb04 0644 	add.w	r6, r4, r4, lsl #1
+			cc2400_strobe(SRX);
+     dfe:	2062      	movs	r0, #98	@ 0x62
+     e00:	f000 fa75 	bl	12ee <cc2400_strobe>
+			buf[3 * i] = (f >> 8) & 0xFF;
+     e04:	f106 0338 	add.w	r3, r6, #56	@ 0x38
+     e08:	eb0d 0603 	add.w	r6, sp, r3
+			buf[(3 * i) + 2] = cc2400_get(RSSI) >> 8;
+     e0c:	2006      	movs	r0, #6
+			buf[3 * i] = (f >> 8) & 0xFF;
+     e0e:	0a2b      	lsrs	r3, r5, #8
+     e10:	f806 3c34 	strb.w	r3, [r6, #-52]
+			buf[(3 * i) + 1] = f  & 0xFF;
+     e14:	f806 5c33 	strb.w	r5, [r6, #-51]
+			buf[(3 * i) + 2] = cc2400_get(RSSI) >> 8;
+     e18:	f000 fa46 	bl	12a8 <cc2400_get>
+			i++;
+     e1c:	3401      	adds	r4, #1
+     e1e:	b2e4      	uxtb	r4, r4
+			buf[(3 * i) + 2] = cc2400_get(RSSI) >> 8;
+     e20:	0a00      	lsrs	r0, r0, #8
+			if (i == 16) {
+     e22:	2c10      	cmp	r4, #16
+			buf[(3 * i) + 2] = cc2400_get(RSSI) >> 8;
+     e24:	f806 0c32 	strb.w	r0, [r6, #-50]
+			if (i == 16) {
+     e28:	d111      	bne.n	e4e <specan+0xf2>
+				enqueue(buf);
+     e2a:	a801      	add	r0, sp, #4
+     e2c:	f7ff fbc6 	bl	5bc <enqueue>
+				epstat = USBHwEPGetStatus(BULK_IN_EP);
+     e30:	2082      	movs	r0, #130	@ 0x82
+     e32:	f000 fc7f 	bl	1734 <USBHwEPGetStatus>
+				if (!(epstat & EPSTAT_B1FULL))
+     e36:	0681      	lsls	r1, r0, #26
+				epstat = USBHwEPGetStatus(BULK_IN_EP);
+     e38:	4604      	mov	r4, r0
+				if (!(epstat & EPSTAT_B1FULL))
+     e3a:	d401      	bmi.n	e40 <specan+0xe4>
+					dequeue();
+     e3c:	f7ff fbfc 	bl	638 <dequeue>
+				if (!(epstat & EPSTAT_B2FULL))
+     e40:	0662      	lsls	r2, r4, #25
+     e42:	d401      	bmi.n	e48 <specan+0xec>
+					dequeue();
+     e44:	f7ff fbf8 	bl	638 <dequeue>
+				USBHwISR();
+     e48:	f000 fcfe 	bl	1848 <USBHwISR>
+				i = 0;
+     e4c:	2400      	movs	r4, #0
+			cc2400_strobe(SRFOFF);
+     e4e:	2064      	movs	r0, #100	@ 0x64
+     e50:	f000 fa4d 	bl	12ee <cc2400_strobe>
+			while ((cc2400_status() & FS_LOCK));
+     e54:	f000 fa44 	bl	12e0 <cc2400_status>
+     e58:	0743      	lsls	r3, r0, #29
+     e5a:	d4fb      	bmi.n	e54 <specan+0xf8>
+		for (f = low_freq; f < high_freq + 1; f++) {
+     e5c:	3501      	adds	r5, #1
+     e5e:	e7ba      	b.n	dd6 <specan+0x7a>
+     e60:	2009c000 	.word	0x2009c000
+     e64:	100000d4 	.word	0x100000d4
+     e68:	10000020 	.word	0x10000020
+
+00000e6c <find_giac>:
+{
+     e6c:	b5f0      	push	{r4, r5, r6, r7, lr}
+     e6e:	b08f      	sub	sp, #60	@ 0x3c
+     e70:	4606      	mov	r6, r0
+	const uint8_t giac[8][7] = {
+     e72:	466a      	mov	r2, sp
+     e74:	466d      	mov	r5, sp
+     e76:	4b1c      	ldr	r3, [pc, #112]	@ (ee8 <find_giac+0x7c>)
+     e78:	f103 0738 	add.w	r7, r3, #56	@ 0x38
+     e7c:	4614      	mov	r4, r2
+     e7e:	6818      	ldr	r0, [r3, #0]
+     e80:	6859      	ldr	r1, [r3, #4]
+     e82:	3308      	adds	r3, #8
+     e84:	c403      	stmia	r4!, {r0, r1}
+     e86:	42bb      	cmp	r3, r7
+     e88:	4622      	mov	r2, r4
+     e8a:	d1f7      	bne.n	e7c <find_giac+0x10>
+    for (i = 0; i < (DMA_SIZE - 6); i++)
+     e8c:	4630      	mov	r0, r6
+     e8e:	f106 042c 	add.w	r4, r6, #44	@ 0x2c
+			for (j = 0; j < 8; j++)
+     e92:	462b      	mov	r3, r5
+     e94:	2200      	movs	r2, #0
+	        	if (buf[i] == giac[j][0]
+     e96:	f810 1b01 	ldrb.w	r1, [r0], #1
+     e9a:	781e      	ldrb	r6, [r3, #0]
+     e9c:	428e      	cmp	r6, r1
+     e9e:	d117      	bne.n	ed0 <find_giac+0x64>
+						&& buf[i + 1] == giac[j][1]
+     ea0:	7807      	ldrb	r7, [r0, #0]
+     ea2:	785e      	ldrb	r6, [r3, #1]
+     ea4:	42b7      	cmp	r7, r6
+     ea6:	d113      	bne.n	ed0 <find_giac+0x64>
+						&& buf[i + 2] == giac[j][2]
+     ea8:	7847      	ldrb	r7, [r0, #1]
+     eaa:	789e      	ldrb	r6, [r3, #2]
+     eac:	42b7      	cmp	r7, r6
+     eae:	d10f      	bne.n	ed0 <find_giac+0x64>
+						&& buf[i + 3] == giac[j][3]
+     eb0:	7887      	ldrb	r7, [r0, #2]
+     eb2:	78de      	ldrb	r6, [r3, #3]
+     eb4:	42b7      	cmp	r7, r6
+     eb6:	d10b      	bne.n	ed0 <find_giac+0x64>
+						&& buf[i + 4] == giac[j][4]
+     eb8:	78c7      	ldrb	r7, [r0, #3]
+     eba:	791e      	ldrb	r6, [r3, #4]
+     ebc:	42b7      	cmp	r7, r6
+     ebe:	d107      	bne.n	ed0 <find_giac+0x64>
+						&& buf[i + 5] == giac[j][5]
+     ec0:	7907      	ldrb	r7, [r0, #4]
+     ec2:	795e      	ldrb	r6, [r3, #5]
+     ec4:	42b7      	cmp	r7, r6
+     ec6:	d103      	bne.n	ed0 <find_giac+0x64>
+						&& buf[i + 6] == giac[j][6])
+     ec8:	7947      	ldrb	r7, [r0, #5]
+     eca:	799e      	ldrb	r6, [r3, #6]
+     ecc:	42b7      	cmp	r7, r6
+     ece:	d008      	beq.n	ee2 <find_giac+0x76>
+			for (j = 0; j < 8; j++)
+     ed0:	3201      	adds	r2, #1
+     ed2:	2a08      	cmp	r2, #8
+     ed4:	f103 0307 	add.w	r3, r3, #7
+     ed8:	d1df      	bne.n	e9a <find_giac+0x2e>
+    for (i = 0; i < (DMA_SIZE - 6); i++)
+     eda:	42a0      	cmp	r0, r4
+     edc:	d1d9      	bne.n	e92 <find_giac+0x26>
+	return 0;
+     ede:	2000      	movs	r0, #0
+     ee0:	e000      	b.n	ee4 <find_giac+0x78>
+					return 1;
+     ee2:	2001      	movs	r0, #1
+}
+     ee4:	b00f      	add	sp, #60	@ 0x3c
+     ee6:	bdf0      	pop	{r4, r5, r6, r7, pc}
+     ee8:	00001ce0 	.word	0x00001ce0
+
+00000eec <bt_test_rx>:
+{
+     eec:	e92d 4ff8 	stmdb	sp!, {r3, r4, r5, r6, r7, r8, r9, sl, fp, lr}
+	int num_giacs = 0;
+     ef0:	2500      	movs	r5, #0
+			RXLED_CLR;
+     ef2:	f04f 0a10 	mov.w	sl, #16
+	int countdown = 0;
+     ef6:	462e      	mov	r6, r5
+					USRLED_CLR;
+     ef8:	f04f 0902 	mov.w	r9, #2
+				TXLED_CLR;
+     efc:	f44f 7b80 	mov.w	fp, #256	@ 0x100
+		rx_tc = 0;
+     f00:	46a8      	mov	r8, r5
+	dio_ssp_init();
+     f02:	f000 f955 	bl	11b0 <dio_ssp_init>
+		while ((rx_tc == 0) && (rx_err == 0));
+     f06:	4c1f      	ldr	r4, [pc, #124]	@ (f84 <bt_test_rx+0x98>)
+	dma_init();
+     f08:	f7ff f966 	bl	1d8 <dma_init>
+			tmp = active_rxbuf;
+     f0c:	4f1e      	ldr	r7, [pc, #120]	@ (f88 <bt_test_rx+0x9c>)
+	dio_ssp_start();
+     f0e:	f7ff f9bd 	bl	28c <dio_ssp_start>
+	cc2400_rx();
+     f12:	f7ff fc03 	bl	71c <cc2400_rx>
+			RXLED_CLR;
+     f16:	4b1d      	ldr	r3, [pc, #116]	@ (f8c <bt_test_rx+0xa0>)
+		while ((rx_tc == 0) && (rx_err == 0));
+     f18:	f8d4 2088 	ldr.w	r2, [r4, #136]	@ 0x88
+     f1c:	b91a      	cbnz	r2, f26 <bt_test_rx+0x3a>
+     f1e:	f8d4 208c 	ldr.w	r2, [r4, #140]	@ 0x8c
+     f22:	2a00      	cmp	r2, #0
+     f24:	d0f8      	beq.n	f18 <bt_test_rx+0x2c>
+		if (rx_tc % 2) {
+     f26:	f8d4 2088 	ldr.w	r2, [r4, #136]	@ 0x88
+     f2a:	07d2      	lsls	r2, r2, #31
+			active_rxbuf = idle_rxbuf;
+     f2c:	bf44      	itt	mi
+     f2e:	e9d7 1202 	ldrdmi	r1, r2, [r7, #8]
+			idle_rxbuf = tmp;
+     f32:	e9c7 2102 	strdmi	r2, r1, [r7, #8]
+		if (rx_err)
+     f36:	f8d4 208c 	ldr.w	r2, [r4, #140]	@ 0x8c
+     f3a:	b10a      	cbz	r2, f40 <bt_test_rx+0x54>
+			RXLED_CLR;
+     f3c:	f8c3 a03c 	str.w	sl, [r3, #60]	@ 0x3c
+		if (rx_tc) {
+     f40:	f8d4 2088 	ldr.w	r2, [r4, #136]	@ 0x88
+     f44:	b172      	cbz	r2, f64 <bt_test_rx+0x78>
+			if (rx_tc > 1)
+     f46:	f8d4 2088 	ldr.w	r2, [r4, #136]	@ 0x88
+			if (find_giac(idle_rxbuf)) {
+     f4a:	68f8      	ldr	r0, [r7, #12]
+			if (rx_tc > 1)
+     f4c:	2a01      	cmp	r2, #1
+				TXLED_CLR;
+     f4e:	bf88      	it	hi
+     f50:	f8c3 b03c 	strhi.w	fp, [r3, #60]	@ 0x3c
+			if (find_giac(idle_rxbuf)) {
+     f54:	f7ff ff8a 	bl	e6c <find_giac>
+     f58:	4b0c      	ldr	r3, [pc, #48]	@ (f8c <bt_test_rx+0xa0>)
+     f5a:	b158      	cbz	r0, f74 <bt_test_rx+0x88>
+				countdown = 100;
+     f5c:	2664      	movs	r6, #100	@ 0x64
+				USRLED_SET;
+     f5e:	f8c3 9038 	str.w	r9, [r3, #56]	@ 0x38
+				num_giacs++;
+     f62:	3501      	adds	r5, #1
+	while (num_giacs < 20) {
+     f64:	2d14      	cmp	r5, #20
+		rx_tc = 0;
+     f66:	f8c4 8088 	str.w	r8, [r4, #136]	@ 0x88
+		rx_err = 0;
+     f6a:	f8c4 808c 	str.w	r8, [r4, #140]	@ 0x8c
+	while (num_giacs < 20) {
+     f6e:	d1d3      	bne.n	f18 <bt_test_rx+0x2c>
+}
+     f70:	e8bd 8ff8 	ldmia.w	sp!, {r3, r4, r5, r6, r7, r8, r9, sl, fp, pc}
+				if (countdown == 0) {
+     f74:	b91e      	cbnz	r6, f7e <bt_test_rx+0x92>
+					num_giacs = 0;
+     f76:	4635      	mov	r5, r6
+					USRLED_CLR;
+     f78:	f8c3 903c 	str.w	r9, [r3, #60]	@ 0x3c
+					num_giacs = 0;
+     f7c:	e7f2      	b.n	f64 <bt_test_rx+0x78>
+					--countdown;
+     f7e:	3e01      	subs	r6, #1
+     f80:	e7f0      	b.n	f64 <bt_test_rx+0x78>
+     f82:	bf00      	nop
+     f84:	100000d4 	.word	0x100000d4
+     f88:	10000020 	.word	0x10000020
+     f8c:	2009c000 	.word	0x2009c000
+
+00000f90 <main>:
+
+int main()
+{
+     f90:	b5f8      	push	{r3, r4, r5, r6, r7, lr}
+	int i;
+
+	gpio_init();
+     f92:	f000 f8f3 	bl	117c <gpio_init>
+     f96:	2302      	movs	r3, #2
+
+	/* blinky */
+	for (i = 0; i < 2; i++) {
+		TXLED_SET;
+     f98:	f44f 7580 	mov.w	r5, #256	@ 0x100
+		RXLED_SET;
+     f9c:	2110      	movs	r1, #16
+		USRLED_SET;
+     f9e:	461a      	mov	r2, r3
+		TXLED_SET;
+     fa0:	4c3c      	ldr	r4, [pc, #240]	@ (1094 <main+0x104>)
+	for (i = 0; i < 2; i++) {
+     fa2:	2b01      	cmp	r3, #1
+		TXLED_SET;
+     fa4:	63a5      	str	r5, [r4, #56]	@ 0x38
+		RXLED_SET;
+     fa6:	63a1      	str	r1, [r4, #56]	@ 0x38
+		USRLED_SET;
+     fa8:	63a2      	str	r2, [r4, #56]	@ 0x38
+		waitms(200);
+		TXLED_CLR;
+     faa:	63e5      	str	r5, [r4, #60]	@ 0x3c
+		RXLED_CLR;
+     fac:	63e1      	str	r1, [r4, #60]	@ 0x3c
+		USRLED_CLR;
+     fae:	63e2      	str	r2, [r4, #60]	@ 0x3c
+	for (i = 0; i < 2; i++) {
+     fb0:	d10e      	bne.n	fd0 <main+0x40>
+		waitms(200);
+	}
+
+	/* cc2400_test */
+	cc2400_init();
+     fb2:	f000 f95f 	bl	1274 <cc2400_init>
+	TXLED_SET;
+     fb6:	63a5      	str	r5, [r4, #56]	@ 0x38
+	waitms(200);
+	TXLED_CLR;
+     fb8:	63e5      	str	r5, [r4, #60]	@ 0x3c
+	waitms(200);
+	cc2400_reset();
+     fba:	f000 f99f 	bl	12fc <cc2400_reset>
+	TXLED_SET;
+     fbe:	63a5      	str	r5, [r4, #56]	@ 0x38
+	waitms(200);
+	TXLED_CLR;
+	waitms(200);
+	if (cc2400_get(AGCCTRL) != 0xf700)
+     fc0:	2004      	movs	r0, #4
+	TXLED_CLR;
+     fc2:	63e5      	str	r5, [r4, #60]	@ 0x3c
+	if (cc2400_get(AGCCTRL) != 0xf700)
+     fc4:	f000 f970 	bl	12a8 <cc2400_get>
+     fc8:	f5b0 4f77 	cmp.w	r0, #63232	@ 0xf700
+     fcc:	d002      	beq.n	fd4 <main+0x44>
+		while(1);
+     fce:	e7fe      	b.n	fce <main+0x3e>
+     fd0:	2301      	movs	r3, #1
+     fd2:	e7e6      	b.n	fa2 <main+0x12>
+	TXLED_SET;
+     fd4:	63a5      	str	r5, [r4, #56]	@ 0x38
+	waitms(200);
+
+	/* clock_test */
+	clock_start();
+     fd6:	f000 f9a7 	bl	1328 <clock_start>
+     fda:	2604      	movs	r6, #4
+	for (i = 0; i < 4; i++) {
+		RXLED_SET;
+     fdc:	2410      	movs	r4, #16
+     fde:	4d2d      	ldr	r5, [pc, #180]	@ (1094 <main+0x104>)
+		wait(2);
+     fe0:	2002      	movs	r0, #2
+		RXLED_SET;
+     fe2:	63ac      	str	r4, [r5, #56]	@ 0x38
+		wait(2);
+     fe4:	f000 f8a0 	bl	1128 <wait>
+		RXLED_CLR;
+		wait(2);
+     fe8:	2002      	movs	r0, #2
+		RXLED_CLR;
+     fea:	63ec      	str	r4, [r5, #60]	@ 0x3c
+		wait(2);
+     fec:	f000 f89c 	bl	1128 <wait>
+	for (i = 0; i < 4; i++) {
+     ff0:	3e01      	subs	r6, #1
+     ff2:	d1f5      	bne.n	fe0 <main+0x50>
+	T0TCR = TCR_Counter_Reset;
+     ff4:	f04f 2340 	mov.w	r3, #1073758208	@ 0x40004000
+     ff8:	2702      	movs	r7, #2
+	T0PR = 4;
+     ffa:	2204      	movs	r2, #4
+	}
+	RXLED_SET;
+     ffc:	63ac      	str	r4, [r5, #56]	@ 0x38
+	clkn_high = 0;
+     ffe:	4c26      	ldr	r4, [pc, #152]	@ (1098 <main+0x108>)
+	T0TCR = TCR_Counter_Reset;
+    1000:	605f      	str	r7, [r3, #4]
+	clkn_high = 0;
+    1002:	f884 60ac 	strb.w	r6, [r4, #172]	@ 0xac
+	T0PR = 4;
+    1006:	60da      	str	r2, [r3, #12]
+	T0MR0 = 3276799999;
+    1008:	4a24      	ldr	r2, [pc, #144]	@ (109c <main+0x10c>)
+	ISER0 |= ISER0_ISE_TIMER0;
+    100a:	f04f 21e0 	mov.w	r1, #3758153728	@ 0xe000e000
+	T0MR0 = 3276799999;
+    100e:	619a      	str	r2, [r3, #24]
+	T0MCR = TMCR_MR0R | TMCR_MR0I;
+    1010:	2203      	movs	r2, #3
+    1012:	615a      	str	r2, [r3, #20]
+	ISER0 |= ISER0_ISE_TIMER0;
+    1014:	f8d1 2100 	ldr.w	r2, [r1, #256]	@ 0x100
+    1018:	433a      	orrs	r2, r7
+    101a:	f8c1 2100 	str.w	r2, [r1, #256]	@ 0x100
+	T0TCR = TCR_Counter_Enable;
+    101e:	2201      	movs	r2, #1
+    1020:	605a      	str	r2, [r3, #4]
+
+	clkn_init();
+	bt_test_rx();
+    1022:	f7ff ff63 	bl	eec <bt_test_rx>
+	USRLED_SET;
+    1026:	63af      	str	r7, [r5, #56]	@ 0x38
+
+	/*
+	 * Now we function like bluetooth_rxtx so that the USB interface can be
+	 * tested.
+	 */
+	ubertooth_usb_init();
+    1028:	f7ff fb2c 	bl	684 <ubertooth_usb_init>
+
+	while (1) {
+		USBHwISR();
+    102c:	f000 fc0c 	bl	1848 <USBHwISR>
+		if (rx_pkts)
+    1030:	f8d4 3090 	ldr.w	r3, [r4, #144]	@ 0x90
+    1034:	b113      	cbz	r3, 103c <main+0xac>
+			bt_stream_rx();
+    1036:	f7ff fe2b 	bl	c90 <bt_stream_rx>
+    103a:	e7f7      	b.n	102c <main+0x9c>
+		else if (requested_mode == MODE_TX_TEST && mode != MODE_TX_TEST)
+    103c:	f8d4 3094 	ldr.w	r3, [r4, #148]	@ 0x94
+    1040:	2b03      	cmp	r3, #3
+    1042:	d106      	bne.n	1052 <main+0xc2>
+    1044:	f8d4 30c0 	ldr.w	r3, [r4, #192]	@ 0xc0
+    1048:	2b03      	cmp	r3, #3
+    104a:	d002      	beq.n	1052 <main+0xc2>
+			cc2400_txtest();
+    104c:	f7ff fbc6 	bl	7dc <cc2400_txtest>
+    1050:	e7ec      	b.n	102c <main+0x9c>
+		else if (requested_mode == MODE_RANGE_TEST && mode != MODE_RANGE_TEST)
+    1052:	f8d4 3094 	ldr.w	r3, [r4, #148]	@ 0x94
+    1056:	2b05      	cmp	r3, #5
+    1058:	d106      	bne.n	1068 <main+0xd8>
+    105a:	f8d4 30c0 	ldr.w	r3, [r4, #192]	@ 0xc0
+    105e:	2b05      	cmp	r3, #5
+    1060:	d002      	beq.n	1068 <main+0xd8>
+			cc2400_rangetest();
+    1062:	f7ff fc13 	bl	88c <cc2400_rangetest>
+    1066:	e7e1      	b.n	102c <main+0x9c>
+		else if (requested_mode == MODE_REPEATER && mode != MODE_REPEATER)
+    1068:	f8d4 3094 	ldr.w	r3, [r4, #148]	@ 0x94
+    106c:	2b06      	cmp	r3, #6
+    106e:	d105      	bne.n	107c <main+0xec>
+    1070:	f8d4 30c0 	ldr.w	r3, [r4, #192]	@ 0xc0
+    1074:	2b06      	cmp	r3, #6
+    1076:	d001      	beq.n	107c <main+0xec>
+			cc2400_repeater();
+    1078:	f7ff fd4c 	bl	b14 <cc2400_repeater>
+		else if (requested_mode == MODE_SPECAN && mode != MODE_SPECAN)
+    107c:	f8d4 3094 	ldr.w	r3, [r4, #148]	@ 0x94
+    1080:	2b04      	cmp	r3, #4
+    1082:	d1d3      	bne.n	102c <main+0x9c>
+    1084:	f8d4 30c0 	ldr.w	r3, [r4, #192]	@ 0xc0
+    1088:	2b04      	cmp	r3, #4
+    108a:	d0cf      	beq.n	102c <main+0x9c>
+			specan();
+    108c:	f7ff fe66 	bl	d5c <specan>
+    1090:	e7cc      	b.n	102c <main+0x9c>
+    1092:	bf00      	nop
+    1094:	2009c000 	.word	0x2009c000
+    1098:	100000d4 	.word	0x100000d4
+    109c:	c34fffff 	.word	0xc34fffff
+
+000010a0 <USB_IRQHandler>:
+	USBHwISR();
+    10a0:	f000 bbd2 	b.w	1848 <USBHwISR>
+
+000010a4 <Reset_Handler>:
+extern void __libc_init_array(void);
+extern int main(void);
+
+/* Reset Handler */
+void Reset_Handler(void)
+{
+    10a4:	b508      	push	{r3, lr}
+	unsigned long *src, *dest;
+
+	// Copy the data segment initializers from flash to SRAM
+	src = &_etext;
+	for(dest = &_data; dest < &_edata; )
+    10a6:	4b0e      	ldr	r3, [pc, #56]	@ (10e0 <Reset_Handler+0x3c>)
+	src = &_etext;
+    10a8:	4a0e      	ldr	r2, [pc, #56]	@ (10e4 <Reset_Handler+0x40>)
+	for(dest = &_data; dest < &_edata; )
+    10aa:	490f      	ldr	r1, [pc, #60]	@ (10e8 <Reset_Handler+0x44>)
+    10ac:	428b      	cmp	r3, r1
+    10ae:	d30e      	bcc.n	10ce <Reset_Handler+0x2a>
+
+	// Initialize the .bss segment of memory to zeros
+	src = &_bss;
+	while (src < &_ebss)
+	{
+		*src++ = 0;
+    10b0:	2100      	movs	r1, #0
+	src = &_bss;
+    10b2:	4b0e      	ldr	r3, [pc, #56]	@ (10ec <Reset_Handler+0x48>)
+	while (src < &_ebss)
+    10b4:	4a0e      	ldr	r2, [pc, #56]	@ (10f0 <Reset_Handler+0x4c>)
+    10b6:	4293      	cmp	r3, r2
+    10b8:	d30e      	bcc.n	10d8 <Reset_Handler+0x34>
+	}
+
+	__libc_init_array();
+    10ba:	f7ff f87d 	bl	1b8 <__libc_init_array>
+
+	// Set the vector table location.
+	SCB_VTOR = (uint32_t)&_interrupt_vector_table;
+    10be:	f04f 23e0 	mov.w	r3, #3758153728	@ 0xe000e000
+    10c2:	4a0c      	ldr	r2, [pc, #48]	@ (10f4 <Reset_Handler+0x50>)
+    10c4:	f8c3 2d08 	str.w	r2, [r3, #3336]	@ 0xd08
+
+	main();
+    10c8:	f7ff ff62 	bl	f90 <main>
+
+	// In case main() fails, have something to breakpoint
+	while (1) {;}
+    10cc:	e7fe      	b.n	10cc <Reset_Handler+0x28>
+		*dest++ = *src++;
+    10ce:	f852 0b04 	ldr.w	r0, [r2], #4
+    10d2:	f843 0b04 	str.w	r0, [r3], #4
+    10d6:	e7e9      	b.n	10ac <Reset_Handler+0x8>
+		*src++ = 0;
+    10d8:	f843 1b04 	str.w	r1, [r3], #4
+    10dc:	e7eb      	b.n	10b6 <Reset_Handler+0x12>
+    10de:	bf00      	nop
+    10e0:	10000020 	.word	0x10000020
+    10e4:	00001d48 	.word	0x00001d48
+    10e8:	100000d4 	.word	0x100000d4
+    10ec:	100000d4 	.word	0x100000d4
+    10f0:	10002231 	.word	0x10002231
+    10f4:	00000000 	.word	0x00000000
+
+000010f8 <ADC_IRQHandler>:
+extern unsigned long _StackTop;
+
+extern void Reset_Handler(void);
+
+/* Default interrupt handler */
+static void Default_Handler(void) { while(1) {;} }
+    10f8:	e7fe      	b.n	10f8 <ADC_IRQHandler>
+    10fa:	0000      	movs	r0, r0
+
+000010fc <wait_us>:
+	/* This is binary multiply by ~0.3999, i.e, multiply by
+	   0.011011011b. The loop also contains 6 instructions at -Os, so
+	   why this factor works is not at all related to the comment
+	   above ;-) */
+	wait_us_counter =
+		(us>>2) + (us>>3) + (us>>6) + (us>>7) + (us>>10) + (us>>11);
+    10fc:	08c3      	lsrs	r3, r0, #3
+    10fe:	eb03 0390 	add.w	r3, r3, r0, lsr #2
+    1102:	eb03 1390 	add.w	r3, r3, r0, lsr #6
+    1106:	eb03 13d0 	add.w	r3, r3, r0, lsr #7
+	wait_us_counter =
+    110a:	4a06      	ldr	r2, [pc, #24]	@ (1124 <wait_us+0x28>)
+		(us>>2) + (us>>3) + (us>>6) + (us>>7) + (us>>10) + (us>>11);
+    110c:	eb03 2390 	add.w	r3, r3, r0, lsr #10
+    1110:	eb03 23d0 	add.w	r3, r3, r0, lsr #11
+	wait_us_counter =
+    1114:	6053      	str	r3, [r2, #4]
+	while(--wait_us_counter);
+    1116:	6853      	ldr	r3, [r2, #4]
+    1118:	3b01      	subs	r3, #1
+    111a:	6053      	str	r3, [r2, #4]
+    111c:	2b00      	cmp	r3, #0
+    111e:	d1fa      	bne.n	1116 <wait_us+0x1a>
+}
+    1120:	4770      	bx	lr
+    1122:	bf00      	nop
+    1124:	10002198 	.word	0x10002198
+
+00001128 <wait>:
+	wait_us(seconds * 1000000);
+    1128:	4b01      	ldr	r3, [pc, #4]	@ (1130 <wait+0x8>)
+    112a:	4358      	muls	r0, r3
+    112c:	f7ff bfe6 	b.w	10fc <wait_us>
+    1130:	000f4240 	.word	0x000f4240
+
+00001134 <all_pins_off>:
+}
+
+void all_pins_off(void)
+{
+	/* configure all pins for GPIO */
+	PINSEL0 = 0;
+    1134:	2300      	movs	r3, #0
+    1136:	4a0f      	ldr	r2, [pc, #60]	@ (1174 <all_pins_off+0x40>)
+	PINSEL7 = 0;
+	PINSEL9 = 0;
+	PINSEL10 = 0;
+
+	/* configure all pins as inputs */
+	FIO0DIR = 0;
+    1138:	490f      	ldr	r1, [pc, #60]	@ (1178 <all_pins_off+0x44>)
+	PINSEL0 = 0;
+    113a:	6013      	str	r3, [r2, #0]
+	PINSEL1 = 0;
+    113c:	6053      	str	r3, [r2, #4]
+	PINSEL2 = 0;
+    113e:	6093      	str	r3, [r2, #8]
+	PINSEL3 = 0;
+    1140:	60d3      	str	r3, [r2, #12]
+	PINSEL4 = 0;
+    1142:	6113      	str	r3, [r2, #16]
+	PINSEL7 = 0;
+    1144:	61d3      	str	r3, [r2, #28]
+	PINSEL9 = 0;
+    1146:	6253      	str	r3, [r2, #36]	@ 0x24
+	PINSEL10 = 0;
+    1148:	6293      	str	r3, [r2, #40]	@ 0x28
+	FIO0DIR = 0;
+    114a:	600b      	str	r3, [r1, #0]
+	FIO1DIR = 0;
+    114c:	620b      	str	r3, [r1, #32]
+	FIO2DIR = 0;
+    114e:	640b      	str	r3, [r1, #64]	@ 0x40
+	FIO3DIR = 0;
+    1150:	660b      	str	r3, [r1, #96]	@ 0x60
+	FIO4DIR = 0;
+    1152:	f8c1 3080 	str.w	r3, [r1, #128]	@ 0x80
+
+	/* pull-up on every pin */
+	PINMODE0 = 0;
+    1156:	6413      	str	r3, [r2, #64]	@ 0x40
+	PINMODE1 = 0;
+    1158:	6453      	str	r3, [r2, #68]	@ 0x44
+	PINMODE2 = 0;
+    115a:	6493      	str	r3, [r2, #72]	@ 0x48
+	PINMODE3 = 0;
+    115c:	64d3      	str	r3, [r2, #76]	@ 0x4c
+	PINMODE4 = 0;
+    115e:	6513      	str	r3, [r2, #80]	@ 0x50
+	PINMODE7 = 0;
+    1160:	65d3      	str	r3, [r2, #92]	@ 0x5c
+	PINMODE9 = 0;
+    1162:	6653      	str	r3, [r2, #100]	@ 0x64
+
+	/* set all outputs low */
+	FIO0PIN = 0;
+    1164:	614b      	str	r3, [r1, #20]
+	FIO1PIN = 0;
+    1166:	634b      	str	r3, [r1, #52]	@ 0x34
+	FIO2PIN = 0;
+    1168:	654b      	str	r3, [r1, #84]	@ 0x54
+	FIO3PIN = 0;
+    116a:	674b      	str	r3, [r1, #116]	@ 0x74
+	FIO4PIN = 0;
+    116c:	f8c1 3094 	str.w	r3, [r1, #148]	@ 0x94
+}
+    1170:	4770      	bx	lr
+    1172:	bf00      	nop
+    1174:	4002c000 	.word	0x4002c000
+    1178:	2009c000 	.word	0x2009c000
+
+0000117c <gpio_init>:
+{
+    117c:	b508      	push	{r3, lr}
+	all_pins_off();
+    117e:	f7ff ffd9 	bl	1134 <all_pins_off>
+	FIO0DIR = 0;
+    1182:	2200      	movs	r2, #0
+	FIO1DIR = (PIN_USRLED | PIN_RXLED | PIN_TXLED | PIN_CC3V3 |
+    1184:	f24c 7112 	movw	r1, #50962	@ 0xc712
+	FIO0DIR = 0;
+    1188:	4b08      	ldr	r3, [pc, #32]	@ (11ac <gpio_init+0x30>)
+    118a:	601a      	str	r2, [r3, #0]
+	FIO1DIR = (PIN_USRLED | PIN_RXLED | PIN_TXLED | PIN_CC3V3 |
+    118c:	6219      	str	r1, [r3, #32]
+	FIO2DIR = (PIN_CSN | PIN_SCLK | PIN_MOSI | PIN_PAEN | PIN_HGM);
+    118e:	f240 11b1 	movw	r1, #433	@ 0x1b1
+    1192:	6419      	str	r1, [r3, #64]	@ 0x40
+	FIO4DIR = (PIN_TX | PIN_SSEL1);
+    1194:	f04f 5140 	mov.w	r1, #805306368	@ 0x30000000
+	FIO3DIR = 0;
+    1198:	661a      	str	r2, [r3, #96]	@ 0x60
+	FIO4DIR = (PIN_TX | PIN_SSEL1);
+    119a:	f8c3 1080 	str.w	r1, [r3, #128]	@ 0x80
+	FIO0PIN = 0;
+    119e:	615a      	str	r2, [r3, #20]
+	FIO1PIN = 0;
+    11a0:	635a      	str	r2, [r3, #52]	@ 0x34
+	FIO2PIN = 0;
+    11a2:	655a      	str	r2, [r3, #84]	@ 0x54
+	FIO3PIN = 0;
+    11a4:	675a      	str	r2, [r3, #116]	@ 0x74
+	FIO4PIN = 0;
+    11a6:	f8c3 2094 	str.w	r2, [r3, #148]	@ 0x94
+}
+    11aa:	bd08      	pop	{r3, pc}
+    11ac:	2009c000 	.word	0x2009c000
+
+000011b0 <dio_ssp_init>:
+	/* set P1.18 as MOSI0 */
+	PINSEL1 = (PINSEL1 & ~(3 << 4)) | (2 << 4);
+#endif
+#if defined UBERTOOTH_ONE || defined TC13BADGE
+	/* set P0.7 as SCK1 */
+	PINSEL0 = (PINSEL0 & ~(3 << 14)) | (2 << 14);
+    11b0:	4b11      	ldr	r3, [pc, #68]	@ (11f8 <dio_ssp_init+0x48>)
+    11b2:	681a      	ldr	r2, [r3, #0]
+    11b4:	f422 4240 	bic.w	r2, r2, #49152	@ 0xc000
+    11b8:	f442 4200 	orr.w	r2, r2, #32768	@ 0x8000
+    11bc:	601a      	str	r2, [r3, #0]
+
+	/* set P0.6 as SSEL1 */
+	PINSEL0 = (PINSEL0 & ~(3 << 12)) | (2 << 12);
+    11be:	681a      	ldr	r2, [r3, #0]
+    11c0:	f422 5240 	bic.w	r2, r2, #12288	@ 0x3000
+    11c4:	f442 5200 	orr.w	r2, r2, #8192	@ 0x2000
+    11c8:	601a      	str	r2, [r3, #0]
+
+	/* set P0.8 as MISO1 */
+	PINSEL0 = (PINSEL0 & ~(3 << 16)) | (2 << 16);
+    11ca:	681a      	ldr	r2, [r3, #0]
+    11cc:	f422 3240 	bic.w	r2, r2, #196608	@ 0x30000
+    11d0:	f442 3200 	orr.w	r2, r2, #131072	@ 0x20000
+    11d4:	601a      	str	r2, [r3, #0]
+
+	/* set P0.9 as MOSI1 */
+	PINSEL0 = (PINSEL0 & ~(3 << 18)) | (2 << 18);
+    11d6:	681a      	ldr	r2, [r3, #0]
+    11d8:	f422 2240 	bic.w	r2, r2, #786432	@ 0xc0000
+    11dc:	f442 2200 	orr.w	r2, r2, #524288	@ 0x80000
+    11e0:	601a      	str	r2, [r3, #0]
+	 * interface.  Since the CC2400 doesn't have a slave select output, we
+	 * control it with this.  DIO_SSEL should already be configured by
+	 * gpio_init().  We set it high by default because it is an active low
+	 * signal.
+	 */
+	DIO_SSEL_SET;
+    11e2:	f04f 5280 	mov.w	r2, #268435456	@ 0x10000000
+    11e6:	4b05      	ldr	r3, [pc, #20]	@ (11fc <dio_ssp_init+0x4c>)
+    11e8:	f8c3 2098 	str.w	r2, [r3, #152]	@ 0x98
+
+	/* configure DIO_SSP */
+	DIO_SSP_CR0 = (0x7 /* 8 bit transfer */ | SSPCR0_CPOL | SSPCR0_CPHA);
+    11ec:	22c7      	movs	r2, #199	@ 0xc7
+    11ee:	4b04      	ldr	r3, [pc, #16]	@ (1200 <dio_ssp_init+0x50>)
+    11f0:	601a      	str	r2, [r3, #0]
+	DIO_SSP_CR1 = (SSPCR1_MS | SSPCR1_SOD);
+    11f2:	220c      	movs	r2, #12
+    11f4:	605a      	str	r2, [r3, #4]
+}
+    11f6:	4770      	bx	lr
+    11f8:	4002c000 	.word	0x4002c000
+    11fc:	2009c000 	.word	0x2009c000
+    1200:	40030000 	.word	0x40030000
+
+00001204 <atest_init>:
+	 * ADC can optionally be configured for ATEST1 and ATEST2, but for now we
+	 * set them as floating inputs.
+	 */
+
+	/* P0.25 is ATEST1, P0.26 is ATEST2 */
+	PINSEL1 &= ~((0x3 << 20) | (0x3 << 18)); // set as GPIO
+    1204:	4b09      	ldr	r3, [pc, #36]	@ (122c <atest_init+0x28>)
+	FIO0DIR &= ~(0x3 << 25); // set as input
+    1206:	490a      	ldr	r1, [pc, #40]	@ (1230 <atest_init+0x2c>)
+	PINSEL1 &= ~((0x3 << 20) | (0x3 << 18)); // set as GPIO
+    1208:	685a      	ldr	r2, [r3, #4]
+    120a:	f422 1270 	bic.w	r2, r2, #3932160	@ 0x3c0000
+    120e:	605a      	str	r2, [r3, #4]
+	FIO0DIR &= ~(0x3 << 25); // set as input
+    1210:	680a      	ldr	r2, [r1, #0]
+    1212:	f022 62c0 	bic.w	r2, r2, #100663296	@ 0x6000000
+    1216:	600a      	str	r2, [r1, #0]
+	PINMODE1 |= (0x5 << 19); // no pull-up/pull-down
+    1218:	6c5a      	ldr	r2, [r3, #68]	@ 0x44
+    121a:	f442 1220 	orr.w	r2, r2, #2621440	@ 0x280000
+    121e:	645a      	str	r2, [r3, #68]	@ 0x44
+	PINMODE1 &= ~(0x5 << 18); // no pull-up/pull-down
+    1220:	6c5a      	ldr	r2, [r3, #68]	@ 0x44
+    1222:	f422 12a0 	bic.w	r2, r2, #1310720	@ 0x140000
+    1226:	645a      	str	r2, [r3, #68]	@ 0x44
+}
+    1228:	4770      	bx	lr
+    122a:	bf00      	nop
+    122c:	4002c000 	.word	0x4002c000
+    1230:	2009c000 	.word	0x2009c000
+
+00001234 <cc2400_spi>:
+ * 2. We're saving the second SPI peripheral for an expansion port.
+ * 3. The CC2400 needs CSN held low for the entire transaction which the
+ *    LPC17xx SPI peripheral won't do without some workaround anyway.
+ */
+u32 cc2400_spi(u8 len, u32 data)
+{
+    1234:	b570      	push	{r4, r5, r6, lr}
+	u32 msb = 1 << (len - 1);
+    1236:	1e44      	subs	r4, r0, #1
+{
+    1238:	4603      	mov	r3, r0
+
+	/* start transaction by dropping CSN */
+	CSN_CLR;
+    123a:	2020      	movs	r0, #32
+    123c:	4a0c      	ldr	r2, [pc, #48]	@ (1270 <cc2400_spi+0x3c>)
+	u32 msb = 1 << (len - 1);
+    123e:	2501      	movs	r5, #1
+	CSN_CLR;
+    1240:	65d0      	str	r0, [r2, #92]	@ 0x5c
+			MOSI_SET;
+		else
+			MOSI_CLR;
+		data <<= 1;
+
+		SCLK_SET;
+    1242:	2610      	movs	r6, #16
+	while (len--) {
+    1244:	4608      	mov	r0, r1
+	u32 msb = 1 << (len - 1);
+    1246:	fa05 f404 	lsl.w	r4, r5, r4
+	while (len--) {
+    124a:	b913      	cbnz	r3, 1252 <cc2400_spi+0x1e>
+		data |= !!MISO;
+		SCLK_CLR;
+	}
+
+	/* end transaction by raising CSN */
+	CSN_SET;
+    124c:	2320      	movs	r3, #32
+    124e:	6593      	str	r3, [r2, #88]	@ 0x58
+
+	return data;
+}
+    1250:	bd70      	pop	{r4, r5, r6, pc}
+		if (data & msb)
+    1252:	4220      	tst	r0, r4
+			MOSI_SET;
+    1254:	bf14      	ite	ne
+    1256:	6595      	strne	r5, [r2, #88]	@ 0x58
+			MOSI_CLR;
+    1258:	65d5      	streq	r5, [r2, #92]	@ 0x5c
+		SCLK_SET;
+    125a:	6596      	str	r6, [r2, #88]	@ 0x58
+		data |= !!MISO;
+    125c:	6d51      	ldr	r1, [r2, #84]	@ 0x54
+	while (len--) {
+    125e:	3b01      	subs	r3, #1
+		data |= !!MISO;
+    1260:	f3c1 0140 	ubfx	r1, r1, #1, #1
+	while (len--) {
+    1264:	b2db      	uxtb	r3, r3
+		data |= !!MISO;
+    1266:	ea41 0040 	orr.w	r0, r1, r0, lsl #1
+		SCLK_CLR;
+    126a:	65d6      	str	r6, [r2, #92]	@ 0x5c
+    126c:	e7ed      	b.n	124a <cc2400_spi+0x16>
+    126e:	bf00      	nop
+    1270:	2009c000 	.word	0x2009c000
+
+00001274 <cc2400_init>:
+{
+    1274:	b508      	push	{r3, lr}
+	atest_init();
+    1276:	f7ff ffc5 	bl	1204 <atest_init>
+	CC1V8_SET;
+    127a:	f44f 7300 	mov.w	r3, #512	@ 0x200
+    127e:	4908      	ldr	r1, [pc, #32]	@ (12a0 <cc2400_init+0x2c>)
+	wait_us(50);
+    1280:	2032      	movs	r0, #50	@ 0x32
+	CC1V8_SET;
+    1282:	638b      	str	r3, [r1, #56]	@ 0x38
+	wait_us(50);
+    1284:	f7ff ff3a 	bl	10fc <wait_us>
+	CSN_SET;
+    1288:	2320      	movs	r3, #32
+    128a:	658b      	str	r3, [r1, #88]	@ 0x58
+	CC3V3_SET;
+    128c:	f44f 4380 	mov.w	r3, #16384	@ 0x4000
+
+/* write 16 bit value to a register */
+void cc2400_set(u8 reg, u16 val)
+{
+	u32 out = (reg << 16) | val;
+	cc2400_spi(24, out);
+    1290:	2018      	movs	r0, #24
+	CC3V3_SET;
+    1292:	638b      	str	r3, [r1, #56]	@ 0x38
+	cc2400_spi(24, out);
+    1294:	4903      	ldr	r1, [pc, #12]	@ (12a4 <cc2400_init+0x30>)
+}
+    1296:	e8bd 4008 	ldmia.w	sp!, {r3, lr}
+	cc2400_spi(24, out);
+    129a:	f7ff bfcb 	b.w	1234 <cc2400_spi>
+    129e:	bf00      	nop
+    12a0:	2009c000 	.word	0x2009c000
+    12a4:	000d7fff 	.word	0x000d7fff
+
+000012a8 <cc2400_get>:
+{
+    12a8:	b508      	push	{r3, lr}
+	u32 out = (reg | 0x80) << 16;
+    12aa:	f040 0180 	orr.w	r1, r0, #128	@ 0x80
+	in = cc2400_spi(24, out);
+    12ae:	0409      	lsls	r1, r1, #16
+    12b0:	2018      	movs	r0, #24
+    12b2:	f7ff ffbf 	bl	1234 <cc2400_spi>
+}
+    12b6:	b280      	uxth	r0, r0
+    12b8:	bd08      	pop	{r3, pc}
+
+000012ba <cc2400_set>:
+	cc2400_spi(24, out);
+    12ba:	ea41 4100 	orr.w	r1, r1, r0, lsl #16
+    12be:	2018      	movs	r0, #24
+    12c0:	f7ff bfb8 	b.w	1234 <cc2400_spi>
+
+000012c4 <cc2400_get8>:
+}
+
+/* read 8 bit value from a register */
+u8 cc2400_get8(u8 reg)
+{
+    12c4:	b508      	push	{r3, lr}
+	u16 in;
+
+	u16 out = (reg | 0x80) << 8;
+    12c6:	0201      	lsls	r1, r0, #8
+	in = cc2400_spi(16, out);
+    12c8:	f441 4100 	orr.w	r1, r1, #32768	@ 0x8000
+    12cc:	2010      	movs	r0, #16
+    12ce:	f7ff ffb1 	bl	1234 <cc2400_spi>
+	return in & 0xFF;
+}
+    12d2:	b2c0      	uxtb	r0, r0
+    12d4:	bd08      	pop	{r3, pc}
+
+000012d6 <cc2400_set8>:
+
+/* write 8 bit value to a register */
+void cc2400_set8(u8 reg, u8 val)
+{
+	u32 out = (reg << 8) | val;
+	cc2400_spi(16, out);
+    12d6:	ea41 2100 	orr.w	r1, r1, r0, lsl #8
+    12da:	2010      	movs	r0, #16
+    12dc:	f7ff bfaa 	b.w	1234 <cc2400_spi>
+
+000012e0 <cc2400_status>:
+	CSN_SET;
+}
+
+/* get the status */
+u8 cc2400_status()
+{
+    12e0:	b508      	push	{r3, lr}
+	return cc2400_spi(8, 0);
+    12e2:	2100      	movs	r1, #0
+    12e4:	2008      	movs	r0, #8
+    12e6:	f7ff ffa5 	bl	1234 <cc2400_spi>
+}
+    12ea:	b2c0      	uxtb	r0, r0
+    12ec:	bd08      	pop	{r3, pc}
+
+000012ee <cc2400_strobe>:
+
+/* strobe register, return status */
+u8 cc2400_strobe(u8 reg)
+{
+    12ee:	b508      	push	{r3, lr}
+    12f0:	4601      	mov	r1, r0
+	return cc2400_spi(8, reg);
+    12f2:	2008      	movs	r0, #8
+    12f4:	f7ff ff9e 	bl	1234 <cc2400_spi>
+}
+    12f8:	b2c0      	uxtb	r0, r0
+    12fa:	bd08      	pop	{r3, pc}
+
+000012fc <cc2400_reset>:
+/*
+ * Warning: This should only be called when running on the internal oscillator.
+ * Otherwise use clock_start().
+ */
+void cc2400_reset()
+{
+    12fc:	b508      	push	{r3, lr}
+	cc2400_spi(24, out);
+    12fe:	2100      	movs	r1, #0
+    1300:	2018      	movs	r0, #24
+    1302:	f7ff ff97 	bl	1234 <cc2400_spi>
+	cc2400_set(MAIN, 0x0000);
+	while (cc2400_get(MAIN) != 0x0000);
+    1306:	2000      	movs	r0, #0
+    1308:	f7ff ffce 	bl	12a8 <cc2400_get>
+    130c:	2800      	cmp	r0, #0
+    130e:	d1fa      	bne.n	1306 <cc2400_reset+0xa>
+	cc2400_spi(24, out);
+    1310:	f44f 4100 	mov.w	r1, #32768	@ 0x8000
+    1314:	2018      	movs	r0, #24
+    1316:	f7ff ff8d 	bl	1234 <cc2400_spi>
+	cc2400_set(MAIN, 0x8000);
+	while (cc2400_get(MAIN) != 0x8000);
+    131a:	2000      	movs	r0, #0
+    131c:	f7ff ffc4 	bl	12a8 <cc2400_get>
+    1320:	f5b0 4f00 	cmp.w	r0, #32768	@ 0x8000
+    1324:	d1f9      	bne.n	131a <cc2400_reset+0x1e>
+}
+    1326:	bd08      	pop	{r3, pc}
+
+00001328 <clock_start>:
+
+/* activate the CC2400's 16 MHz oscillator and sync LPC175x to it */
+void clock_start()
+{
+    1328:	b508      	push	{r3, lr}
+	/* configure flash accelerator for higher clock rate */
+	FLASHCFG = (0x03A | (FLASHTIM << 12));
+    132a:	f244 023a 	movw	r2, #16442	@ 0x403a
+    132e:	4b51      	ldr	r3, [pc, #324]	@ (1474 <clock_start+0x14c>)
+    1330:	601a      	str	r2, [r3, #0]
+
+	/* switch to the internal oscillator if necessary */
+	CLKSRCSEL = 0;
+    1332:	2200      	movs	r2, #0
+    1334:	f8c3 210c 	str.w	r2, [r3, #268]	@ 0x10c
+
+	/* disconnect PLL0 */
+	PLL0CON &= ~PLL0CON_PLLC0;
+    1338:	f8d3 2080 	ldr.w	r2, [r3, #128]	@ 0x80
+    133c:	f022 0202 	bic.w	r2, r2, #2
+    1340:	f8c3 2080 	str.w	r2, [r3, #128]	@ 0x80
+	PLL0FEED_SEQUENCE;
+    1344:	22aa      	movs	r2, #170	@ 0xaa
+    1346:	f8c3 208c 	str.w	r2, [r3, #140]	@ 0x8c
+    134a:	2255      	movs	r2, #85	@ 0x55
+    134c:	f8c3 208c 	str.w	r2, [r3, #140]	@ 0x8c
+	while (PLL0STAT & PLL0STAT_PLLC0_STAT);
+    1350:	f8d3 2088 	ldr.w	r2, [r3, #136]	@ 0x88
+    1354:	0192      	lsls	r2, r2, #6
+    1356:	d4fb      	bmi.n	1350 <clock_start+0x28>
+
+	/* turn off PLL0 */
+	PLL0CON &= ~PLL0CON_PLLE0;
+    1358:	f8d3 2080 	ldr.w	r2, [r3, #128]	@ 0x80
+    135c:	f022 0201 	bic.w	r2, r2, #1
+    1360:	f8c3 2080 	str.w	r2, [r3, #128]	@ 0x80
+	PLL0FEED_SEQUENCE;
+    1364:	22aa      	movs	r2, #170	@ 0xaa
+    1366:	f8c3 208c 	str.w	r2, [r3, #140]	@ 0x8c
+    136a:	2255      	movs	r2, #85	@ 0x55
+    136c:	f8c3 208c 	str.w	r2, [r3, #140]	@ 0x8c
+	while (PLL0STAT & PLL0STAT_PLLE0_STAT);
+    1370:	4a40      	ldr	r2, [pc, #256]	@ (1474 <clock_start+0x14c>)
+    1372:	f8d2 3088 	ldr.w	r3, [r2, #136]	@ 0x88
+    1376:	f013 7380 	ands.w	r3, r3, #16777216	@ 0x1000000
+    137a:	d1fa      	bne.n	1372 <clock_start+0x4a>
+
+	/* temporarily set CPU clock divider to 1 */
+	CCLKCFG = 0;
+    137c:	f8c2 3104 	str.w	r3, [r2, #260]	@ 0x104
+
+	/* configure CC2400 oscillator, output carrier sense on GIO6 */
+	cc2400_reset();
+    1380:	f7ff ffbc 	bl	12fc <cc2400_reset>
+	cc2400_spi(24, out);
+    1384:	2018      	movs	r0, #24
+    1386:	493c      	ldr	r1, [pc, #240]	@ (1478 <clock_start+0x150>)
+    1388:	f7ff ff54 	bl	1234 <cc2400_spi>
+	cc2400_set(IOCFG, (GIO_CARRIER_SENSE_N << 9) | (GIO_CLK_16M << 3));
+	cc2400_strobe(SXOSCON);
+    138c:	2060      	movs	r0, #96	@ 0x60
+    138e:	f7ff ffae 	bl	12ee <cc2400_strobe>
+	while (!(cc2400_status() & XOSC16M_STABLE));
+    1392:	f7ff ffa5 	bl	12e0 <cc2400_status>
+    1396:	0640      	lsls	r0, r0, #25
+    1398:	d5fb      	bpl.n	1392 <clock_start+0x6a>
+
+	/* activate main oscillator */
+	SCS = SCS_OSCEN;
+    139a:	2220      	movs	r2, #32
+    139c:	4b35      	ldr	r3, [pc, #212]	@ (1474 <clock_start+0x14c>)
+    139e:	f8c3 21a0 	str.w	r2, [r3, #416]	@ 0x1a0
+	while (!(SCS & SCS_OSCSTAT));
+    13a2:	f8d3 21a0 	ldr.w	r2, [r3, #416]	@ 0x1a0
+    13a6:	0651      	lsls	r1, r2, #25
+    13a8:	d5fb      	bpl.n	13a2 <clock_start+0x7a>
+#ifdef TC13BADGE
+	PCLKSEL0  = (1 << 2); /* TIMER0 at cclk (30 MHz) */
+	PCLKSEL1  = 0;
+#else
+        // XXX here
+	PCLKSEL0  = (2 << 2) | (2 << 4); /* TIMER0 and TIMER1 at cclk/2 (50 MHz) */
+    13aa:	2228      	movs	r2, #40	@ 0x28
+    13ac:	f8c3 21a8 	str.w	r2, [r3, #424]	@ 0x1a8
+	PCLKSEL1  = (2 << 12); /* TIMER2 at cclk/2 (50 MHz) */
+    13b0:	f44f 5200 	mov.w	r2, #8192	@ 0x2000
+    13b4:	f8c3 21ac 	str.w	r2, [r3, #428]	@ 0x1ac
+#endif
+
+	/* switch to main oscillator */
+	CLKSRCSEL = 1;
+    13b8:	2201      	movs	r2, #1
+
+	/* configure PLL0 */
+	PLL0CFG = (MSEL0 << 0) | (NSEL0 << 16);
+	PLL0FEED_SEQUENCE;
+    13ba:	20aa      	movs	r0, #170	@ 0xaa
+    13bc:	2155      	movs	r1, #85	@ 0x55
+	CLKSRCSEL = 1;
+    13be:	f8c3 210c 	str.w	r2, [r3, #268]	@ 0x10c
+	PLL0CFG = (MSEL0 << 0) | (NSEL0 << 16);
+    13c2:	4a2e      	ldr	r2, [pc, #184]	@ (147c <clock_start+0x154>)
+    13c4:	f8c3 2084 	str.w	r2, [r3, #132]	@ 0x84
+	PLL0FEED_SEQUENCE;
+    13c8:	f8c3 008c 	str.w	r0, [r3, #140]	@ 0x8c
+    13cc:	f8c3 108c 	str.w	r1, [r3, #140]	@ 0x8c
+
+	/* turn on PLL0 */
+	PLL0CON |= PLL0CON_PLLE0;
+    13d0:	f8d3 2080 	ldr.w	r2, [r3, #128]	@ 0x80
+    13d4:	f042 0201 	orr.w	r2, r2, #1
+    13d8:	f8c3 2080 	str.w	r2, [r3, #128]	@ 0x80
+	PLL0FEED_SEQUENCE;
+    13dc:	f8c3 008c 	str.w	r0, [r3, #140]	@ 0x8c
+    13e0:	f8c3 108c 	str.w	r1, [r3, #140]	@ 0x8c
+	while (!(PLL0STAT & PLL0STAT_PLLE0_STAT));
+    13e4:	4b23      	ldr	r3, [pc, #140]	@ (1474 <clock_start+0x14c>)
+    13e6:	f8d3 2088 	ldr.w	r2, [r3, #136]	@ 0x88
+    13ea:	01d2      	lsls	r2, r2, #7
+    13ec:	d5fb      	bpl.n	13e6 <clock_start+0xbe>
+
+	/* set CPU clock divider */
+	CCLKCFG = CCLKSEL;
+    13ee:	2203      	movs	r2, #3
+    13f0:	f8c3 2104 	str.w	r2, [r3, #260]	@ 0x104
+
+	/* connect PLL0 */
+	PLL0CON |= PLL0CON_PLLC0;
+    13f4:	f8d3 2080 	ldr.w	r2, [r3, #128]	@ 0x80
+    13f8:	f042 0202 	orr.w	r2, r2, #2
+    13fc:	f8c3 2080 	str.w	r2, [r3, #128]	@ 0x80
+	PLL0FEED_SEQUENCE;
+    1400:	22aa      	movs	r2, #170	@ 0xaa
+    1402:	f8c3 208c 	str.w	r2, [r3, #140]	@ 0x8c
+    1406:	2255      	movs	r2, #85	@ 0x55
+    1408:	f8c3 208c 	str.w	r2, [r3, #140]	@ 0x8c
+	while (!(PLL0STAT & PLL0STAT_PLLC0_STAT));
+    140c:	4b19      	ldr	r3, [pc, #100]	@ (1474 <clock_start+0x14c>)
+    140e:	f8d3 2088 	ldr.w	r2, [r3, #136]	@ 0x88
+    1412:	0190      	lsls	r0, r2, #6
+    1414:	d5fb      	bpl.n	140e <clock_start+0xe6>
+
+	/* configure PLL1 */
+	PLL1CFG = (MSEL1 << 0) | (PSEL1 << 5);
+    1416:	2222      	movs	r2, #34	@ 0x22
+	PLL1FEED_SEQUENCE;
+    1418:	20aa      	movs	r0, #170	@ 0xaa
+    141a:	2155      	movs	r1, #85	@ 0x55
+	PLL1CFG = (MSEL1 << 0) | (PSEL1 << 5);
+    141c:	f8c3 20a4 	str.w	r2, [r3, #164]	@ 0xa4
+	PLL1FEED_SEQUENCE;
+    1420:	f8c3 00ac 	str.w	r0, [r3, #172]	@ 0xac
+    1424:	f8c3 10ac 	str.w	r1, [r3, #172]	@ 0xac
+
+	/* turn on PLL1 */
+	PLL1CON |= PLL1CON_PLLE1;
+    1428:	f8d3 20a0 	ldr.w	r2, [r3, #160]	@ 0xa0
+    142c:	f042 0201 	orr.w	r2, r2, #1
+    1430:	f8c3 20a0 	str.w	r2, [r3, #160]	@ 0xa0
+	PLL1FEED_SEQUENCE;
+    1434:	f8c3 00ac 	str.w	r0, [r3, #172]	@ 0xac
+    1438:	f8c3 10ac 	str.w	r1, [r3, #172]	@ 0xac
+	while (!(PLL1STAT & PLL1STAT_PLLE1_STAT));
+    143c:	4b0d      	ldr	r3, [pc, #52]	@ (1474 <clock_start+0x14c>)
+    143e:	f8d3 20a8 	ldr.w	r2, [r3, #168]	@ 0xa8
+    1442:	05d1      	lsls	r1, r2, #23
+    1444:	d5fb      	bpl.n	143e <clock_start+0x116>
+	while (!(PLL1STAT & PLL1STAT_PLOCK1));
+    1446:	f8d3 20a8 	ldr.w	r2, [r3, #168]	@ 0xa8
+    144a:	0552      	lsls	r2, r2, #21
+    144c:	d5fb      	bpl.n	1446 <clock_start+0x11e>
+
+	/* connect PLL1 */
+	PLL1CON |= PLL1CON_PLLC1;
+    144e:	f8d3 20a0 	ldr.w	r2, [r3, #160]	@ 0xa0
+    1452:	f042 0202 	orr.w	r2, r2, #2
+    1456:	f8c3 20a0 	str.w	r2, [r3, #160]	@ 0xa0
+	PLL1FEED_SEQUENCE;
+    145a:	22aa      	movs	r2, #170	@ 0xaa
+    145c:	f8c3 20ac 	str.w	r2, [r3, #172]	@ 0xac
+    1460:	2255      	movs	r2, #85	@ 0x55
+    1462:	f8c3 20ac 	str.w	r2, [r3, #172]	@ 0xac
+	while (!(PLL1STAT & PLL1STAT_PLLC1_STAT));
+    1466:	4a03      	ldr	r2, [pc, #12]	@ (1474 <clock_start+0x14c>)
+    1468:	f8d2 30a8 	ldr.w	r3, [r2, #168]	@ 0xa8
+    146c:	059b      	lsls	r3, r3, #22
+    146e:	d5fb      	bpl.n	1468 <clock_start+0x140>
+}
+    1470:	bd08      	pop	{r3, pc}
+    1472:	bf00      	nop
+    1474:	400fc000 	.word	0x400fc000
+    1478:	00081570 	.word	0x00081570
+    147c:	00010018 	.word	0x00010018
+
+00001480 <reset>:
+
+/* reset the LPC17xx, the cc2400 will be handled by the boot code */
+void reset()
+{
+    1480:	b508      	push	{r3, lr}
+	all_pins_off();
+    1482:	f7ff fe57 	bl	1134 <all_pins_off>
+
+	/* Enable the watchdog with reset enabled */
+	USRLED_CLR;
+    1486:	2202      	movs	r2, #2
+    1488:	4b08      	ldr	r3, [pc, #32]	@ (14ac <reset+0x2c>)
+	wait_us(seconds * 1000000);
+    148a:	4809      	ldr	r0, [pc, #36]	@ (14b0 <reset+0x30>)
+	USRLED_CLR;
+    148c:	63da      	str	r2, [r3, #60]	@ 0x3c
+	WDMOD |= WDMOD_WDEN | WDMOD_WDRESET;
+    148e:	f04f 4380 	mov.w	r3, #1073741824	@ 0x40000000
+    1492:	681a      	ldr	r2, [r3, #0]
+    1494:	f042 0203 	orr.w	r2, r2, #3
+    1498:	601a      	str	r2, [r3, #0]
+	WDFEED_SEQUENCE;
+    149a:	22aa      	movs	r2, #170	@ 0xaa
+    149c:	609a      	str	r2, [r3, #8]
+    149e:	2255      	movs	r2, #85	@ 0x55
+    14a0:	609a      	str	r2, [r3, #8]
+	
+	/* Set watchdog timeout to 256us (minimum) */
+	
+	/* sleep for 1s (minimum) */
+	wait(1);
+}
+    14a2:	e8bd 4008 	ldmia.w	sp!, {r3, lr}
+	wait_us(seconds * 1000000);
+    14a6:	f7ff be29 	b.w	10fc <wait_us>
+    14aa:	bf00      	nop
+    14ac:	2009c000 	.word	0x2009c000
+    14b0:	000f4240 	.word	0x000f4240
+
+000014b4 <DataIn>:
+
+/**
+	Sends next chunk of data (possibly 0 bytes) to host
+ */
+static void DataIn(void)
+{
+    14b4:	b538      	push	{r3, r4, r5, lr}
+	int iChunk;
+
+	iChunk = MIN(MAX_PACKET_SIZE0, iResidue);
+    14b6:	4c08      	ldr	r4, [pc, #32]	@ (14d8 <DataIn+0x24>)
+	USBHwEPWrite(0x80, pbData, iChunk);
+    14b8:	2080      	movs	r0, #128	@ 0x80
+	iChunk = MIN(MAX_PACKET_SIZE0, iResidue);
+    14ba:	6825      	ldr	r5, [r4, #0]
+	USBHwEPWrite(0x80, pbData, iChunk);
+    14bc:	6861      	ldr	r1, [r4, #4]
+	iChunk = MIN(MAX_PACKET_SIZE0, iResidue);
+    14be:	2d40      	cmp	r5, #64	@ 0x40
+    14c0:	bfa8      	it	ge
+    14c2:	2540      	movge	r5, #64	@ 0x40
+	USBHwEPWrite(0x80, pbData, iChunk);
+    14c4:	462a      	mov	r2, r5
+    14c6:	f000 f959 	bl	177c <USBHwEPWrite>
+	pbData += iChunk;
+    14ca:	6863      	ldr	r3, [r4, #4]
+    14cc:	442b      	add	r3, r5
+    14ce:	6063      	str	r3, [r4, #4]
+	iResidue -= iChunk;
+    14d0:	6823      	ldr	r3, [r4, #0]
+    14d2:	1b5b      	subs	r3, r3, r5
+    14d4:	6023      	str	r3, [r4, #0]
+}
+    14d6:	bd38      	pop	{r3, r4, r5, pc}
+    14d8:	100021a0 	.word	0x100021a0
+
+000014dc <_HandleRequest.constprop.0>:
+static BOOL _HandleRequest(TSetupPacket *pSetup, int *piLen, U8 **ppbData)
+    14dc:	b537      	push	{r0, r1, r2, r4, r5, lr}
+	iType = REQTYPE_GET_TYPE(pSetup->bmRequestType);
+    14de:	4c11      	ldr	r4, [pc, #68]	@ (1524 <_HandleRequest.constprop.0+0x48>)
+    14e0:	7a25      	ldrb	r5, [r4, #8]
+    14e2:	f3c5 1541 	ubfx	r5, r5, #5, #2
+	if(iType == REQTYPE_TYPE_VENDOR) {
+    14e6:	2d02      	cmp	r5, #2
+    14e8:	d10d      	bne.n	1506 <_HandleRequest.constprop.0+0x2a>
+		BOOL fFilterStatus = FALSE;
+    14ea:	2300      	movs	r3, #0
+		if(USBFilterOsVendorMessage(pSetup, &fFilterStatus, piLen, ppbData)) {
+    14ec:	f104 0210 	add.w	r2, r4, #16
+		BOOL fFilterStatus = FALSE;
+    14f0:	9301      	str	r3, [sp, #4]
+		if(USBFilterOsVendorMessage(pSetup, &fFilterStatus, piLen, ppbData)) {
+    14f2:	a901      	add	r1, sp, #4
+    14f4:	1d23      	adds	r3, r4, #4
+    14f6:	f104 0008 	add.w	r0, r4, #8
+    14fa:	f000 fa55 	bl	19a8 <USBFilterOsVendorMessage>
+    14fe:	b110      	cbz	r0, 1506 <_HandleRequest.constprop.0+0x2a>
+			return fFilterStatus;
+    1500:	9801      	ldr	r0, [sp, #4]
+}
+    1502:	b003      	add	sp, #12
+    1504:	bd30      	pop	{r4, r5, pc}
+	pfnHandler = apfnReqHandlers[iType];
+    1506:	eb04 0485 	add.w	r4, r4, r5, lsl #2
+    150a:	6963      	ldr	r3, [r4, #20]
+	if (pfnHandler == NULL) {
+    150c:	b13b      	cbz	r3, 151e <_HandleRequest.constprop.0+0x42>
+	return pfnHandler(pSetup, piLen, ppbData);
+    150e:	4a06      	ldr	r2, [pc, #24]	@ (1528 <_HandleRequest.constprop.0+0x4c>)
+    1510:	f102 010c 	add.w	r1, r2, #12
+    1514:	1d10      	adds	r0, r2, #4
+}
+    1516:	b003      	add	sp, #12
+    1518:	e8bd 4030 	ldmia.w	sp!, {r4, r5, lr}
+	return pfnHandler(pSetup, piLen, ppbData);
+    151c:	4718      	bx	r3
+		return FALSE;
+    151e:	4618      	mov	r0, r3
+    1520:	e7ef      	b.n	1502 <_HandleRequest.constprop.0+0x26>
+    1522:	bf00      	nop
+    1524:	100021a0 	.word	0x100021a0
+    1528:	100021a4 	.word	0x100021a4
+
+0000152c <USBHandleControlTransfer>:
+ *
+ *	@param [in]	bEP		Endpoint address
+ *	@param [in]	bEPStat	Endpoint status
+ */
+void USBHandleControlTransfer(U8 bEP, U8 bEPStat)
+{
+    152c:	b510      	push	{r4, lr}
+	int iChunk, iType;
+
+	if (bEP == 0x00) {
+    152e:	2800      	cmp	r0, #0
+    1530:	d147      	bne.n	15c2 <USBHandleControlTransfer+0x96>
+		// OUT transfer
+		if (bEPStat & EP_STATUS_SETUP) {
+    1532:	f011 0104 	ands.w	r1, r1, #4
+    1536:	4c24      	ldr	r4, [pc, #144]	@ (15c8 <USBHandleControlTransfer+0x9c>)
+    1538:	d023      	beq.n	1582 <USBHandleControlTransfer+0x56>
+			// setup packet, reset request message state machine
+			USBHwEPRead(0x00, (U8 *)&Setup, sizeof(Setup));
+    153a:	2208      	movs	r2, #8
+    153c:	18a1      	adds	r1, r4, r2
+    153e:	f000 f945 	bl	17cc <USBHwEPRead>
+			DBG("S%x", Setup.bRequest);
+
+			// defaults for data pointer and residue
+			iType = REQTYPE_GET_TYPE(Setup.bmRequestType);
+    1542:	7a23      	ldrb	r3, [r4, #8]
+    1544:	f3c3 1241 	ubfx	r2, r3, #5, #2
+			pbData = apbDataStore[iType];
+    1548:	eb04 0282 	add.w	r2, r4, r2, lsl #2
+    154c:	6a52      	ldr	r2, [r2, #36]	@ 0x24
+    154e:	6062      	str	r2, [r4, #4]
+			iResidue = Setup.wLength;
+    1550:	89e2      	ldrh	r2, [r4, #14]
+    1552:	6022      	str	r2, [r4, #0]
+			iLen = Setup.wLength;
+    1554:	6122      	str	r2, [r4, #16]
+
+			if ((Setup.wLength == 0) ||
+    1556:	b10a      	cbz	r2, 155c <USBHandleControlTransfer+0x30>
+    1558:	09db      	lsrs	r3, r3, #7
+    155a:	d034      	beq.n	15c6 <USBHandleControlTransfer+0x9a>
+				(REQTYPE_GET_DIR(Setup.bmRequestType) == REQTYPE_DIR_TO_HOST)) {
+				// ask installed handler to process request
+				if (!_HandleRequest(&Setup, &iLen, &pbData)) {
+    155c:	f7ff ffbe 	bl	14dc <_HandleRequest.constprop.0>
+    1560:	b928      	cbnz	r0, 156e <USBHandleControlTransfer+0x42>
+		DataIn();
+	}
+	else {
+		ASSERT(FALSE);
+	}
+}
+    1562:	e8bd 4010 	ldmia.w	sp!, {r4, lr}
+	USBHwEPStall(0x80, TRUE);
+    1566:	2101      	movs	r1, #1
+    1568:	2080      	movs	r0, #128	@ 0x80
+    156a:	f000 b8fb 	b.w	1764 <USBHwEPStall>
+				iResidue = MIN(iLen, Setup.wLength);
+    156e:	89e2      	ldrh	r2, [r4, #14]
+    1570:	6923      	ldr	r3, [r4, #16]
+    1572:	429a      	cmp	r2, r3
+    1574:	bfd4      	ite	le
+    1576:	6022      	strle	r2, [r4, #0]
+    1578:	6023      	strgt	r3, [r4, #0]
+}
+    157a:	e8bd 4010 	ldmia.w	sp!, {r4, lr}
+					DataIn();
+    157e:	f7ff bf99 	b.w	14b4 <DataIn>
+			if (iResidue > 0) {
+    1582:	6822      	ldr	r2, [r4, #0]
+    1584:	2a00      	cmp	r2, #0
+    1586:	dd17      	ble.n	15b8 <USBHandleControlTransfer+0x8c>
+				iChunk = USBHwEPRead(0x00, pbData, iResidue);
+    1588:	6861      	ldr	r1, [r4, #4]
+    158a:	f000 f91f 	bl	17cc <USBHwEPRead>
+				if (iChunk < 0) {
+    158e:	2800      	cmp	r0, #0
+    1590:	dbe7      	blt.n	1562 <USBHandleControlTransfer+0x36>
+				pbData += iChunk;
+    1592:	6863      	ldr	r3, [r4, #4]
+    1594:	4403      	add	r3, r0
+    1596:	6063      	str	r3, [r4, #4]
+				iResidue -= iChunk;
+    1598:	6823      	ldr	r3, [r4, #0]
+    159a:	1a1b      	subs	r3, r3, r0
+    159c:	6023      	str	r3, [r4, #0]
+				if (iResidue == 0) {
+    159e:	b993      	cbnz	r3, 15c6 <USBHandleControlTransfer+0x9a>
+					iType = REQTYPE_GET_TYPE(Setup.bmRequestType);
+    15a0:	7a23      	ldrb	r3, [r4, #8]
+    15a2:	f3c3 1341 	ubfx	r3, r3, #5, #2
+					pbData = apbDataStore[iType];
+    15a6:	eb04 0383 	add.w	r3, r4, r3, lsl #2
+    15aa:	6a5b      	ldr	r3, [r3, #36]	@ 0x24
+    15ac:	6063      	str	r3, [r4, #4]
+					if (!_HandleRequest(&Setup, &iLen, &pbData)) {
+    15ae:	f7ff ff95 	bl	14dc <_HandleRequest.constprop.0>
+    15b2:	2800      	cmp	r0, #0
+    15b4:	d1e1      	bne.n	157a <USBHandleControlTransfer+0x4e>
+    15b6:	e7d4      	b.n	1562 <USBHandleControlTransfer+0x36>
+				iChunk = USBHwEPRead(0x00, NULL, 0);
+    15b8:	460a      	mov	r2, r1
+}
+    15ba:	e8bd 4010 	ldmia.w	sp!, {r4, lr}
+				iChunk = USBHwEPRead(0x00, NULL, 0);
+    15be:	f000 b905 	b.w	17cc <USBHwEPRead>
+	else if (bEP == 0x80) {
+    15c2:	2880      	cmp	r0, #128	@ 0x80
+    15c4:	d0d9      	beq.n	157a <USBHandleControlTransfer+0x4e>
+}
+    15c6:	bd10      	pop	{r4, pc}
+    15c8:	100021a0 	.word	0x100021a0
+
+000015cc <USBRegisterRequestHandler>:
+ */
+void USBRegisterRequestHandler(int iType, TFnHandleRequest *pfnHandler, U8 *pbDataStore)
+{
+	ASSERT(iType >= 0);
+	ASSERT(iType < 4);
+	apfnReqHandlers[iType] = pfnHandler;
+    15cc:	4b02      	ldr	r3, [pc, #8]	@ (15d8 <USBRegisterRequestHandler+0xc>)
+    15ce:	eb03 0080 	add.w	r0, r3, r0, lsl #2
+    15d2:	6141      	str	r1, [r0, #20]
+	apbDataStore[iType] = pbDataStore;
+    15d4:	6242      	str	r2, [r0, #36]	@ 0x24
+}
+    15d6:	4770      	bx	lr
+    15d8:	100021a0 	.word	0x100021a0
+
+000015dc <HandleUsbReset>:
+static void HandleUsbReset(U8 bDevStatus)
+{
+	if (bDevStatus & DEV_STATUS_RESET) {
+		DBG("\n!");
+	}
+}
+    15dc:	4770      	bx	lr
+    15de:	0000      	movs	r0, r0
+
+000015e0 <USBInit>:
+	installing default callbacks.
+	
+	@return TRUE if initialisation was successful
+ */
+BOOL USBInit(void)
+{
+    15e0:	b508      	push	{r3, lr}
+	// init hardware
+	USBHwInit();
+    15e2:	f000 f991 	bl	1908 <USBHwInit>
+	
+	// register bus reset handler
+	USBHwRegisterDevIntHandler(HandleUsbReset);
+    15e6:	480d      	ldr	r0, [pc, #52]	@ (161c <USBInit+0x3c>)
+    15e8:	f000 f886 	bl	16f8 <USBHwRegisterDevIntHandler>
+	
+	// register control transfer handler on EP0
+	USBHwRegisterEPIntHandler(0x00, USBHandleControlTransfer);
+    15ec:	2000      	movs	r0, #0
+    15ee:	490c      	ldr	r1, [pc, #48]	@ (1620 <USBInit+0x40>)
+    15f0:	f000 f866 	bl	16c0 <USBHwRegisterEPIntHandler>
+	USBHwRegisterEPIntHandler(0x80, USBHandleControlTransfer);
+    15f4:	2080      	movs	r0, #128	@ 0x80
+    15f6:	490a      	ldr	r1, [pc, #40]	@ (1620 <USBInit+0x40>)
+    15f8:	f000 f862 	bl	16c0 <USBHwRegisterEPIntHandler>
+	
+	// setup control endpoints
+	USBHwEPConfig(0x00, MAX_PACKET_SIZE0);
+    15fc:	2140      	movs	r1, #64	@ 0x40
+    15fe:	2000      	movs	r0, #0
+    1600:	f000 f83e 	bl	1680 <USBHwEPConfig>
+	USBHwEPConfig(0x80, MAX_PACKET_SIZE0);
+    1604:	2140      	movs	r1, #64	@ 0x40
+    1606:	2080      	movs	r0, #128	@ 0x80
+    1608:	f000 f83a 	bl	1680 <USBHwEPConfig>
+	
+	// register standard request handler
+	USBRegisterRequestHandler(REQTYPE_TYPE_STANDARD, USBHandleStandardRequest, abStdReqData);
+    160c:	2000      	movs	r0, #0
+    160e:	4a05      	ldr	r2, [pc, #20]	@ (1624 <USBInit+0x44>)
+    1610:	4905      	ldr	r1, [pc, #20]	@ (1628 <USBInit+0x48>)
+    1612:	f7ff ffdb 	bl	15cc <USBRegisterRequestHandler>
+
+	return TRUE;
+}
+    1616:	2001      	movs	r0, #1
+    1618:	bd08      	pop	{r3, pc}
+    161a:	bf00      	nop
+    161c:	000015dd 	.word	0x000015dd
+    1620:	0000152d 	.word	0x0000152d
+    1624:	100021d4 	.word	0x100021d4
+    1628:	00001a69 	.word	0x00001a69
+
+0000162c <Wait4DevInt>:
+    while ((USBDevIntSt & dwIntr) != dwIntr);
+    162c:	4b04      	ldr	r3, [pc, #16]	@ (1640 <Wait4DevInt+0x14>)
+    162e:	f8d3 2200 	ldr.w	r2, [r3, #512]	@ 0x200
+    1632:	ea30 0202 	bics.w	r2, r0, r2
+    1636:	d1fa      	bne.n	162e <Wait4DevInt+0x2>
+    USBDevIntClr = dwIntr;
+    1638:	f8c3 0208 	str.w	r0, [r3, #520]	@ 0x208
+}
+    163c:	4770      	bx	lr
+    163e:	bf00      	nop
+    1640:	5000c000 	.word	0x5000c000
+
+00001644 <USBHwCmd>:
+    USBDevIntClr = CDFULL | CCEMTY;
+    1644:	2230      	movs	r2, #48	@ 0x30
+    1646:	4b05      	ldr	r3, [pc, #20]	@ (165c <USBHwCmd+0x18>)
+    USBCmdCode = 0x00000500 | (bCmd << 16);
+    1648:	0400      	lsls	r0, r0, #16
+    164a:	f440 60a0 	orr.w	r0, r0, #1280	@ 0x500
+    USBDevIntClr = CDFULL | CCEMTY;
+    164e:	f8c3 2208 	str.w	r2, [r3, #520]	@ 0x208
+    USBCmdCode = 0x00000500 | (bCmd << 16);
+    1652:	f8c3 0210 	str.w	r0, [r3, #528]	@ 0x210
+    Wait4DevInt(CCEMTY);
+    1656:	2010      	movs	r0, #16
+    1658:	f7ff bfe8 	b.w	162c <Wait4DevInt>
+    165c:	5000c000 	.word	0x5000c000
+
+00001660 <USBHwCmdWrite>:
+{
+    1660:	b508      	push	{r3, lr}
+    USBHwCmd(bCmd);
+    1662:	f7ff ffef 	bl	1644 <USBHwCmd>
+    USBCmdCode = 0x00000100 | (bData << 16);
+    1666:	0409      	lsls	r1, r1, #16
+    1668:	4b04      	ldr	r3, [pc, #16]	@ (167c <USBHwCmdWrite+0x1c>)
+    166a:	f441 7180 	orr.w	r1, r1, #256	@ 0x100
+    166e:	f8c3 1210 	str.w	r1, [r3, #528]	@ 0x210
+    Wait4DevInt(CCEMTY);
+    1672:	2010      	movs	r0, #16
+}
+    1674:	e8bd 4008 	ldmia.w	sp!, {r3, lr}
+    Wait4DevInt(CCEMTY);
+    1678:	f7ff bfd8 	b.w	162c <Wait4DevInt>
+    167c:	5000c000 	.word	0x5000c000
+
+00001680 <USBHwEPConfig>:
+{
+    1680:	b510      	push	{r4, lr}
+    USBReEp |= (1 << idx);
+    1682:	2301      	movs	r3, #1
+    1684:	4a0d      	ldr	r2, [pc, #52]	@ (16bc <USBHwEPConfig+0x3c>)
+    idx = EP2IDX(bEP);
+    1686:	0044      	lsls	r4, r0, #1
+    1688:	f004 041e 	and.w	r4, r4, #30
+    168c:	ea44 14d0 	orr.w	r4, r4, r0, lsr #7
+    USBReEp |= (1 << idx);
+    1690:	f8d2 0244 	ldr.w	r0, [r2, #580]	@ 0x244
+    1694:	40a3      	lsls	r3, r4
+    1696:	4303      	orrs	r3, r0
+    1698:	f8c2 3244 	str.w	r3, [r2, #580]	@ 0x244
+    Wait4DevInt(EP_RLZED);
+    169c:	f44f 7080 	mov.w	r0, #256	@ 0x100
+    USBEpIn = idx;
+    16a0:	f8c2 4248 	str.w	r4, [r2, #584]	@ 0x248
+    USBMaxPSize = wMaxPSize;
+    16a4:	f8c2 124c 	str.w	r1, [r2, #588]	@ 0x24c
+    Wait4DevInt(EP_RLZED);
+    16a8:	f7ff ffc0 	bl	162c <Wait4DevInt>
+    USBHwCmdWrite(CMD_EP_SET_STATUS | idx, fEnable ? 0 : EP_DA);
+    16ac:	2100      	movs	r1, #0
+    16ae:	f044 0040 	orr.w	r0, r4, #64	@ 0x40
+}
+    16b2:	e8bd 4010 	ldmia.w	sp!, {r4, lr}
+    USBHwCmdWrite(CMD_EP_SET_STATUS | idx, fEnable ? 0 : EP_DA);
+    16b6:	f7ff bfd3 	b.w	1660 <USBHwCmdWrite>
+    16ba:	bf00      	nop
+    16bc:	5000c000 	.word	0x5000c000
+
+000016c0 <USBHwRegisterEPIntHandler>:
+    _apfnEPIntHandlers[idx / 2] = pfnHandler;
+    16c0:	4a0b      	ldr	r2, [pc, #44]	@ (16f0 <USBHwRegisterEPIntHandler+0x30>)
+    idx = EP2IDX(bEP);
+    16c2:	0043      	lsls	r3, r0, #1
+    16c4:	f003 031e 	and.w	r3, r3, #30
+    _apfnEPIntHandlers[idx / 2] = pfnHandler;
+    16c8:	f842 1013 	str.w	r1, [r2, r3, lsl #1]
+    idx = EP2IDX(bEP);
+    16cc:	ea43 10d0 	orr.w	r0, r3, r0, lsr #7
+    USBEpIntEn |= (1 << idx);
+    16d0:	2301      	movs	r3, #1
+    16d2:	4a08      	ldr	r2, [pc, #32]	@ (16f4 <USBHwRegisterEPIntHandler+0x34>)
+    16d4:	4083      	lsls	r3, r0
+    16d6:	f8d2 1234 	ldr.w	r1, [r2, #564]	@ 0x234
+    16da:	430b      	orrs	r3, r1
+    16dc:	f8c2 3234 	str.w	r3, [r2, #564]	@ 0x234
+    USBDevIntEn |= EP_SLOW;
+    16e0:	f8d2 3204 	ldr.w	r3, [r2, #516]	@ 0x204
+    16e4:	f043 0304 	orr.w	r3, r3, #4
+    16e8:	f8c2 3204 	str.w	r3, [r2, #516]	@ 0x204
+}
+    16ec:	4770      	bx	lr
+    16ee:	bf00      	nop
+    16f0:	100021dc 	.word	0x100021dc
+    16f4:	5000c000 	.word	0x5000c000
+
+000016f8 <USBHwRegisterDevIntHandler>:
+    _pfnDevIntHandler = pfnHandler;
+    16f8:	4b04      	ldr	r3, [pc, #16]	@ (170c <USBHwRegisterDevIntHandler+0x14>)
+    USBDevIntEn |= DEV_STAT;
+    16fa:	4a05      	ldr	r2, [pc, #20]	@ (1710 <USBHwRegisterDevIntHandler+0x18>)
+    _pfnDevIntHandler = pfnHandler;
+    16fc:	6418      	str	r0, [r3, #64]	@ 0x40
+    USBDevIntEn |= DEV_STAT;
+    16fe:	f8d2 3204 	ldr.w	r3, [r2, #516]	@ 0x204
+    1702:	f043 0308 	orr.w	r3, r3, #8
+    1706:	f8c2 3204 	str.w	r3, [r2, #516]	@ 0x204
+}
+    170a:	4770      	bx	lr
+    170c:	100021dc 	.word	0x100021dc
+    1710:	5000c000 	.word	0x5000c000
+
+00001714 <USBHwSetAddress>:
+    USBHwCmdWrite(CMD_DEV_SET_ADDRESS, DEV_EN | bAddr);
+    1714:	f040 0180 	orr.w	r1, r0, #128	@ 0x80
+    1718:	20d0      	movs	r0, #208	@ 0xd0
+    171a:	f7ff bfa1 	b.w	1660 <USBHwCmdWrite>
+
+0000171e <USBHwConnect>:
+    USBHwCmdWrite(CMD_DEV_STATUS, fConnect ? CON : 0);
+    171e:	1e01      	subs	r1, r0, #0
+    1720:	bf18      	it	ne
+    1722:	2101      	movne	r1, #1
+    1724:	20fe      	movs	r0, #254	@ 0xfe
+    1726:	f7ff bf9b 	b.w	1660 <USBHwCmdWrite>
+
+0000172a <USBHwNakIntEnable>:
+{
+    172a:	4601      	mov	r1, r0
+    USBHwCmdWrite(CMD_DEV_SET_MODE, bIntBits);
+    172c:	20f3      	movs	r0, #243	@ 0xf3
+    172e:	f7ff bf97 	b.w	1660 <USBHwCmdWrite>
+    1732:	0000      	movs	r0, r0
+
+00001734 <USBHwEPGetStatus>:
+{
+    1734:	b510      	push	{r4, lr}
+    int idx = EP2IDX(bEP);
+    1736:	0043      	lsls	r3, r0, #1
+    1738:	f003 031e 	and.w	r3, r3, #30
+    173c:	ea43 11d0 	orr.w	r1, r3, r0, lsr #7
+    USBHwCmd(bCmd);
+    1740:	4608      	mov	r0, r1
+    USBCmdCode = 0x00000200 | (bCmd << 16);
+    1742:	4c07      	ldr	r4, [pc, #28]	@ (1760 <USBHwEPGetStatus+0x2c>)
+    1744:	0409      	lsls	r1, r1, #16
+    1746:	f441 7100 	orr.w	r1, r1, #512	@ 0x200
+    USBHwCmd(bCmd);
+    174a:	f7ff ff7b 	bl	1644 <USBHwCmd>
+    Wait4DevInt(CDFULL);
+    174e:	2020      	movs	r0, #32
+    USBCmdCode = 0x00000200 | (bCmd << 16);
+    1750:	f8c4 1210 	str.w	r1, [r4, #528]	@ 0x210
+    Wait4DevInt(CDFULL);
+    1754:	f7ff ff6a 	bl	162c <Wait4DevInt>
+    return USBCmdData;
+    1758:	f8d4 0214 	ldr.w	r0, [r4, #532]	@ 0x214
+}
+    175c:	b2c0      	uxtb	r0, r0
+    175e:	bd10      	pop	{r4, pc}
+    1760:	5000c000 	.word	0x5000c000
+
+00001764 <USBHwEPStall>:
+    int idx = EP2IDX(bEP);
+    1764:	0043      	lsls	r3, r0, #1
+    1766:	f003 031e 	and.w	r3, r3, #30
+    176a:	ea43 10d0 	orr.w	r0, r3, r0, lsr #7
+    USBHwCmdWrite(CMD_EP_SET_STATUS | idx, fStall ? EP_ST : 0);
+    176e:	3900      	subs	r1, #0
+    1770:	bf18      	it	ne
+    1772:	2101      	movne	r1, #1
+    1774:	f040 0040 	orr.w	r0, r0, #64	@ 0x40
+    1778:	f7ff bf72 	b.w	1660 <USBHwCmdWrite>
+
+0000177c <USBHwEPWrite>:
+{
+    177c:	b538      	push	{r3, r4, r5, lr}
+    177e:	4603      	mov	r3, r0
+    1780:	4615      	mov	r5, r2
+    idx = EP2IDX(bEP);
+    1782:	0040      	lsls	r0, r0, #1
+    1784:	f000 001e 	and.w	r0, r0, #30
+    1788:	ea40 10d3 	orr.w	r0, r0, r3, lsr #7
+    USBCtrl = WR_EN | ((bEP & 0xF) << 2);
+    178c:	009b      	lsls	r3, r3, #2
+    178e:	4c0e      	ldr	r4, [pc, #56]	@ (17c8 <USBHwEPWrite+0x4c>)
+    1790:	f003 033c 	and.w	r3, r3, #60	@ 0x3c
+    1794:	f043 0302 	orr.w	r3, r3, #2
+    1798:	f8c4 3228 	str.w	r3, [r4, #552]	@ 0x228
+    USBTxPLen = iLen;
+    179c:	f8c4 2224 	str.w	r2, [r4, #548]	@ 0x224
+    while (USBCtrl & WR_EN) {
+    17a0:	f8d4 3228 	ldr.w	r3, [r4, #552]	@ 0x228
+    17a4:	f013 0302 	ands.w	r3, r3, #2
+    17a8:	d108      	bne.n	17bc <USBHwEPWrite+0x40>
+    USBCtrl = 0;
+    17aa:	f8c4 3228 	str.w	r3, [r4, #552]	@ 0x228
+    USBHwCmd(CMD_EP_SELECT | idx);
+    17ae:	f7ff ff49 	bl	1644 <USBHwCmd>
+    USBHwCmd(CMD_EP_VALIDATE_BUFFER);
+    17b2:	20fa      	movs	r0, #250	@ 0xfa
+    17b4:	f7ff ff46 	bl	1644 <USBHwCmd>
+}
+    17b8:	4628      	mov	r0, r5
+    17ba:	bd38      	pop	{r3, r4, r5, pc}
+        USBTxData = (pbBuf[3] << 24) | (pbBuf[2] << 16) | (pbBuf[1] << 8) | pbBuf[0];
+    17bc:	f851 3b04 	ldr.w	r3, [r1], #4
+    17c0:	f8c4 321c 	str.w	r3, [r4, #540]	@ 0x21c
+        pbBuf += 4;
+    17c4:	e7ec      	b.n	17a0 <USBHwEPWrite+0x24>
+    17c6:	bf00      	nop
+    17c8:	5000c000 	.word	0x5000c000
+
+000017cc <USBHwEPRead>:
+{
+    17cc:	b570      	push	{r4, r5, r6, lr}
+    USBCtrl = RD_EN | ((bEP & 0xF) << 2);
+    17ce:	0083      	lsls	r3, r0, #2
+    17d0:	4d19      	ldr	r5, [pc, #100]	@ (1838 <USBHwEPRead+0x6c>)
+    17d2:	f003 033c 	and.w	r3, r3, #60	@ 0x3c
+    17d6:	f043 0301 	orr.w	r3, r3, #1
+    17da:	f8c5 3228 	str.w	r3, [r5, #552]	@ 0x228
+        dwLen = USBRxPLen;
+    17de:	f8d5 4220 	ldr.w	r4, [r5, #544]	@ 0x220
+    } while ((dwLen & PKT_RDY) == 0);
+    17e2:	0526      	lsls	r6, r4, #20
+    17e4:	d5fb      	bpl.n	17de <USBHwEPRead+0x12>
+    if ((dwLen & DV) == 0) {
+    17e6:	0563      	lsls	r3, r4, #21
+    17e8:	d522      	bpl.n	1830 <USBHwEPRead+0x64>
+    dwData = 0;
+    17ea:	2500      	movs	r5, #0
+    idx = EP2IDX(bEP);
+    17ec:	0043      	lsls	r3, r0, #1
+    17ee:	f003 031e 	and.w	r3, r3, #30
+    17f2:	ea43 10d0 	orr.w	r0, r3, r0, lsr #7
+    dwLen &= PKT_LNGTH_MASK;
+    17f6:	f3c4 0309 	ubfx	r3, r4, #0, #10
+    for (i = 0; i < dwLen; i++) {
+    17fa:	462c      	mov	r4, r5
+            dwData = USBRxData;
+    17fc:	4e0e      	ldr	r6, [pc, #56]	@ (1838 <USBHwEPRead+0x6c>)
+    for (i = 0; i < dwLen; i++) {
+    17fe:	429c      	cmp	r4, r3
+    1800:	d10a      	bne.n	1818 <USBHwEPRead+0x4c>
+    USBCtrl = 0;
+    1802:	2200      	movs	r2, #0
+    1804:	4b0c      	ldr	r3, [pc, #48]	@ (1838 <USBHwEPRead+0x6c>)
+    1806:	f8c3 2228 	str.w	r2, [r3, #552]	@ 0x228
+    USBHwCmd(CMD_EP_SELECT | idx);
+    180a:	f7ff ff1b 	bl	1644 <USBHwCmd>
+    USBHwCmd(CMD_EP_CLEAR_BUFFER);
+    180e:	20f2      	movs	r0, #242	@ 0xf2
+    1810:	f7ff ff18 	bl	1644 <USBHwCmd>
+    return dwLen;
+    1814:	4620      	mov	r0, r4
+}
+    1816:	bd70      	pop	{r4, r5, r6, pc}
+        if ((i % 4) == 0) {
+    1818:	f014 0f03 	tst.w	r4, #3
+            dwData = USBRxData;
+    181c:	bf08      	it	eq
+    181e:	f8d6 5218 	ldreq.w	r5, [r6, #536]	@ 0x218
+        if ((pbBuf != NULL) && (i < iMaxLen)) {
+    1822:	b111      	cbz	r1, 182a <USBHwEPRead+0x5e>
+    1824:	4294      	cmp	r4, r2
+            pbBuf[i] = dwData & 0xFF;
+    1826:	bf38      	it	cc
+    1828:	550d      	strbcc	r5, [r1, r4]
+        dwData >>= 8;
+    182a:	0a2d      	lsrs	r5, r5, #8
+    for (i = 0; i < dwLen; i++) {
+    182c:	3401      	adds	r4, #1
+    182e:	e7e6      	b.n	17fe <USBHwEPRead+0x32>
+        return -1;
+    1830:	f04f 30ff 	mov.w	r0, #4294967295	@ 0xffffffff
+    1834:	e7ef      	b.n	1816 <USBHwEPRead+0x4a>
+    1836:	bf00      	nop
+    1838:	5000c000 	.word	0x5000c000
+
+0000183c <USBHwConfigDevice>:
+    @param [in] fConfigured If TRUE, configure device, else unconfigure
+ */
+void USBHwConfigDevice(BOOL fConfigured)
+{
+    // set configured bit
+    USBHwCmdWrite(CMD_DEV_CONFIG, fConfigured ? CONF_DEVICE : 0);
+    183c:	1e01      	subs	r1, r0, #0
+    183e:	bf18      	it	ne
+    1840:	2101      	movne	r1, #1
+    1842:	20d8      	movs	r0, #216	@ 0xd8
+    1844:	f7ff bf0c 	b.w	1660 <USBHwCmdWrite>
+
+00001848 <USBHwISR>:
+    @todo Get all 11 bits of frame number instead of just 8
+
+    Endpoint interrupts are mapped to the slow interrupt
+ */
+void USBHwISR(void)
+{
+    1848:	b5f8      	push	{r3, r4, r5, r6, r7, lr}
+
+// LED9 monitors total time in interrupt routine
+DEBUG_LED_ON(9);
+
+    // handle device interrupts
+    dwStatus = USBDevIntSt;
+    184a:	492b      	ldr	r1, [pc, #172]	@ (18f8 <USBHwISR+0xb0>)
+    184c:	f8d1 4200 	ldr.w	r4, [r1, #512]	@ 0x200
+    
+    // frame interrupt
+    if (dwStatus & FRAME) {
+    1850:	07e0      	lsls	r0, r4, #31
+    1852:	d512      	bpl.n	187a <USBHwISR+0x32>
+        // clear int
+        USBDevIntClr = FRAME;
+    1854:	2301      	movs	r3, #1
+    1856:	f8c1 3208 	str.w	r3, [r1, #520]	@ 0x208
+        // call handler
+        if (_pfnFrameHandler != NULL) {
+    185a:	4b28      	ldr	r3, [pc, #160]	@ (18fc <USBHwISR+0xb4>)
+    185c:	6c5d      	ldr	r5, [r3, #68]	@ 0x44
+    185e:	b165      	cbz	r5, 187a <USBHwISR+0x32>
+    USBHwCmd(bCmd);
+    1860:	20f5      	movs	r0, #245	@ 0xf5
+    1862:	f7ff feef 	bl	1644 <USBHwCmd>
+    USBCmdCode = 0x00000200 | (bCmd << 16);
+    1866:	4b26      	ldr	r3, [pc, #152]	@ (1900 <USBHwISR+0xb8>)
+    Wait4DevInt(CDFULL);
+    1868:	2020      	movs	r0, #32
+    USBCmdCode = 0x00000200 | (bCmd << 16);
+    186a:	f8c1 3210 	str.w	r3, [r1, #528]	@ 0x210
+    Wait4DevInt(CDFULL);
+    186e:	f7ff fedd 	bl	162c <Wait4DevInt>
+    return USBCmdData;
+    1872:	f8d1 0214 	ldr.w	r0, [r1, #532]	@ 0x214
+            wFrame = USBHwCmdRead(CMD_DEV_READ_CUR_FRAME_NR);
+            _pfnFrameHandler(wFrame);
+    1876:	b2c0      	uxtb	r0, r0
+    1878:	47a8      	blx	r5
+        }
+    }
+    
+    // device status interrupt
+    if (dwStatus & DEV_STAT) {
+    187a:	0722      	lsls	r2, r4, #28
+    187c:	d517      	bpl.n	18ae <USBHwISR+0x66>
+        /*  Clear DEV_STAT interrupt before reading DEV_STAT register.
+            This prevents corrupted device status reads, see
+            LPC2148 User manual revision 2, 25 july 2006.
+        */
+        USBDevIntClr = DEV_STAT;
+    187e:	2308      	movs	r3, #8
+    1880:	491d      	ldr	r1, [pc, #116]	@ (18f8 <USBHwISR+0xb0>)
+    USBHwCmd(bCmd);
+    1882:	20fe      	movs	r0, #254	@ 0xfe
+        USBDevIntClr = DEV_STAT;
+    1884:	f8c1 3208 	str.w	r3, [r1, #520]	@ 0x208
+    USBHwCmd(bCmd);
+    1888:	f7ff fedc 	bl	1644 <USBHwCmd>
+    USBCmdCode = 0x00000200 | (bCmd << 16);
+    188c:	4b1d      	ldr	r3, [pc, #116]	@ (1904 <USBHwISR+0xbc>)
+    Wait4DevInt(CDFULL);
+    188e:	2020      	movs	r0, #32
+    USBCmdCode = 0x00000200 | (bCmd << 16);
+    1890:	f8c1 3210 	str.w	r3, [r1, #528]	@ 0x210
+    Wait4DevInt(CDFULL);
+    1894:	f7ff feca 	bl	162c <Wait4DevInt>
+    return USBCmdData;
+    1898:	f8d1 0214 	ldr.w	r0, [r1, #532]	@ 0x214
+        bDevStat = USBHwCmdRead(CMD_DEV_STATUS);
+        if (bDevStat & (CON_CH | SUS_CH | RST)) {
+    189c:	f010 0f1a 	tst.w	r0, #26
+    18a0:	d005      	beq.n	18ae <USBHwISR+0x66>
+            // convert device status into something HW independent
+            bStat = ((bDevStat & CON) ? DEV_STATUS_CONNECT : 0) |
+                    ((bDevStat & SUS) ? DEV_STATUS_SUSPEND : 0) |
+                    ((bDevStat & RST) ? DEV_STATUS_RESET : 0);
+            // call handler
+            if (_pfnDevIntHandler != NULL) {
+    18a2:	4b16      	ldr	r3, [pc, #88]	@ (18fc <USBHwISR+0xb4>)
+    18a4:	6c1b      	ldr	r3, [r3, #64]	@ 0x40
+    18a6:	b113      	cbz	r3, 18ae <USBHwISR+0x66>
+DEBUG_LED_ON(8);        
+                _pfnDevIntHandler(bStat);
+    18a8:	f000 0015 	and.w	r0, r0, #21
+    18ac:	4798      	blx	r3
+            }
+        }
+    }
+    
+    // endpoint interrupt
+    if (dwStatus & EP_SLOW) {
+    18ae:	0763      	lsls	r3, r4, #29
+    18b0:	d520      	bpl.n	18f4 <USBHwISR+0xac>
+        // clear EP_SLOW
+        USBDevIntClr = EP_SLOW;
+    18b2:	2304      	movs	r3, #4
+        // check all endpoints
+        for (i = 0; i < 32; i++) {
+    18b4:	2400      	movs	r4, #0
+            dwIntBit = (1 << i);
+    18b6:	2601      	movs	r6, #1
+        USBDevIntClr = EP_SLOW;
+    18b8:	4d0f      	ldr	r5, [pc, #60]	@ (18f8 <USBHwISR+0xb0>)
+                        ((bEPStat & EPSTAT_ST) ? EP_STATUS_STALLED : 0) |
+                        ((bEPStat & EPSTAT_STP) ? EP_STATUS_SETUP : 0) |
+                        ((bEPStat & EPSTAT_EPN) ? EP_STATUS_NACKED : 0) |
+                        ((bEPStat & EPSTAT_PO) ? EP_STATUS_ERROR : 0);
+                // call handler
+                if (_apfnEPIntHandlers[i / 2] != NULL) {
+    18ba:	4f10      	ldr	r7, [pc, #64]	@ (18fc <USBHwISR+0xb4>)
+        USBDevIntClr = EP_SLOW;
+    18bc:	f8c5 3208 	str.w	r3, [r5, #520]	@ 0x208
+            if (USBEpIntSt & dwIntBit) {
+    18c0:	f8d5 2230 	ldr.w	r2, [r5, #560]	@ 0x230
+            dwIntBit = (1 << i);
+    18c4:	fa06 f304 	lsl.w	r3, r6, r4
+            if (USBEpIntSt & dwIntBit) {
+    18c8:	421a      	tst	r2, r3
+    18ca:	d010      	beq.n	18ee <USBHwISR+0xa6>
+                Wait4DevInt(CDFULL);
+    18cc:	2020      	movs	r0, #32
+                USBEpIntClr = dwIntBit;
+    18ce:	f8c5 3238 	str.w	r3, [r5, #568]	@ 0x238
+                Wait4DevInt(CDFULL);
+    18d2:	f7ff feab 	bl	162c <Wait4DevInt>
+                if (_apfnEPIntHandlers[i / 2] != NULL) {
+    18d6:	1060      	asrs	r0, r4, #1
+    18d8:	f857 3020 	ldr.w	r3, [r7, r0, lsl #2]
+                bEPStat = USBCmdData;
+    18dc:	f8d5 1214 	ldr.w	r1, [r5, #532]	@ 0x214
+                if (_apfnEPIntHandlers[i / 2] != NULL) {
+    18e0:	b12b      	cbz	r3, 18ee <USBHwISR+0xa6>
+DEBUG_LED_ON(10);       
+                    _apfnEPIntHandlers[i / 2](IDX2EP(i), bStat);
+    18e2:	ea40 10c4 	orr.w	r0, r0, r4, lsl #7
+    18e6:	f001 011f 	and.w	r1, r1, #31
+    18ea:	b2c0      	uxtb	r0, r0
+    18ec:	4798      	blx	r3
+        for (i = 0; i < 32; i++) {
+    18ee:	3401      	adds	r4, #1
+    18f0:	2c20      	cmp	r4, #32
+    18f2:	d1e5      	bne.n	18c0 <USBHwISR+0x78>
+            }
+        }
+    }
+    
+DEBUG_LED_OFF(9);       
+}
+    18f4:	bdf8      	pop	{r3, r4, r5, r6, r7, pc}
+    18f6:	bf00      	nop
+    18f8:	5000c000 	.word	0x5000c000
+    18fc:	100021dc 	.word	0x100021dc
+    1900:	00f50200 	.word	0x00f50200
+    1904:	00fe0200 	.word	0x00fe0200
+
+00001908 <USBHwInit>:
+    acts as a pull-up and so prevents detection of USB disconnect.
+        
+    @return TRUE if the hardware was successfully initialised
+ */
+BOOL USBHwInit(void)
+{
+    1908:	b508      	push	{r3, lr}
+#ifdef LPC17xx
+	// P2.9 is USB_CONNECT
+    PINSEL4 = (PINSEL4 & ~(3 << 18)) | (1 << 18);
+    190a:	4b24      	ldr	r3, [pc, #144]	@ (199c <USBHwInit+0x94>)
+    190c:	691a      	ldr	r2, [r3, #16]
+    190e:	f422 2240 	bic.w	r2, r2, #786432	@ 0xc0000
+    1912:	f442 2280 	orr.w	r2, r2, #262144	@ 0x40000
+    1916:	611a      	str	r2, [r3, #16]
+
+	// P1.18 is USB_UP_LED
+    PINSEL3 = (PINSEL3 & ~(3 << 4)) | (1 << 4);
+    1918:	68da      	ldr	r2, [r3, #12]
+    191a:	f022 0230 	bic.w	r2, r2, #48	@ 0x30
+    191e:	f042 0210 	orr.w	r2, r2, #16
+    1922:	60da      	str	r2, [r3, #12]
+
+	// P1.30 is VBUS
+    PINSEL3 = (PINSEL3 & ~(3 << 28)) | (2 << 28);
+    1924:	68da      	ldr	r2, [r3, #12]
+    1926:	f022 5240 	bic.w	r2, r2, #805306368	@ 0x30000000
+    192a:	f042 5200 	orr.w	r2, r2, #536870912	@ 0x20000000
+    192e:	60da      	str	r2, [r3, #12]
+
+	// P0.29 is USB_D+
+    PINSEL1 = (PINSEL1 & ~(3 << 26)) | (1 << 26);
+    1930:	685a      	ldr	r2, [r3, #4]
+    1932:	f022 6240 	bic.w	r2, r2, #201326592	@ 0xc000000
+    1936:	f042 6280 	orr.w	r2, r2, #67108864	@ 0x4000000
+    193a:	605a      	str	r2, [r3, #4]
+
+	// P0.30 is USB_D-
+    PINSEL1 = (PINSEL1 & ~(3 << 28)) | (1 << 28);
+    193c:	685a      	ldr	r2, [r3, #4]
+    193e:	f022 5240 	bic.w	r2, r2, #805306368	@ 0x30000000
+    1942:	f042 5280 	orr.w	r2, r2, #268435456	@ 0x10000000
+    1946:	605a      	str	r2, [r3, #4]
+
+	// enable PUSB
+	PCONP |= PCONP_PCUSB;
+    1948:	4a15      	ldr	r2, [pc, #84]	@ (19a0 <USBHwInit+0x98>)
+    194a:	f8d2 30c4 	ldr.w	r3, [r2, #196]	@ 0xc4
+    194e:	f043 4300 	orr.w	r3, r3, #2147483648	@ 0x80000000
+    1952:	f8c2 30c4 	str.w	r3, [r2, #196]	@ 0xc4
+
+	/* enable the USB controller clocks */
+    USBClkCtrl |= (USBClkCtrl_DEV_CLK_EN | USBClkCtrl_AHB_CLK_EN);
+    1956:	4b13      	ldr	r3, [pc, #76]	@ (19a4 <USBHwInit+0x9c>)
+    1958:	f8d3 2ff4 	ldr.w	r2, [r3, #4084]	@ 0xff4
+    195c:	f042 0212 	orr.w	r2, r2, #18
+    1960:	f8c3 2ff4 	str.w	r2, [r3, #4084]	@ 0xff4
+    while (!(USBClkSt & USBClkSt_DEV_CLK_ON));
+    1964:	f8d3 2ff8 	ldr.w	r2, [r3, #4088]	@ 0xff8
+    1968:	0791      	lsls	r1, r2, #30
+    196a:	d5fb      	bpl.n	1964 <USBHwInit+0x5c>
+    while (!(USBClkSt & USBClkSt_AHB_CLK_ON));
+    196c:	f8d3 2ff8 	ldr.w	r2, [r3, #4088]	@ 0xff8
+    1970:	06d2      	lsls	r2, r2, #27
+    1972:	d5fb      	bpl.n	196c <USBHwInit+0x64>
+#endif
+
+#endif
+    
+    // disable/clear all interrupts for now
+    USBDevIntEn = 0;
+    1974:	2000      	movs	r0, #0
+    USBDevIntClr = 0xFFFFFFFF;
+    1976:	f04f 32ff 	mov.w	r2, #4294967295	@ 0xffffffff
+    USBDevIntEn = 0;
+    197a:	f8c3 0204 	str.w	r0, [r3, #516]	@ 0x204
+    USBDevIntClr = 0xFFFFFFFF;
+    197e:	f8c3 2208 	str.w	r2, [r3, #520]	@ 0x208
+    USBDevIntPri = 0;
+    1982:	f8c3 022c 	str.w	r0, [r3, #556]	@ 0x22c
+
+    USBEpIntEn = 0;
+    1986:	f8c3 0234 	str.w	r0, [r3, #564]	@ 0x234
+    USBEpIntClr = 0xFFFFFFFF;
+    198a:	f8c3 2238 	str.w	r2, [r3, #568]	@ 0x238
+    USBEpIntPri = 0;
+    198e:	f8c3 0240 	str.w	r0, [r3, #576]	@ 0x240
+
+    // by default, only ACKs generate interrupts
+    USBHwNakIntEnable(0);
+    1992:	f7ff feca 	bl	172a <USBHwNakIntEnable>
+    DEBUG_LED_INIT(8);
+    DEBUG_LED_INIT(9);
+    DEBUG_LED_INIT(10);
+
+    return TRUE;
+}
+    1996:	2001      	movs	r0, #1
+    1998:	bd08      	pop	{r3, pc}
+    199a:	bf00      	nop
+    199c:	4002c000 	.word	0x4002c000
+    19a0:	400fc000 	.word	0x400fc000
+    19a4:	5000c000 	.word	0x5000c000
+
+000019a8 <USBFilterOsVendorMessage>:
+	@param [out]	*ppbData	Descriptor data
+	
+	@return TRUE if the request was handled by this filter, FALSE otherwise
+ */
+BOOL USBFilterOsVendorMessage(TSetupPacket *pSetup, BOOL *pfSuccess, int *piLen, U8 **ppbData)
+{
+    19a8:	b570      	push	{r4, r5, r6, lr}
+	if(bMsVendorIndex == 0)	{
+    19aa:	4c13      	ldr	r4, [pc, #76]	@ (19f8 <USBFilterOsVendorMessage+0x50>)
+    19ac:	7825      	ldrb	r5, [r4, #0]
+    19ae:	2400      	movs	r4, #0
+    19b0:	b1f5      	cbz	r5, 19f0 <USBFilterOsVendorMessage+0x48>
+		// Feature is disabled.
+		return FALSE;
+	}
+	
+	if(pSetup->bRequest == bMsVendorIndex) {
+    19b2:	7846      	ldrb	r6, [r0, #1]
+    19b4:	42ae      	cmp	r6, r5
+    19b6:	d11d      	bne.n	19f4 <USBFilterOsVendorMessage+0x4c>
+		// Fail unless we make it to the end.
+		*pfSuccess = FALSE;
+    19b8:	600c      	str	r4, [r1, #0]
+	
+		int iRequestLength = pSetup->wLength;
+		U8 bInterfaceNumber = GET_OS_DESC_INTERFACE(pSetup->wValue);
+		U8 bPageNumber = GET_OS_DESC_PAGE(pSetup->wValue);
+	
+		switch (pSetup->wIndex) {
+    19ba:	8884      	ldrh	r4, [r0, #4]
+    19bc:	2c04      	cmp	r4, #4
+    19be:	d014      	beq.n	19ea <USBFilterOsVendorMessage+0x42>
+    19c0:	2c05      	cmp	r4, #5
+    19c2:	d110      	bne.n	19e6 <USBFilterOsVendorMessage+0x3e>
+    19c4:	2492      	movs	r4, #146	@ 0x92
+    19c6:	4d0d      	ldr	r5, [pc, #52]	@ (19fc <USBFilterOsVendorMessage+0x54>)
+		int iRequestLength = pSetup->wLength;
+    19c8:	88c6      	ldrh	r6, [r0, #6]
+		U8 bPageNumber = GET_OS_DESC_PAGE(pSetup->wValue);
+    19ca:	8840      	ldrh	r0, [r0, #2]
+		case DESC_EXT_OS_FEATURES:
+			*ppbData = (U8*)abExtendedOsFeatureDescriptor;
+    19cc:	601d      	str	r5, [r3, #0]
+		U8 bPageNumber = GET_OS_DESC_PAGE(pSetup->wValue);
+    19ce:	0a00      	lsrs	r0, r0, #8
+			return TRUE;
+		}
+		
+		// Decide what portion of the descriptor to return.
+		int iPageOffset = bPageNumber*0x10000; // This will probably always be zero...
+		if (*piLen < iPageOffset) {
+    19d0:	ebb4 4f00 	cmp.w	r4, r0, lsl #16
+			*piLen = sizeof(abExtendedOsFeatureDescriptor);
+    19d4:	6014      	str	r4, [r2, #0]
+		if (*piLen < iPageOffset) {
+    19d6:	db06      	blt.n	19e6 <USBFilterOsVendorMessage+0x3e>
+			// Not enough data for the requested offset.
+			return TRUE;
+		}
+		*ppbData += iPageOffset;
+    19d8:	601d      	str	r5, [r3, #0]
+		if (*piLen > iRequestLength) {
+			// Clip data longer than the requested length
+			*piLen = iRequestLength;
+		}
+	
+		*pfSuccess = TRUE;
+    19da:	2301      	movs	r3, #1
+    19dc:	42a6      	cmp	r6, r4
+    19de:	bfd4      	ite	le
+    19e0:	6016      	strle	r6, [r2, #0]
+    19e2:	6014      	strgt	r4, [r2, #0]
+    19e4:	600b      	str	r3, [r1, #0]
+			return TRUE;
+    19e6:	2001      	movs	r0, #1
+		return TRUE;
+	}
+	
+	// These are not the requests you are looking for
+	return FALSE;
+}
+    19e8:	bd70      	pop	{r4, r5, r6, pc}
+		switch (pSetup->wIndex) {
+    19ea:	2428      	movs	r4, #40	@ 0x28
+    19ec:	4d04      	ldr	r5, [pc, #16]	@ (1a00 <USBFilterOsVendorMessage+0x58>)
+    19ee:	e7eb      	b.n	19c8 <USBFilterOsVendorMessage+0x20>
+		return FALSE;
+    19f0:	4628      	mov	r0, r5
+    19f2:	e7f9      	b.n	19e8 <USBFilterOsVendorMessage+0x40>
+    19f4:	4620      	mov	r0, r4
+    19f6:	e7f7      	b.n	19e8 <USBFilterOsVendorMessage+0x40>
+    19f8:	10002224 	.word	0x10002224
+    19fc:	10000030 	.word	0x10000030
+    1a00:	00001d1c 	.word	0x00001d1c
+
+00001a04 <USBRegisterDescriptors>:
+
+	@param [in]	pabDescriptors	The descriptor byte array
+ */
+void USBRegisterDescriptors(U8 *pabDescriptors)
+{
+	pabDescrip = pabDescriptors;
+    1a04:	4b01      	ldr	r3, [pc, #4]	@ (1a0c <USBRegisterDescriptors+0x8>)
+    1a06:	6058      	str	r0, [r3, #4]
+}
+    1a08:	4770      	bx	lr
+    1a0a:	bf00      	nop
+    1a0c:	10002224 	.word	0x10002224
+
+00001a10 <USBGetDescriptor>:
+	@param [out]	*ppbData	Descriptor data
+	
+	@return TRUE if the descriptor was found, FALSE otherwise
+ */
+BOOL USBGetDescriptor(U16 wTypeIndex, U16 wLangID, int *piLen, U8 **ppbData)
+{
+    1a10:	b5f0      	push	{r4, r5, r6, r7, lr}
+	ASSERT(pabDescrip != NULL);
+
+	bType = GET_DESC_TYPE(wTypeIndex);
+	bIndex = GET_DESC_INDEX(wTypeIndex);
+	
+    if (bType == DESC_STRING &&
+    1a12:	f240 31ee 	movw	r1, #1006	@ 0x3ee
+    1a16:	4288      	cmp	r0, r1
+    1a18:	4c11      	ldr	r4, [pc, #68]	@ (1a60 <USBGetDescriptor+0x50>)
+    1a1a:	d108      	bne.n	1a2e <USBGetDescriptor+0x1e>
+	abOsStringDescriptor[sizeof(abOsStringDescriptor)-2] = bMsVendorIndex;
+    1a1c:	4911      	ldr	r1, [pc, #68]	@ (1a64 <USBGetDescriptor+0x54>)
+    1a1e:	7820      	ldrb	r0, [r4, #0]
+	*ppbData = abOsStringDescriptor;
+    1a20:	3192      	adds	r1, #146	@ 0x92
+	abOsStringDescriptor[sizeof(abOsStringDescriptor)-2] = bMsVendorIndex;
+    1a22:	7408      	strb	r0, [r1, #16]
+	*ppbData = abOsStringDescriptor;
+    1a24:	6019      	str	r1, [r3, #0]
+        bIndex == DESC_STRING_OS) {
+        
+        if (USBGetOsStringDescriptor(piLen, ppbData)) {
+            
+            return TRUE;
+    1a26:	2312      	movs	r3, #18
+    1a28:	2001      	movs	r0, #1
+					*piLen =	(pab[CONF_DESC_wTotalLength]) |
+								(pab[CONF_DESC_wTotalLength + 1] << 8);
+				}
+				else {
+					// normally length is at offset 0
+					*piLen = pab[DESC_bLength];
+    1a2a:	6013      	str	r3, [r2, #0]
+		pab += pab[DESC_bLength];
+	}
+	// nothing found
+	DBG("Desc %x not found!\n", wTypeIndex);
+	return FALSE;
+}
+    1a2c:	bdf0      	pop	{r4, r5, r6, r7, pc}
+	iCurIndex = 0;
+    1a2e:	2500      	movs	r5, #0
+	pab = (U8 *)pabDescrip;
+    1a30:	6861      	ldr	r1, [r4, #4]
+	bType = GET_DESC_TYPE(wTypeIndex);
+    1a32:	0a06      	lsrs	r6, r0, #8
+			if (iCurIndex == bIndex) {
+    1a34:	b2c7      	uxtb	r7, r0
+	while (pab[DESC_bLength] != 0) {
+    1a36:	780c      	ldrb	r4, [r1, #0]
+    1a38:	b90c      	cbnz	r4, 1a3e <USBGetDescriptor+0x2e>
+	return FALSE;
+    1a3a:	4620      	mov	r0, r4
+    1a3c:	e7f6      	b.n	1a2c <USBGetDescriptor+0x1c>
+		if (pab[DESC_bDescriptorType] == bType) {
+    1a3e:	f891 c001 	ldrb.w	ip, [r1, #1]
+    1a42:	ebbc 2f10 	cmp.w	ip, r0, lsr #8
+    1a46:	d108      	bne.n	1a5a <USBGetDescriptor+0x4a>
+			if (iCurIndex == bIndex) {
+    1a48:	42af      	cmp	r7, r5
+    1a4a:	d105      	bne.n	1a58 <USBGetDescriptor+0x48>
+				*ppbData = pab;
+    1a4c:	6019      	str	r1, [r3, #0]
+				if (bType == DESC_CONFIGURATION) {
+    1a4e:	2e02      	cmp	r6, #2
+					*piLen =	(pab[CONF_DESC_wTotalLength]) |
+    1a50:	bf0c      	ite	eq
+    1a52:	884b      	ldrheq	r3, [r1, #2]
+					*piLen = pab[DESC_bLength];
+    1a54:	780b      	ldrbne	r3, [r1, #0]
+    1a56:	e7e7      	b.n	1a28 <USBGetDescriptor+0x18>
+			iCurIndex++;
+    1a58:	3501      	adds	r5, #1
+		pab += pab[DESC_bLength];
+    1a5a:	4421      	add	r1, r4
+    1a5c:	e7eb      	b.n	1a36 <USBGetDescriptor+0x26>
+    1a5e:	bf00      	nop
+    1a60:	10002224 	.word	0x10002224
+    1a64:	10000030 	.word	0x10000030
+
+00001a68 <USBHandleStandardRequest>:
+	@param [in]		ppbData		Data buffer.
+
+	@return TRUE if the request was handled successfully
+ */
+BOOL USBHandleStandardRequest(TSetupPacket	*pSetup, int *piLen, U8 **ppbData)
+{
+    1a68:	e92d 47f0 	stmdb	sp!, {r4, r5, r6, r7, r8, r9, sl, lr}
+	// try the custom request handler first
+	if ((pfnHandleCustomReq != NULL) && pfnHandleCustomReq(pSetup, piLen, ppbData)) {
+    1a6c:	4f52      	ldr	r7, [pc, #328]	@ (1bb8 <USBHandleStandardRequest+0x150>)
+{
+    1a6e:	4604      	mov	r4, r0
+	if ((pfnHandleCustomReq != NULL) && pfnHandleCustomReq(pSetup, piLen, ppbData)) {
+    1a70:	68bb      	ldr	r3, [r7, #8]
+{
+    1a72:	460d      	mov	r5, r1
+    1a74:	4690      	mov	r8, r2
+	if ((pfnHandleCustomReq != NULL) && pfnHandleCustomReq(pSetup, piLen, ppbData)) {
+    1a76:	b94b      	cbnz	r3, 1a8c <USBHandleStandardRequest+0x24>
+		return TRUE;
+	}
+	
+	switch (REQTYPE_GET_RECIP(pSetup->bmRequestType)) {
+    1a78:	7826      	ldrb	r6, [r4, #0]
+    1a7a:	f006 061f 	and.w	r6, r6, #31
+    1a7e:	2e01      	cmp	r6, #1
+    1a80:	d065      	beq.n	1b4e <USBHandleStandardRequest+0xe6>
+    1a82:	2e02      	cmp	r6, #2
+    1a84:	d077      	beq.n	1b76 <USBHandleStandardRequest+0x10e>
+    1a86:	b13e      	cbz	r6, 1a98 <USBHandleStandardRequest+0x30>
+	case REQTYPE_RECIP_DEVICE:		return HandleStdDeviceReq(pSetup, piLen, ppbData);
+	case REQTYPE_RECIP_INTERFACE:	return HandleStdInterfaceReq(pSetup, piLen, ppbData);
+	case REQTYPE_RECIP_ENDPOINT: 	return HandleStdEndPointReq(pSetup, piLen, ppbData);
+	default: 						return FALSE;
+    1a88:	2000      	movs	r0, #0
+    1a8a:	e003      	b.n	1a94 <USBHandleStandardRequest+0x2c>
+	if ((pfnHandleCustomReq != NULL) && pfnHandleCustomReq(pSetup, piLen, ppbData)) {
+    1a8c:	4798      	blx	r3
+    1a8e:	2800      	cmp	r0, #0
+    1a90:	d0f2      	beq.n	1a78 <USBHandleStandardRequest+0x10>
+		return TRUE;
+    1a92:	2001      	movs	r0, #1
+	}
+}
+    1a94:	e8bd 87f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, pc}
+	switch (pSetup->bRequest) {
+    1a98:	7862      	ldrb	r2, [r4, #1]
+	U8	*pbData = *ppbData;
+    1a9a:	f8d8 3000 	ldr.w	r3, [r8]
+	switch (pSetup->bRequest) {
+    1a9e:	2a09      	cmp	r2, #9
+    1aa0:	d8f2      	bhi.n	1a88 <USBHandleStandardRequest+0x20>
+    1aa2:	a101      	add	r1, pc, #4	@ (adr r1, 1aa8 <USBHandleStandardRequest+0x40>)
+    1aa4:	f851 f022 	ldr.w	pc, [r1, r2, lsl #2]
+    1aa8:	00001ad1 	.word	0x00001ad1
+    1aac:	00001a89 	.word	0x00001a89
+    1ab0:	00001a89 	.word	0x00001a89
+    1ab4:	00001a89 	.word	0x00001a89
+    1ab8:	00001a89 	.word	0x00001a89
+    1abc:	00001adb 	.word	0x00001adb
+    1ac0:	00001ae3 	.word	0x00001ae3
+    1ac4:	00001a89 	.word	0x00001a89
+    1ac8:	00001af3 	.word	0x00001af3
+    1acc:	00001afd 	.word	0x00001afd
+		pbData[0] = 0;
+    1ad0:	2200      	movs	r2, #0
+    1ad2:	701a      	strb	r2, [r3, #0]
+		pbData[1] = 0;
+    1ad4:	705a      	strb	r2, [r3, #1]
+		*piLen = 2;
+    1ad6:	2302      	movs	r3, #2
+    1ad8:	e00e      	b.n	1af8 <USBHandleStandardRequest+0x90>
+		USBHwSetAddress(pSetup->wValue);
+    1ada:	78a0      	ldrb	r0, [r4, #2]
+    1adc:	f7ff fe1a 	bl	1714 <USBHwSetAddress>
+		break;
+    1ae0:	e7d7      	b.n	1a92 <USBHandleStandardRequest+0x2a>
+		return USBGetDescriptor(pSetup->wValue, pSetup->wIndex, piLen, ppbData);
+    1ae2:	4643      	mov	r3, r8
+    1ae4:	462a      	mov	r2, r5
+    1ae6:	88a1      	ldrh	r1, [r4, #4]
+    1ae8:	8860      	ldrh	r0, [r4, #2]
+}
+    1aea:	e8bd 47f0 	ldmia.w	sp!, {r4, r5, r6, r7, r8, r9, sl, lr}
+		return USBGetDescriptor(pSetup->wValue, pSetup->wIndex, piLen, ppbData);
+    1aee:	f7ff bf8f 	b.w	1a10 <USBGetDescriptor>
+		pbData[0] = bConfiguration;
+    1af2:	7b3a      	ldrb	r2, [r7, #12]
+    1af4:	701a      	strb	r2, [r3, #0]
+		*piLen = 1;
+    1af6:	2301      	movs	r3, #1
+		*piLen = 2;
+    1af8:	602b      	str	r3, [r5, #0]
+		break;
+    1afa:	e7ca      	b.n	1a92 <USBHandleStandardRequest+0x2a>
+		if (!USBSetConfiguration(pSetup->wValue & 0xFF, 0)) {
+    1afc:	78a6      	ldrb	r6, [r4, #2]
+	if (bConfigIndex == 0) {
+    1afe:	b92e      	cbnz	r6, 1b0c <USBHandleStandardRequest+0xa4>
+		USBHwConfigDevice(FALSE);
+    1b00:	4630      	mov	r0, r6
+		USBHwConfigDevice(TRUE);
+    1b02:	f7ff fe9b 	bl	183c <USBHwConfigDevice>
+		bConfiguration = pSetup->wValue & 0xFF;	
+    1b06:	8863      	ldrh	r3, [r4, #2]
+    1b08:	733b      	strb	r3, [r7, #12]
+		break;
+    1b0a:	e7c2      	b.n	1a92 <USBHandleStandardRequest+0x2a>
+		bCurAltSetting = 0xFF;
+    1b0c:	f04f 08ff 	mov.w	r8, #255	@ 0xff
+		bCurConfig = 0xFF;
+    1b10:	46c1      	mov	r9, r8
+		pab = (U8 *)pabDescrip;
+    1b12:	687d      	ldr	r5, [r7, #4]
+		while (pab[DESC_bLength] != 0) {
+    1b14:	782b      	ldrb	r3, [r5, #0]
+    1b16:	b90b      	cbnz	r3, 1b1c <USBHandleStandardRequest+0xb4>
+		USBHwConfigDevice(TRUE);
+    1b18:	2001      	movs	r0, #1
+    1b1a:	e7f2      	b.n	1b02 <USBHandleStandardRequest+0x9a>
+			switch (pab[DESC_bDescriptorType]) {
+    1b1c:	786b      	ldrb	r3, [r5, #1]
+    1b1e:	2b04      	cmp	r3, #4
+    1b20:	d008      	beq.n	1b34 <USBHandleStandardRequest+0xcc>
+    1b22:	2b05      	cmp	r3, #5
+    1b24:	d009      	beq.n	1b3a <USBHandleStandardRequest+0xd2>
+    1b26:	2b02      	cmp	r3, #2
+    1b28:	d101      	bne.n	1b2e <USBHandleStandardRequest+0xc6>
+				bCurConfig = pab[CONF_DESC_bConfigurationValue];
+    1b2a:	f895 9005 	ldrb.w	r9, [r5, #5]
+			pab += pab[DESC_bLength];
+    1b2e:	782b      	ldrb	r3, [r5, #0]
+    1b30:	441d      	add	r5, r3
+    1b32:	e7ef      	b.n	1b14 <USBHandleStandardRequest+0xac>
+				bCurAltSetting = pab[INTF_DESC_bAlternateSetting];
+    1b34:	f895 8003 	ldrb.w	r8, [r5, #3]
+				break;
+    1b38:	e7f9      	b.n	1b2e <USBHandleStandardRequest+0xc6>
+				if ((bCurConfig == bConfigIndex) &&
+    1b3a:	454e      	cmp	r6, r9
+    1b3c:	d1f7      	bne.n	1b2e <USBHandleStandardRequest+0xc6>
+    1b3e:	f1b8 0f00 	cmp.w	r8, #0
+    1b42:	d1f4      	bne.n	1b2e <USBHandleStandardRequest+0xc6>
+					USBHwEPConfig(bEP, wMaxPktSize);
+    1b44:	88a9      	ldrh	r1, [r5, #4]
+    1b46:	78a8      	ldrb	r0, [r5, #2]
+    1b48:	f7ff fd9a 	bl	1680 <USBHwEPConfig>
+    1b4c:	e7ef      	b.n	1b2e <USBHandleStandardRequest+0xc6>
+	switch (pSetup->bRequest) {
+    1b4e:	7863      	ldrb	r3, [r4, #1]
+    1b50:	f8d8 2000 	ldr.w	r2, [r8]
+    1b54:	2b0a      	cmp	r3, #10
+    1b56:	d006      	beq.n	1b66 <USBHandleStandardRequest+0xfe>
+    1b58:	2b0b      	cmp	r3, #11
+    1b5a:	d008      	beq.n	1b6e <USBHandleStandardRequest+0x106>
+    1b5c:	2b00      	cmp	r3, #0
+    1b5e:	d193      	bne.n	1a88 <USBHandleStandardRequest+0x20>
+		pbData[0] = 0;
+    1b60:	7013      	strb	r3, [r2, #0]
+		pbData[1] = 0;
+    1b62:	7053      	strb	r3, [r2, #1]
+    1b64:	e7b7      	b.n	1ad6 <USBHandleStandardRequest+0x6e>
+		pbData[0] = 0;
+    1b66:	2300      	movs	r3, #0
+    1b68:	7013      	strb	r3, [r2, #0]
+		*piLen = 2;
+    1b6a:	602e      	str	r6, [r5, #0]
+		break;
+    1b6c:	e791      	b.n	1a92 <USBHandleStandardRequest+0x2a>
+		if (pSetup->wValue != 0) {
+    1b6e:	8863      	ldrh	r3, [r4, #2]
+    1b70:	2b00      	cmp	r3, #0
+    1b72:	d0c1      	beq.n	1af8 <USBHandleStandardRequest+0x90>
+    1b74:	e788      	b.n	1a88 <USBHandleStandardRequest+0x20>
+	switch (pSetup->bRequest) {
+    1b76:	7867      	ldrb	r7, [r4, #1]
+    1b78:	2f01      	cmp	r7, #1
+    1b7a:	d00f      	beq.n	1b9c <USBHandleStandardRequest+0x134>
+    1b7c:	2f03      	cmp	r7, #3
+    1b7e:	d015      	beq.n	1bac <USBHandleStandardRequest+0x144>
+    1b80:	2f00      	cmp	r7, #0
+    1b82:	d181      	bne.n	1a88 <USBHandleStandardRequest+0x20>
+		pbData[0] = (USBHwEPGetStatus(pSetup->wIndex) & EP_STATUS_STALLED) ? 1 : 0;
+    1b84:	7920      	ldrb	r0, [r4, #4]
+    1b86:	f8d8 8000 	ldr.w	r8, [r8]
+    1b8a:	f7ff fdd3 	bl	1734 <USBHwEPGetStatus>
+    1b8e:	f3c0 0040 	ubfx	r0, r0, #1, #1
+    1b92:	f888 0000 	strb.w	r0, [r8]
+		pbData[1] = 0;
+    1b96:	f888 7001 	strb.w	r7, [r8, #1]
+    1b9a:	e7e6      	b.n	1b6a <USBHandleStandardRequest+0x102>
+		if (pSetup->wValue == FEA_ENDPOINT_HALT) {
+    1b9c:	8861      	ldrh	r1, [r4, #2]
+    1b9e:	2900      	cmp	r1, #0
+    1ba0:	f47f af72 	bne.w	1a88 <USBHandleStandardRequest+0x20>
+			USBHwEPStall(pSetup->wIndex, TRUE);
+    1ba4:	7920      	ldrb	r0, [r4, #4]
+    1ba6:	f7ff fddd 	bl	1764 <USBHwEPStall>
+			break;
+    1baa:	e772      	b.n	1a92 <USBHandleStandardRequest+0x2a>
+		if (pSetup->wValue == FEA_ENDPOINT_HALT) {
+    1bac:	8863      	ldrh	r3, [r4, #2]
+    1bae:	2b00      	cmp	r3, #0
+    1bb0:	f47f af6a 	bne.w	1a88 <USBHandleStandardRequest+0x20>
+			USBHwEPStall(pSetup->wIndex, TRUE);
+    1bb4:	2101      	movs	r1, #1
+    1bb6:	e7f5      	b.n	1ba4 <USBHandleStandardRequest+0x13c>
+    1bb8:	10002224 	.word	0x10002224
+
+00001bbc <strlen>:
+    1bbc:	f020 0103 	bic.w	r1, r0, #3
+    1bc0:	f010 0003 	ands.w	r0, r0, #3
+    1bc4:	f1c0 0000 	rsb	r0, r0, #0
+    1bc8:	f851 3b04 	ldr.w	r3, [r1], #4
+    1bcc:	f100 0c04 	add.w	ip, r0, #4
+    1bd0:	ea4f 0ccc 	mov.w	ip, ip, lsl #3
+    1bd4:	f06f 0200 	mvn.w	r2, #0
+    1bd8:	bf1c      	itt	ne
+    1bda:	fa22 f20c 	lsrne.w	r2, r2, ip
+    1bde:	4313      	orrne	r3, r2
+    1be0:	f04f 0c01 	mov.w	ip, #1
+    1be4:	ea4c 2c0c 	orr.w	ip, ip, ip, lsl #8
+    1be8:	ea4c 4c0c 	orr.w	ip, ip, ip, lsl #16
+    1bec:	eba3 020c 	sub.w	r2, r3, ip
+    1bf0:	ea22 0203 	bic.w	r2, r2, r3
+    1bf4:	ea12 12cc 	ands.w	r2, r2, ip, lsl #7
+    1bf8:	bf04      	itt	eq
+    1bfa:	f851 3b04 	ldreq.w	r3, [r1], #4
+    1bfe:	3004      	addeq	r0, #4
+    1c00:	d0f4      	beq.n	1bec <strlen+0x30>
+    1c02:	f1c2 0100 	rsb	r1, r2, #0
+    1c06:	ea02 0201 	and.w	r2, r2, r1
+    1c0a:	fab2 f282 	clz	r2, r2
+    1c0e:	f1c2 021f 	rsb	r2, r2, #31
+    1c12:	eb00 00d2 	add.w	r0, r0, r2, lsr #3
+    1c16:	4770      	bx	lr
+    1c18:	30323032 	.word	0x30323032
+    1c1c:	2d32312d 	.word	0x2d32312d
+    1c20:	3152      	.short	0x3152
+    1c22:	00          	.byte	0x00
+
+00001c23 <abDescriptors>:
+    1c23:	12 01 00 02 ff 00 00 40 ff ff 04 00 00 01 01 02     .......@........
+    1c33:	03 01 09 02 20 00 01 01 00 80 32 09 04 00 00 02     .... .....2.....
+    1c43:	ff 00 00 00 07 05 82 02 40 00 00 07 05 05 02 40     ........@......@
+    1c53:	00 00 04 03 09 04 44 03 68 00 74 00 74 00 70 00     ......D.h.t.t.p.
+    1c63:	3a 00 2f 00 2f 00 75 00 62 00 65 00 72 00 74 00     :././.u.b.e.r.t.
+    1c73:	6f 00 6f 00 74 00 68 00 2e 00 73 00 6f 00 75 00     o.o.t.h...s.o.u.
+    1c83:	72 00 63 00 65 00 66 00 6f 00 72 00 67 00 65 00     r.c.e.f.o.r.g.e.
+    1c93:	2e 00 6e 00 65 00 74 00 2f 00 30 03 75 00 62 00     ..n.e.t./.0.u.b.
+    1ca3:	65 00 72 00 74 00 6f 00 6f 00 74 00 68 00 20 00     e.r.t.o.o.t.h. .
+    1cb3:	61 00 73 00 73 00 65 00 6d 00 62 00 6c 00 79 00     a.s.s.e.m.b.l.y.
+    1cc3:	5f 00 74 00 65 00 73 00 74 00 12 03 30 00 30 00     _.t.e.s.t...0.0.
+    1cd3:	30 00 30 00 30 00 30 00 30 00 31 00 00 47 5c 58     0.0.0.0.0.1..G\X
+    1ce3:	cc 73 34 5e 8e b8 b1 98 e6 68 bc 11 d7 16 33 1c     .s4^.....h....3.
+    1cf3:	cd 17 23 ae 2c 66 39 9a 2f 75 c5 8c c7 33 45 e7     ..#.,f9./u...3E.
+    1d03:	eb 8b 19 8e 66 8b ce 1d 71 63 31 cc d1 79 3a e2     ....f...qc1..y:.
+    1d13:	c6 63 99 a2 f3                                      .c...
+
+00001d18 <iap_entry>:
+    1d18:	f1 1f ff 1f                                         ....
+
+00001d1c <abExtendedOsFeatureDescriptor>:
+    1d1c:	28 00 00 00 00 01 04 00 01 00 00 00 00 00 00 00     (...............
+    1d2c:	00 01 57 49 4e 55 53 42 00 00 00 00 00 00 00 00     ..WINUSB........
+    1d3c:	00 00 00 00 00 00 00 00                             ........
+
+00001d44 <__fini_array_end>:
+    1d44:	00000000 	.word	0x00000000

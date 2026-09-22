@@ -1,0 +1,229 @@
+ARM GAS  /tmp/cc4075JW.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"usbinit.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "../common/lpcusb/target/usbinit.c"
+  18              		.section	.text.HandleUsbReset,"ax",%progbits
+  19              		.align	1
+  20              		.p2align 2,,3
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	HandleUsbReset:
+  26              	.LVL0:
+  27              	.LFB0:
+   1:../common/lpcusb/target/usbinit.c **** /*
+   2:../common/lpcusb/target/usbinit.c **** 	LPCUSB, an USB device driver for LPC microcontrollers	
+   3:../common/lpcusb/target/usbinit.c **** 	Copyright (C) 2006 Bertrik Sikken (bertrik@sikken.nl)
+   4:../common/lpcusb/target/usbinit.c **** 
+   5:../common/lpcusb/target/usbinit.c **** 	Redistribution and use in source and binary forms, with or without
+   6:../common/lpcusb/target/usbinit.c **** 	modification, are permitted provided that the following conditions are met:
+   7:../common/lpcusb/target/usbinit.c **** 
+   8:../common/lpcusb/target/usbinit.c **** 	1. Redistributions of source code must retain the above copyright
+   9:../common/lpcusb/target/usbinit.c **** 	   notice, this list of conditions and the following disclaimer.
+  10:../common/lpcusb/target/usbinit.c **** 	2. Redistributions in binary form must reproduce the above copyright
+  11:../common/lpcusb/target/usbinit.c **** 	   notice, this list of conditions and the following disclaimer in the
+  12:../common/lpcusb/target/usbinit.c **** 	   documentation and/or other materials provided with the distribution.
+  13:../common/lpcusb/target/usbinit.c **** 	3. The name of the author may not be used to endorse or promote products
+  14:../common/lpcusb/target/usbinit.c **** 	   derived from this software without specific prior written permission.
+  15:../common/lpcusb/target/usbinit.c **** 
+  16:../common/lpcusb/target/usbinit.c **** 	THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+  17:../common/lpcusb/target/usbinit.c **** 	IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+  18:../common/lpcusb/target/usbinit.c **** 	OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+  19:../common/lpcusb/target/usbinit.c **** 	IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, 
+  20:../common/lpcusb/target/usbinit.c **** 	INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+  21:../common/lpcusb/target/usbinit.c **** 	NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+  22:../common/lpcusb/target/usbinit.c **** 	DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+  23:../common/lpcusb/target/usbinit.c **** 	THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+  24:../common/lpcusb/target/usbinit.c **** 	(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+  25:../common/lpcusb/target/usbinit.c **** 	THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  26:../common/lpcusb/target/usbinit.c **** */
+  27:../common/lpcusb/target/usbinit.c **** 
+  28:../common/lpcusb/target/usbinit.c **** 
+  29:../common/lpcusb/target/usbinit.c **** /** @file
+  30:../common/lpcusb/target/usbinit.c **** 	USB stack initialisation
+  31:../common/lpcusb/target/usbinit.c ****  */
+ARM GAS  /tmp/cc4075JW.s 			page 2
+
+
+  32:../common/lpcusb/target/usbinit.c **** 
+  33:../common/lpcusb/target/usbinit.c **** #include "type.h"
+  34:../common/lpcusb/target/usbinit.c **** #include "debug.h"
+  35:../common/lpcusb/target/usbinit.c **** 
+  36:../common/lpcusb/target/usbinit.c **** #include "usbhw_lpc.h"
+  37:../common/lpcusb/target/usbinit.c **** #include "usbapi.h"
+  38:../common/lpcusb/target/usbinit.c **** 
+  39:../common/lpcusb/target/usbinit.c **** 
+  40:../common/lpcusb/target/usbinit.c **** /** data storage area for standard requests */
+  41:../common/lpcusb/target/usbinit.c **** static U8	abStdReqData[8];
+  42:../common/lpcusb/target/usbinit.c **** 
+  43:../common/lpcusb/target/usbinit.c **** 
+  44:../common/lpcusb/target/usbinit.c **** /**
+  45:../common/lpcusb/target/usbinit.c **** 	USB reset handler
+  46:../common/lpcusb/target/usbinit.c **** 	
+  47:../common/lpcusb/target/usbinit.c **** 	@param [in] bDevStatus	Device status
+  48:../common/lpcusb/target/usbinit.c ****  */
+  49:../common/lpcusb/target/usbinit.c **** static void HandleUsbReset(U8 bDevStatus)
+  50:../common/lpcusb/target/usbinit.c **** {
+  28              		.loc 1 50 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		@ link register save eliminated.
+  33              		.loc 1 50 1 is_stmt 0 view .LVU1
+  51:../common/lpcusb/target/usbinit.c **** 	if (bDevStatus & DEV_STATUS_RESET) {
+  34              		.loc 1 51 2 is_stmt 1 view .LVU2
+  52:../common/lpcusb/target/usbinit.c **** 		DBG("\n!");
+  35              		.loc 1 52 13 view .LVU3
+  53:../common/lpcusb/target/usbinit.c **** 	}
+  54:../common/lpcusb/target/usbinit.c **** }
+  36              		.loc 1 54 1 is_stmt 0 view .LVU4
+  37 0000 7047     		bx	lr
+  38              		.cfi_endproc
+  39              	.LFE0:
+  41 0002 00BF     		.section	.text.USBInit,"ax",%progbits
+  42              		.align	1
+  43              		.p2align 2,,3
+  44              		.global	USBInit
+  45              		.syntax unified
+  46              		.thumb
+  47              		.thumb_func
+  49              	USBInit:
+  50              	.LFB1:
+  55:../common/lpcusb/target/usbinit.c **** 
+  56:../common/lpcusb/target/usbinit.c **** 
+  57:../common/lpcusb/target/usbinit.c **** /**
+  58:../common/lpcusb/target/usbinit.c **** 	Initialises the USB hardware and sets up the USB stack by
+  59:../common/lpcusb/target/usbinit.c **** 	installing default callbacks.
+  60:../common/lpcusb/target/usbinit.c **** 	
+  61:../common/lpcusb/target/usbinit.c **** 	@return TRUE if initialisation was successful
+  62:../common/lpcusb/target/usbinit.c ****  */
+  63:../common/lpcusb/target/usbinit.c **** BOOL USBInit(void)
+  64:../common/lpcusb/target/usbinit.c **** {
+  51              		.loc 1 64 1 is_stmt 1 view -0
+  52              		.cfi_startproc
+  53              		@ args = 0, pretend = 0, frame = 0
+ARM GAS  /tmp/cc4075JW.s 			page 3
+
+
+  54              		@ frame_needed = 0, uses_anonymous_args = 0
+  55 0000 08B5     		push	{r3, lr}
+  56              		.cfi_def_cfa_offset 8
+  57              		.cfi_offset 3, -8
+  58              		.cfi_offset 14, -4
+  65:../common/lpcusb/target/usbinit.c **** 	// init hardware
+  66:../common/lpcusb/target/usbinit.c **** 	USBHwInit();
+  59              		.loc 1 66 2 view .LVU6
+  60 0002 FFF7FEFF 		bl	USBHwInit
+  61              	.LVL1:
+  67:../common/lpcusb/target/usbinit.c **** 	
+  68:../common/lpcusb/target/usbinit.c **** 	// register bus reset handler
+  69:../common/lpcusb/target/usbinit.c **** 	USBHwRegisterDevIntHandler(HandleUsbReset);
+  62              		.loc 1 69 2 view .LVU7
+  63 0006 0D48     		ldr	r0, .L4
+  64 0008 FFF7FEFF 		bl	USBHwRegisterDevIntHandler
+  65              	.LVL2:
+  70:../common/lpcusb/target/usbinit.c **** 	
+  71:../common/lpcusb/target/usbinit.c **** 	// register control transfer handler on EP0
+  72:../common/lpcusb/target/usbinit.c **** 	USBHwRegisterEPIntHandler(0x00, USBHandleControlTransfer);
+  66              		.loc 1 72 2 view .LVU8
+  67 000c 0020     		movs	r0, #0
+  68 000e 0C49     		ldr	r1, .L4+4
+  69 0010 FFF7FEFF 		bl	USBHwRegisterEPIntHandler
+  70              	.LVL3:
+  73:../common/lpcusb/target/usbinit.c **** 	USBHwRegisterEPIntHandler(0x80, USBHandleControlTransfer);
+  71              		.loc 1 73 2 view .LVU9
+  72 0014 8020     		movs	r0, #128
+  73 0016 0A49     		ldr	r1, .L4+4
+  74 0018 FFF7FEFF 		bl	USBHwRegisterEPIntHandler
+  75              	.LVL4:
+  74:../common/lpcusb/target/usbinit.c **** 	
+  75:../common/lpcusb/target/usbinit.c **** 	// setup control endpoints
+  76:../common/lpcusb/target/usbinit.c **** 	USBHwEPConfig(0x00, MAX_PACKET_SIZE0);
+  76              		.loc 1 76 2 view .LVU10
+  77 001c 4021     		movs	r1, #64
+  78 001e 0020     		movs	r0, #0
+  79 0020 FFF7FEFF 		bl	USBHwEPConfig
+  80              	.LVL5:
+  77:../common/lpcusb/target/usbinit.c **** 	USBHwEPConfig(0x80, MAX_PACKET_SIZE0);
+  81              		.loc 1 77 2 view .LVU11
+  82 0024 4021     		movs	r1, #64
+  83 0026 8020     		movs	r0, #128
+  84 0028 FFF7FEFF 		bl	USBHwEPConfig
+  85              	.LVL6:
+  78:../common/lpcusb/target/usbinit.c **** 	
+  79:../common/lpcusb/target/usbinit.c **** 	// register standard request handler
+  80:../common/lpcusb/target/usbinit.c **** 	USBRegisterRequestHandler(REQTYPE_TYPE_STANDARD, USBHandleStandardRequest, abStdReqData);
+  86              		.loc 1 80 2 view .LVU12
+  87 002c 0020     		movs	r0, #0
+  88 002e 054A     		ldr	r2, .L4+8
+  89 0030 0549     		ldr	r1, .L4+12
+  90 0032 FFF7FEFF 		bl	USBRegisterRequestHandler
+  91              	.LVL7:
+  81:../common/lpcusb/target/usbinit.c **** 
+  82:../common/lpcusb/target/usbinit.c **** 	return TRUE;
+  92              		.loc 1 82 2 view .LVU13
+ARM GAS  /tmp/cc4075JW.s 			page 4
+
+
+  83:../common/lpcusb/target/usbinit.c **** }
+  93              		.loc 1 83 1 is_stmt 0 view .LVU14
+  94 0036 0120     		movs	r0, #1
+  95 0038 08BD     		pop	{r3, pc}
+  96              	.L5:
+  97 003a 00BF     		.align	2
+  98              	.L4:
+  99 003c 00000000 		.word	HandleUsbReset
+ 100 0040 00000000 		.word	USBHandleControlTransfer
+ 101 0044 00000000 		.word	.LANCHOR0
+ 102 0048 00000000 		.word	USBHandleStandardRequest
+ 103              		.cfi_endproc
+ 104              	.LFE1:
+ 106              		.bss
+ 107              		.align	2
+ 108              		.set	.LANCHOR0,. + 0
+ 111              	abStdReqData:
+ 112 0000 00000000 		.space	8
+ 112      00000000 
+ 113              		.text
+ 114              	.Letext0:
+ 115              		.file 2 "../common/lpcusb/target/type.h"
+ 116              		.file 3 "../common/lpcusb/target/usbstruct.h"
+ 117              		.file 4 "../common/lpcusb/target/usbapi.h"
+ 118              		.file 5 "../common/lpcusb/target/usbhw_lpc.h"
+ARM GAS  /tmp/cc4075JW.s 			page 5
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 usbinit.c
+     /tmp/cc4075JW.s:19     .text.HandleUsbReset:00000000 $t
+     /tmp/cc4075JW.s:25     .text.HandleUsbReset:00000000 HandleUsbReset
+     /tmp/cc4075JW.s:42     .text.USBInit:00000000 $t
+     /tmp/cc4075JW.s:49     .text.USBInit:00000000 USBInit
+     /tmp/cc4075JW.s:99     .text.USBInit:0000003c $d
+     /tmp/cc4075JW.s:107    .bss:00000000 $d
+     /tmp/cc4075JW.s:111    .bss:00000000 abStdReqData
+
+UNDEFINED SYMBOLS
+USBHwInit
+USBHwRegisterDevIntHandler
+USBHwRegisterEPIntHandler
+USBHwEPConfig
+USBRegisterRequestHandler
+USBHandleControlTransfer
+USBHandleStandardRequest

@@ -1,0 +1,330 @@
+ARM GAS  /tmp/ccrDjiRc.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 4
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"ubertooth_clock.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "ubertooth_clock.c"
+  18              		.section	.text.clkn_stop,"ax",%progbits
+  19              		.align	1
+  20              		.global	clkn_stop
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	clkn_stop:
+  26              	.LFB0:
+   1:ubertooth_clock.c **** /*
+   2:ubertooth_clock.c ****  * Copyright 2015 Hannes Ellinger
+   3:ubertooth_clock.c ****  *
+   4:ubertooth_clock.c ****  * This file is part of Project Ubertooth.
+   5:ubertooth_clock.c ****  *
+   6:ubertooth_clock.c ****  * This program is free software; you can redistribute it and/or modify
+   7:ubertooth_clock.c ****  * it under the terms of the GNU General Public License as published by
+   8:ubertooth_clock.c ****  * the Free Software Foundation; either version 2, or (at your option)
+   9:ubertooth_clock.c ****  * any later version.
+  10:ubertooth_clock.c ****  *
+  11:ubertooth_clock.c ****  * This program is distributed in the hope that it will be useful,
+  12:ubertooth_clock.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  13:ubertooth_clock.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  14:ubertooth_clock.c ****  * GNU General Public License for more details.
+  15:ubertooth_clock.c ****  *
+  16:ubertooth_clock.c ****  * You should have received a copy of the GNU General Public License
+  17:ubertooth_clock.c ****  * along with this program; see the file COPYING.  If not, write to
+  18:ubertooth_clock.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  19:ubertooth_clock.c ****  * Boston, MA 02110-1301, USA.
+  20:ubertooth_clock.c ****  */
+  21:ubertooth_clock.c **** 
+  22:ubertooth_clock.c **** #include "ubertooth_clock.h"
+  23:ubertooth_clock.c **** #include "ubertooth.h"
+  24:ubertooth_clock.c **** 
+  25:ubertooth_clock.c **** volatile uint32_t clkn;
+  26:ubertooth_clock.c **** volatile uint32_t last_hop;
+  27:ubertooth_clock.c **** 
+  28:ubertooth_clock.c **** volatile uint32_t clkn_offset;
+  29:ubertooth_clock.c **** volatile uint16_t clk100ns_offset;
+  30:ubertooth_clock.c **** 
+  31:ubertooth_clock.c **** volatile int16_t clk_drift_ppm;
+  32:ubertooth_clock.c **** volatile uint16_t clk_drift_correction;
+ARM GAS  /tmp/ccrDjiRc.s 			page 2
+
+
+  33:ubertooth_clock.c **** 
+  34:ubertooth_clock.c **** volatile uint32_t clkn_last_drift_fix;
+  35:ubertooth_clock.c **** volatile uint32_t clkn_next_drift_fix;
+  36:ubertooth_clock.c **** 
+  37:ubertooth_clock.c **** void clkn_stop()
+  38:ubertooth_clock.c **** {
+  27              		.loc 1 38 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  39:ubertooth_clock.c **** 	/* stop and reset the timer to zero */
+  40:ubertooth_clock.c **** 	T0TCR = TCR_Counter_Reset;
+  32              		.loc 1 40 2 view .LVU1
+  33              		.loc 1 40 8 is_stmt 0 view .LVU2
+  34 0000 4FF04023 		mov	r3, #1073758208
+  35 0004 0222     		movs	r2, #2
+  36 0006 5A60     		str	r2, [r3, #4]
+  41:ubertooth_clock.c **** 
+  42:ubertooth_clock.c **** 	clkn = 0;
+  37              		.loc 1 42 2 is_stmt 1 view .LVU3
+  38              		.loc 1 42 7 is_stmt 0 view .LVU4
+  39 0008 0022     		movs	r2, #0
+  40 000a 054B     		ldr	r3, .L2
+  41 000c 1A60     		str	r2, [r3]
+  43:ubertooth_clock.c **** 	last_hop = 0;
+  42              		.loc 1 43 2 is_stmt 1 view .LVU5
+  43              		.loc 1 43 11 is_stmt 0 view .LVU6
+  44 000e 5A60     		str	r2, [r3, #4]
+  44:ubertooth_clock.c **** 
+  45:ubertooth_clock.c **** 	clkn_offset = 0;
+  45              		.loc 1 45 2 is_stmt 1 view .LVU7
+  46              		.loc 1 45 14 is_stmt 0 view .LVU8
+  47 0010 9A60     		str	r2, [r3, #8]
+  46:ubertooth_clock.c **** 	clk100ns_offset = 0;
+  48              		.loc 1 46 2 is_stmt 1 view .LVU9
+  49              		.loc 1 46 18 is_stmt 0 view .LVU10
+  50 0012 9A81     		strh	r2, [r3, #12]	@ movhi
+  47:ubertooth_clock.c **** 
+  48:ubertooth_clock.c **** 	clk_drift_ppm = 0;
+  51              		.loc 1 48 2 is_stmt 1 view .LVU11
+  52              		.loc 1 48 16 is_stmt 0 view .LVU12
+  53 0014 DA81     		strh	r2, [r3, #14]	@ movhi
+  49:ubertooth_clock.c **** 	clk_drift_correction = 0;
+  54              		.loc 1 49 2 is_stmt 1 view .LVU13
+  55              		.loc 1 49 23 is_stmt 0 view .LVU14
+  56 0016 1A82     		strh	r2, [r3, #16]	@ movhi
+  50:ubertooth_clock.c **** 
+  51:ubertooth_clock.c **** 	clkn_last_drift_fix = 0;
+  57              		.loc 1 51 2 is_stmt 1 view .LVU15
+  58              		.loc 1 51 22 is_stmt 0 view .LVU16
+  59 0018 5A61     		str	r2, [r3, #20]
+  52:ubertooth_clock.c **** 	clkn_next_drift_fix = 0;
+  60              		.loc 1 52 2 is_stmt 1 view .LVU17
+  61              		.loc 1 52 22 is_stmt 0 view .LVU18
+  62 001a 9A61     		str	r2, [r3, #24]
+  53:ubertooth_clock.c **** }
+ARM GAS  /tmp/ccrDjiRc.s 			page 3
+
+
+  63              		.loc 1 53 1 view .LVU19
+  64 001c 7047     		bx	lr
+  65              	.L3:
+  66 001e 00BF     		.align	2
+  67              	.L2:
+  68 0020 00000000 		.word	.LANCHOR0
+  69              		.cfi_endproc
+  70              	.LFE0:
+  72              		.section	.text.clkn_start,"ax",%progbits
+  73              		.align	1
+  74              		.global	clkn_start
+  75              		.syntax unified
+  76              		.thumb
+  77              		.thumb_func
+  79              	clkn_start:
+  80              	.LFB1:
+  54:ubertooth_clock.c **** 
+  55:ubertooth_clock.c **** void clkn_start()
+  56:ubertooth_clock.c **** {
+  81              		.loc 1 56 1 is_stmt 1 view -0
+  82              		.cfi_startproc
+  83              		@ args = 0, pretend = 0, frame = 0
+  84              		@ frame_needed = 0, uses_anonymous_args = 0
+  85              		@ link register save eliminated.
+  57:ubertooth_clock.c **** 	/* start timer */
+  58:ubertooth_clock.c **** 	T0TCR = TCR_Counter_Enable;
+  86              		.loc 1 58 2 view .LVU21
+  87              		.loc 1 58 8 is_stmt 0 view .LVU22
+  88 0000 4FF04023 		mov	r3, #1073758208
+  89 0004 0122     		movs	r2, #1
+  90 0006 5A60     		str	r2, [r3, #4]
+  59:ubertooth_clock.c **** }
+  91              		.loc 1 59 1 view .LVU23
+  92 0008 7047     		bx	lr
+  93              		.cfi_endproc
+  94              	.LFE1:
+  96              		.section	.text.clkn_init,"ax",%progbits
+  97              		.align	1
+  98              		.global	clkn_init
+  99              		.syntax unified
+ 100              		.thumb
+ 101              		.thumb_func
+ 103              	clkn_init:
+ 104              	.LFB2:
+  60:ubertooth_clock.c **** 
+  61:ubertooth_clock.c **** void clkn_init()
+  62:ubertooth_clock.c **** {
+ 105              		.loc 1 62 1 is_stmt 1 view -0
+ 106              		.cfi_startproc
+ 107              		@ args = 0, pretend = 0, frame = 0
+ 108              		@ frame_needed = 0, uses_anonymous_args = 0
+ 109 0000 08B5     		push	{r3, lr}
+ 110              		.cfi_def_cfa_offset 8
+ 111              		.cfi_offset 3, -8
+ 112              		.cfi_offset 14, -4
+  63:ubertooth_clock.c **** 	/*
+  64:ubertooth_clock.c **** 	 * Because these are reset defaults, we're assuming TIMER0 is powered on
+ARM GAS  /tmp/ccrDjiRc.s 			page 4
+
+
+  65:ubertooth_clock.c **** 	 * and in timer mode.  The TIMER0 peripheral clock should have been set by
+  66:ubertooth_clock.c **** 	 * clock_start().
+  67:ubertooth_clock.c **** 	 */
+  68:ubertooth_clock.c **** 
+  69:ubertooth_clock.c **** 	clkn_stop();
+ 113              		.loc 1 69 2 view .LVU25
+ 114 0002 FFF7FEFF 		bl	clkn_stop
+ 115              	.LVL0:
+  70:ubertooth_clock.c **** 
+  71:ubertooth_clock.c **** #ifdef TC13BADGE
+  72:ubertooth_clock.c **** 	/*
+  73:ubertooth_clock.c **** 	 * The peripheral clock has a period of 33.3ns.  3 pclk periods makes one
+  74:ubertooth_clock.c **** 	 * CLK100NS period (100 ns).
+  75:ubertooth_clock.c **** 	 */
+  76:ubertooth_clock.c **** 	T0PR = 2;
+  77:ubertooth_clock.c **** #else
+  78:ubertooth_clock.c **** 	/*
+  79:ubertooth_clock.c **** 	 * The peripheral clock has a period of 20ns.  5 pclk periods
+  80:ubertooth_clock.c **** 	 * makes one CLK100NS period (100 ns).
+  81:ubertooth_clock.c **** 	 */
+  82:ubertooth_clock.c **** 	T0PR = 4;
+ 116              		.loc 1 82 2 view .LVU26
+ 117              		.loc 1 82 7 is_stmt 0 view .LVU27
+ 118 0006 4FF04023 		mov	r3, #1073758208
+ 119 000a 0422     		movs	r2, #4
+ 120 000c DA60     		str	r2, [r3, #12]
+  83:ubertooth_clock.c **** #endif
+  84:ubertooth_clock.c **** 	/* 3125 * 100 ns = 312.5 us, the Bluetooth clock (CLKN). */
+  85:ubertooth_clock.c **** 	T0MR0 = 3124;
+ 121              		.loc 1 85 2 is_stmt 1 view .LVU28
+ 122              		.loc 1 85 8 is_stmt 0 view .LVU29
+ 123 000e 40F63442 		movw	r2, #3124
+ 124 0012 9A61     		str	r2, [r3, #24]
+  86:ubertooth_clock.c **** 	T0MCR = TMCR_MR0R | TMCR_MR0I;
+ 125              		.loc 1 86 2 is_stmt 1 view .LVU30
+ 126              		.loc 1 86 8 is_stmt 0 view .LVU31
+ 127 0014 0322     		movs	r2, #3
+ 128 0016 5A61     		str	r2, [r3, #20]
+  87:ubertooth_clock.c **** 	ISER0 = ISER0_ISE_TIMER0;
+ 129              		.loc 1 87 2 is_stmt 1 view .LVU32
+ 130              		.loc 1 87 8 is_stmt 0 view .LVU33
+ 131 0018 4FF0E023 		mov	r3, #-536813568
+ 132 001c 0222     		movs	r2, #2
+ 133 001e C3F80021 		str	r2, [r3, #256]
+  88:ubertooth_clock.c **** }
+ 134              		.loc 1 88 1 view .LVU34
+ 135 0022 08BD     		pop	{r3, pc}
+ 136              		.cfi_endproc
+ 137              	.LFE2:
+ 139              		.section	.text.clkn_disable,"ax",%progbits
+ 140              		.align	1
+ 141              		.global	clkn_disable
+ 142              		.syntax unified
+ 143              		.thumb
+ 144              		.thumb_func
+ 146              	clkn_disable:
+ 147              	.LFB3:
+ARM GAS  /tmp/ccrDjiRc.s 			page 5
+
+
+  89:ubertooth_clock.c **** 
+  90:ubertooth_clock.c **** // totally disable clkn and timer0
+  91:ubertooth_clock.c **** void clkn_disable(void) {
+ 148              		.loc 1 91 25 is_stmt 1 view -0
+ 149              		.cfi_startproc
+ 150              		@ args = 0, pretend = 0, frame = 0
+ 151              		@ frame_needed = 0, uses_anonymous_args = 0
+ 152 0000 08B5     		push	{r3, lr}
+ 153              		.cfi_def_cfa_offset 8
+ 154              		.cfi_offset 3, -8
+ 155              		.cfi_offset 14, -4
+  92:ubertooth_clock.c **** 	clkn_stop();
+ 156              		.loc 1 92 2 view .LVU36
+ 157 0002 FFF7FEFF 		bl	clkn_stop
+ 158              	.LVL1:
+  93:ubertooth_clock.c **** 	ICER0 = ICER0_ICE_TIMER0;
+ 159              		.loc 1 93 2 view .LVU37
+ 160              		.loc 1 93 8 is_stmt 0 view .LVU38
+ 161 0006 4FF0E023 		mov	r3, #-536813568
+ 162 000a 0222     		movs	r2, #2
+ 163 000c C3F88021 		str	r2, [r3, #384]
+  94:ubertooth_clock.c **** }
+ 164              		.loc 1 94 1 view .LVU39
+ 165 0010 08BD     		pop	{r3, pc}
+ 166              		.cfi_endproc
+ 167              	.LFE3:
+ 169              		.global	clkn_next_drift_fix
+ 170              		.global	clkn_last_drift_fix
+ 171              		.global	clk_drift_correction
+ 172              		.global	clk_drift_ppm
+ 173              		.global	clk100ns_offset
+ 174              		.global	clkn_offset
+ 175              		.global	last_hop
+ 176              		.global	clkn
+ 177              		.bss
+ 178              		.align	2
+ 179              		.set	.LANCHOR0,. + 0
+ 182              	clkn:
+ 183 0000 00000000 		.space	4
+ 186              	last_hop:
+ 187 0004 00000000 		.space	4
+ 190              	clkn_offset:
+ 191 0008 00000000 		.space	4
+ 194              	clk100ns_offset:
+ 195 000c 0000     		.space	2
+ 198              	clk_drift_ppm:
+ 199 000e 0000     		.space	2
+ 202              	clk_drift_correction:
+ 203 0010 0000     		.space	2
+ 204 0012 0000     		.space	2
+ 207              	clkn_last_drift_fix:
+ 208 0014 00000000 		.space	4
+ 211              	clkn_next_drift_fix:
+ 212 0018 00000000 		.space	4
+ 213              		.text
+ 214              	.Letext0:
+ 215              		.file 2 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ARM GAS  /tmp/ccrDjiRc.s 			page 6
+
+
+ 216              		.file 3 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 217              		.file 4 "ubertooth_clock.h"
+ARM GAS  /tmp/ccrDjiRc.s 			page 7
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 ubertooth_clock.c
+     /tmp/ccrDjiRc.s:19     .text.clkn_stop:00000000 $t
+     /tmp/ccrDjiRc.s:25     .text.clkn_stop:00000000 clkn_stop
+     /tmp/ccrDjiRc.s:68     .text.clkn_stop:00000020 $d
+     /tmp/ccrDjiRc.s:73     .text.clkn_start:00000000 $t
+     /tmp/ccrDjiRc.s:79     .text.clkn_start:00000000 clkn_start
+     /tmp/ccrDjiRc.s:97     .text.clkn_init:00000000 $t
+     /tmp/ccrDjiRc.s:103    .text.clkn_init:00000000 clkn_init
+     /tmp/ccrDjiRc.s:140    .text.clkn_disable:00000000 $t
+     /tmp/ccrDjiRc.s:146    .text.clkn_disable:00000000 clkn_disable
+     /tmp/ccrDjiRc.s:211    .bss:00000018 clkn_next_drift_fix
+     /tmp/ccrDjiRc.s:207    .bss:00000014 clkn_last_drift_fix
+     /tmp/ccrDjiRc.s:202    .bss:00000010 clk_drift_correction
+     /tmp/ccrDjiRc.s:198    .bss:0000000e clk_drift_ppm
+     /tmp/ccrDjiRc.s:194    .bss:0000000c clk100ns_offset
+     /tmp/ccrDjiRc.s:190    .bss:00000008 clkn_offset
+     /tmp/ccrDjiRc.s:186    .bss:00000004 last_hop
+     /tmp/ccrDjiRc.s:182    .bss:00000000 clkn
+     /tmp/ccrDjiRc.s:178    .bss:00000000 $d
+
+NO UNDEFINED SYMBOLS

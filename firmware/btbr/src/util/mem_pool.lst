@@ -1,0 +1,618 @@
+ARM GAS  /tmp/cctx2xKZ.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"mem_pool.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/util/mem_pool.c"
+  18              		.section	.text.mem_pool_init,"ax",%progbits
+  19              		.align	1
+  20              		.p2align 2,,3
+  21              		.global	mem_pool_init
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	mem_pool_init:
+  27              	.LFB11:
+   1:src/util/mem_pool.c **** /* Memory pool
+   2:src/util/mem_pool.c ****  *
+   3:src/util/mem_pool.c ****  * Copyright 2020 Etienne Helluy-Lafont, Univ. Lille, CNRS.
+   4:src/util/mem_pool.c ****  *
+   5:src/util/mem_pool.c ****  * This file is part of Project Ubertooth.
+   6:src/util/mem_pool.c ****  *
+   7:src/util/mem_pool.c ****  * This program is free software; you can redistribute it and/or modify
+   8:src/util/mem_pool.c ****  * it under the terms of the GNU General Public License as published by
+   9:src/util/mem_pool.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  10:src/util/mem_pool.c ****  * any later version.
+  11:src/util/mem_pool.c ****  *
+  12:src/util/mem_pool.c ****  * This program is distributed in the hope that it will be useful,
+  13:src/util/mem_pool.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  14:src/util/mem_pool.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  15:src/util/mem_pool.c ****  * GNU General Public License for more details.
+  16:src/util/mem_pool.c ****  *
+  17:src/util/mem_pool.c ****  * You should have received a copy of the GNU General Public License
+  18:src/util/mem_pool.c ****  * along with this program; see the file COPYING.  If not, write to
+  19:src/util/mem_pool.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  20:src/util/mem_pool.c ****  * Boston, MA 02110-1301, USA.
+  21:src/util/mem_pool.c ****  */
+  22:src/util/mem_pool.c **** #include <stddef.h>
+  23:src/util/mem_pool.c **** #include <ubertooth_interface.h>
+  24:src/util/mem_pool.c **** #include <ubtbr/debug.h>
+  25:src/util/mem_pool.c **** #include <ubtbr/system.h>
+  26:src/util/mem_pool.c **** #include <ubtbr/bb_msg.h>
+  27:src/util/mem_pool.c **** 
+  28:src/util/mem_pool.c **** //#define MEM_DEBUG // this was to fix a small double free
+  29:src/util/mem_pool.c **** 
+  30:src/util/mem_pool.c **** #define BUF_NUM 16
+  31:src/util/mem_pool.c **** 
+ARM GAS  /tmp/cctx2xKZ.s 			page 2
+
+
+  32:src/util/mem_pool.c **** /* shoult be enough for any ACL packet */
+  33:src/util/mem_pool.c **** #define BUF_SIZE (sizeof(msg_t)+sizeof(btctl_hdr_t)+sizeof(btctl_rx_pkt_t)+344)
+  34:src/util/mem_pool.c **** 
+  35:src/util/mem_pool.c **** typedef struct pool_el_s {
+  36:src/util/mem_pool.c **** #ifdef MEM_DEBUG
+  37:src/util/mem_pool.c **** 	int allocated;
+  38:src/util/mem_pool.c **** #endif
+  39:src/util/mem_pool.c **** 	struct pool_el_s *li;
+  40:src/util/mem_pool.c **** 	uint8_t buf[BUF_SIZE];
+  41:src/util/mem_pool.c **** } pool_el_t;
+  42:src/util/mem_pool.c **** 
+  43:src/util/mem_pool.c **** static struct {
+  44:src/util/mem_pool.c **** 	int init;
+  45:src/util/mem_pool.c **** 	pool_el_t *li;
+  46:src/util/mem_pool.c **** 	pool_el_t el[BUF_NUM];
+  47:src/util/mem_pool.c **** } pool = {0};
+  48:src/util/mem_pool.c **** 
+  49:src/util/mem_pool.c **** void mem_pool_init(void)
+  50:src/util/mem_pool.c **** {
+  28              		.loc 1 50 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32 0000 00B5     		push	{lr}
+  33              		.cfi_def_cfa_offset 4
+  34              		.cfi_offset 14, -4
+  51:src/util/mem_pool.c **** 	int i;
+  35              		.loc 1 51 2 view .LVU1
+  52:src/util/mem_pool.c **** 
+  53:src/util/mem_pool.c **** 	for(i=0;i<BUF_NUM-1;i++)
+  36              		.loc 1 53 2 view .LVU2
+  37              		.loc 1 53 11 discriminator 1 view .LVU3
+  38              	.LVL0:
+  54:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  39              		.loc 1 54 3 view .LVU4
+  55:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+  40              		.loc 1 55 24 is_stmt 0 view .LVU5
+  41 0002 0020     		movs	r0, #0
+  56:src/util/mem_pool.c **** 	pool.li = pool.el;
+  57:src/util/mem_pool.c **** 	pool.init = 1;
+  42              		.loc 1 57 12 view .LVU6
+  43 0004 0121     		movs	r1, #1
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+  44              		.loc 1 54 17 view .LVU7
+  45 0006 224B     		ldr	r3, .L3
+  46 0008 DFF888C0 		ldr	ip, .L3+4
+  47 000c 03F58052 		add	r2, r3, #4096
+  55:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+  48              		.loc 1 55 24 view .LVU8
+  49 0010 C2F81006 		str	r0, [r2, #1552]
+  56:src/util/mem_pool.c **** 	pool.li = pool.el;
+  50              		.loc 1 56 10 view .LVU9
+  51 0014 03F10800 		add	r0, r3, #8
+  52              		.loc 1 57 12 view .LVU10
+  53 0018 C3E90010 		strd	r1, r0, [r3]
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+  54              		.loc 1 54 17 view .LVU11
+ARM GAS  /tmp/cctx2xKZ.s 			page 3
+
+
+  55 001c 1E48     		ldr	r0, .L3+8
+  56 001e 0CF5BC7E 		add	lr, ip, #376
+  57 0022 00F5BC71 		add	r1, r0, #376
+  58 0026 C2F89814 		str	r1, [r2, #1176]
+  59 002a 03F58E61 		add	r1, r3, #1136
+  60 002e C3F8F812 		str	r1, [r3, #760]
+  61 0032 03F5EC61 		add	r1, r3, #1888
+  62 0036 C2F82003 		str	r0, [r2, #800]
+  63 003a C3F8E815 		str	r1, [r3, #1512]
+  64 003e 03F53E70 		add	r0, r3, #760
+  65 0042 03F52561 		add	r1, r3, #2640
+  66 0046 C3F8B8CE 		str	ip, [r3, #3768]
+  67 004a C3F88001 		str	r0, [r3, #384]
+  68 004e 03F5BD6C 		add	ip, r3, #1512
+  69 0052 03F6D800 		addw	r0, r3, #2264
+  70 0056 C3F8D818 		str	r1, [r3, #2264]
+  71 005a 03F55461 		add	r1, r3, #3392
+  72 005e C2F830E0 		str	lr, [r2, #48]
+  73 0062 C3F870C4 		str	ip, [r3, #1136]
+  74 0066 03F5C07E 		add	lr, r3, #384
+  75 006a 03F6C83C 		addw	ip, r3, #3016
+  76 006e C3F86007 		str	r0, [r3, #1888]
+  77 0072 C3F8C81B 		str	r1, [r3, #3016]
+  78 0076 03F6B860 		addw	r0, r3, #3768
+  79 007a 03F59951 		add	r1, r3, #4896
+  80 007e C3F808E0 		str	lr, [r3, #8]
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  81              		.loc 1 53 23 is_stmt 1 discriminator 3 view .LVU12
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  82              		.loc 1 53 11 discriminator 1 view .LVU13
+  83              	.LVL1:
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+  84              		.loc 1 54 3 view .LVU14
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  85              		.loc 1 53 23 discriminator 3 view .LVU15
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  86              		.loc 1 53 11 discriminator 1 view .LVU16
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+  87              		.loc 1 54 3 view .LVU17
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  88              		.loc 1 53 23 discriminator 3 view .LVU18
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  89              		.loc 1 53 11 discriminator 1 view .LVU19
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+  90              		.loc 1 54 3 view .LVU20
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  91              		.loc 1 53 23 discriminator 3 view .LVU21
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  92              		.loc 1 53 11 discriminator 1 view .LVU22
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+  93              		.loc 1 54 3 view .LVU23
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  94              		.loc 1 53 23 discriminator 3 view .LVU24
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  95              		.loc 1 53 11 discriminator 1 view .LVU25
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+  96              		.loc 1 54 3 view .LVU26
+ARM GAS  /tmp/cctx2xKZ.s 			page 4
+
+
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  97              		.loc 1 53 23 discriminator 3 view .LVU27
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+  98              		.loc 1 53 11 discriminator 1 view .LVU28
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+  99              		.loc 1 54 3 view .LVU29
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 100              		.loc 1 53 23 discriminator 3 view .LVU30
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 101              		.loc 1 53 11 discriminator 1 view .LVU31
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 102              		.loc 1 54 3 view .LVU32
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 103              		.loc 1 54 17 is_stmt 0 view .LVU33
+ 104 0082 C3F850CA 		str	ip, [r3, #2640]
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 105              		.loc 1 53 23 is_stmt 1 discriminator 3 view .LVU34
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 106              		.loc 1 53 11 discriminator 1 view .LVU35
+ 107              	.LVL2:
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 108              		.loc 1 54 3 view .LVU36
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 109              		.loc 1 53 23 discriminator 3 view .LVU37
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 110              		.loc 1 53 11 discriminator 1 view .LVU38
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 111              		.loc 1 54 3 view .LVU39
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 112              		.loc 1 54 17 is_stmt 0 view .LVU40
+ 113 0086 C3F8400D 		str	r0, [r3, #3392]
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 114              		.loc 1 53 23 is_stmt 1 discriminator 3 view .LVU41
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 115              		.loc 1 53 11 discriminator 1 view .LVU42
+ 116              	.LVL3:
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 117              		.loc 1 54 3 view .LVU43
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 118              		.loc 1 53 23 discriminator 3 view .LVU44
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 119              		.loc 1 53 11 discriminator 1 view .LVU45
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 120              		.loc 1 54 3 view .LVU46
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 121              		.loc 1 53 23 discriminator 3 view .LVU47
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 122              		.loc 1 53 11 discriminator 1 view .LVU48
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 123              		.loc 1 54 3 view .LVU49
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 124              		.loc 1 54 17 is_stmt 0 view .LVU50
+ 125 008a C2F8A811 		str	r1, [r2, #424]
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 126              		.loc 1 53 23 is_stmt 1 discriminator 3 view .LVU51
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 127              		.loc 1 53 11 discriminator 1 view .LVU52
+ARM GAS  /tmp/cctx2xKZ.s 			page 5
+
+
+ 128              	.LVL4:
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 129              		.loc 1 54 3 view .LVU53
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 130              		.loc 1 53 23 discriminator 3 view .LVU54
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 131              		.loc 1 53 11 discriminator 1 view .LVU55
+  54:src/util/mem_pool.c **** 	pool.el[BUF_NUM-1].li = NULL;
+ 132              		.loc 1 54 3 view .LVU56
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 133              		.loc 1 53 23 discriminator 3 view .LVU57
+  53:src/util/mem_pool.c **** 		pool.el[i].li = &pool.el[i+1];
+ 134              		.loc 1 53 11 discriminator 1 view .LVU58
+  55:src/util/mem_pool.c **** 	pool.li = pool.el;
+ 135              		.loc 1 55 2 view .LVU59
+  56:src/util/mem_pool.c **** 	pool.init = 1;
+ 136              		.loc 1 56 2 view .LVU60
+ 137              		.loc 1 57 2 view .LVU61
+  58:src/util/mem_pool.c **** }
+ 138              		.loc 1 58 1 is_stmt 0 view .LVU62
+ 139 008e 00BD     		pop	{pc}
+ 140              	.L4:
+ 141              		.align	2
+ 142              	.L3:
+ 143 0090 00000000 		.word	pool
+ 144 0094 30100000 		.word	pool+4144
+ 145 0098 98140000 		.word	pool+5272
+ 146              		.cfi_endproc
+ 147              	.LFE11:
+ 149              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 150              		.align	2
+ 151              	.LC0:
+ 152 0000 4449457C 		.ascii	"DIE|pool ny initalized\012\012\000"
+ 152      706F6F6C 
+ 152      206E7920 
+ 152      696E6974 
+ 152      616C697A 
+ 153 0019 000000   		.align	2
+ 154              	.LC1:
+ 155 001c 4449457C 		.ascii	"DIE|Cannot alloc %d\012\012\000"
+ 155      43616E6E 
+ 155      6F742061 
+ 155      6C6C6F63 
+ 155      2025640A 
+ 156 0032 0000     		.align	2
+ 157              	.LC2:
+ 158 0034 4449457C 		.ascii	"DIE|No more buffers\012\012\000"
+ 158      4E6F206D 
+ 158      6F726520 
+ 158      62756666 
+ 158      6572730A 
+ 159              		.section	.text.mem_pool_alloc,"ax",%progbits
+ 160              		.align	1
+ 161              		.p2align 2,,3
+ 162              		.global	mem_pool_alloc
+ 163              		.syntax unified
+ 164              		.thumb
+ARM GAS  /tmp/cctx2xKZ.s 			page 6
+
+
+ 165              		.thumb_func
+ 167              	mem_pool_alloc:
+ 168              	.LVL5:
+ 169              	.LFB12:
+  59:src/util/mem_pool.c **** 
+  60:src/util/mem_pool.c **** void *mem_pool_alloc(unsigned size)
+  61:src/util/mem_pool.c **** {
+ 170              		.loc 1 61 1 is_stmt 1 view -0
+ 171              		.cfi_startproc
+ 172              		@ args = 0, pretend = 0, frame = 0
+ 173              		@ frame_needed = 0, uses_anonymous_args = 0
+ 174              		.loc 1 61 1 is_stmt 0 view .LVU64
+ 175 0000 08B5     		push	{r3, lr}
+ 176              		.cfi_def_cfa_offset 8
+ 177              		.cfi_offset 3, -8
+ 178              		.cfi_offset 14, -4
+  62:src/util/mem_pool.c **** 	uint32_t flags = irq_save_disable();
+ 179              		.loc 1 62 2 is_stmt 1 view .LVU65
+ 180              	.LBB10:
+ 181              	.LBI10:
+ 182              		.file 2 "include/ubtbr/system.h"
+   1:include/ubtbr/system.h **** #ifndef __SYSTEM_H
+   2:include/ubtbr/system.h **** #define __SYSTEM_H
+   3:include/ubtbr/system.h **** #include <stdint.h>
+   4:include/ubtbr/system.h **** 
+   5:include/ubtbr/system.h **** static inline uint32_t irq_save_disable(void)
+ 183              		.loc 2 5 24 view .LVU66
+ 184              	.LBB11:
+   6:include/ubtbr/system.h **** {
+   7:include/ubtbr/system.h **** 	uint32_t primask;
+ 185              		.loc 2 7 2 view .LVU67
+   8:include/ubtbr/system.h **** 
+   9:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 186              		.loc 2 9 2 view .LVU68
+ 187              		.syntax unified
+ 188              	@ 9 "include/ubtbr/system.h" 1
+ 189 0002 EFF31081 			mrs    r1, primask
+ 190 0006 72B6     		cpsid  i
+ 191              	
+ 192              	@ 0 "" 2
+  10:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+  11:include/ubtbr/system.h **** 	"\tcpsid  i\n"
+  12:include/ubtbr/system.h **** 	: "=r" (primask)
+  13:include/ubtbr/system.h **** 	:
+  14:include/ubtbr/system.h **** 	: "memory");
+  15:include/ubtbr/system.h **** 
+  16:include/ubtbr/system.h **** 	return primask;
+ 193              		.loc 2 16 2 view .LVU69
+ 194              	.LVL6:
+ 195              		.loc 2 16 2 is_stmt 0 view .LVU70
+ 196              		.thumb
+ 197              		.syntax unified
+ 198              	.LBE11:
+ 199              	.LBE10:
+  63:src/util/mem_pool.c **** 	pool_el_t *el;
+ 200              		.loc 1 63 2 is_stmt 1 view .LVU71
+  64:src/util/mem_pool.c **** 	void *buf;
+ARM GAS  /tmp/cctx2xKZ.s 			page 7
+
+
+ 201              		.loc 1 64 2 view .LVU72
+  65:src/util/mem_pool.c **** 
+  66:src/util/mem_pool.c **** 	if (!pool.init)
+ 202              		.loc 1 66 2 view .LVU73
+ 203              		.loc 1 66 11 is_stmt 0 view .LVU74
+ 204 0008 0B4B     		ldr	r3, .L12
+ 205              		.loc 1 66 5 view .LVU75
+ 206 000a 1A68     		ldr	r2, [r3]
+ 207 000c 52B1     		cbz	r2, .L9
+  67:src/util/mem_pool.c **** 		DIE("pool ny initalized\n");
+  68:src/util/mem_pool.c **** 
+  69:src/util/mem_pool.c **** 	if (size > BUF_SIZE)
+ 208              		.loc 1 69 2 is_stmt 1 view .LVU76
+ 209              		.loc 1 69 5 is_stmt 0 view .LVU77
+ 210 000e B0F5BA7F 		cmp	r0, #372
+ 211 0012 0DD8     		bhi	.L10
+  70:src/util/mem_pool.c **** 		DIE("Cannot alloc %d\n", size);
+  71:src/util/mem_pool.c **** 
+  72:src/util/mem_pool.c **** 	if ((el = pool.li) == NULL)
+ 212              		.loc 1 72 2 is_stmt 1 view .LVU78
+ 213              		.loc 1 72 10 is_stmt 0 view .LVU79
+ 214 0014 5868     		ldr	r0, [r3, #4]
+ 215              	.LVL7:
+ 216              		.loc 1 72 5 view .LVU80
+ 217 0016 40B1     		cbz	r0, .L11
+  73:src/util/mem_pool.c **** 		DIE("No more buffers\n");
+  74:src/util/mem_pool.c **** #ifdef MEM_DEBUG
+  75:src/util/mem_pool.c **** 	if (el->allocated)
+  76:src/util/mem_pool.c **** 		DIE("el already allocated\n");
+  77:src/util/mem_pool.c **** #endif
+  78:src/util/mem_pool.c **** 
+  79:src/util/mem_pool.c **** 	pool.li = el->li;
+ 218              		.loc 1 79 2 is_stmt 1 view .LVU81
+ 219              		.loc 1 79 10 is_stmt 0 view .LVU82
+ 220 0018 50F8042B 		ldr	r2, [r0], #4
+ 221              	.LVL8:
+ 222              		.loc 1 79 10 view .LVU83
+ 223 001c 5A60     		str	r2, [r3, #4]
+ 224              	.LVL9:
+  80:src/util/mem_pool.c **** #ifdef MEM_DEBUG
+  81:src/util/mem_pool.c **** 	el->allocated = 1;
+  82:src/util/mem_pool.c **** #endif
+  83:src/util/mem_pool.c **** 	irq_restore(flags);
+ 225              		.loc 1 83 2 is_stmt 1 view .LVU84
+ 226              	.LBB12:
+ 227              	.LBI12:
+  17:include/ubtbr/system.h **** }
+  18:include/ubtbr/system.h **** 
+  19:include/ubtbr/system.h **** static inline void irq_restore(uint32_t primask)
+ 228              		.loc 2 19 20 view .LVU85
+ 229              	.LBB13:
+  20:include/ubtbr/system.h **** {
+  21:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 230              		.loc 2 21 2 view .LVU86
+ 231              		.syntax unified
+ 232              	@ 21 "include/ubtbr/system.h" 1
+ 233 001e 81F31088 		msr primask, r1
+ARM GAS  /tmp/cctx2xKZ.s 			page 8
+
+
+ 234              	@ 0 "" 2
+ 235              	.LVL10:
+ 236              		.loc 2 21 2 is_stmt 0 view .LVU87
+ 237              		.thumb
+ 238              		.syntax unified
+ 239              	.LBE13:
+ 240              	.LBE12:
+  84:src/util/mem_pool.c **** 
+  85:src/util/mem_pool.c **** 	return &el->buf;
+ 241              		.loc 1 85 2 is_stmt 1 view .LVU88
+  86:src/util/mem_pool.c **** }
+ 242              		.loc 1 86 1 is_stmt 0 view .LVU89
+ 243 0022 08BD     		pop	{r3, pc}
+ 244              	.LVL11:
+ 245              	.L9:
+  67:src/util/mem_pool.c **** 
+ 246              		.loc 1 67 3 is_stmt 1 view .LVU90
+ 247 0024 0548     		ldr	r0, .L12+4
+ 248              	.LVL12:
+  67:src/util/mem_pool.c **** 
+ 249              		.loc 1 67 3 is_stmt 0 view .LVU91
+ 250 0026 FFF7FEFF 		bl	die
+ 251              	.LVL13:
+ 252              	.L11:
+  73:src/util/mem_pool.c **** #ifdef MEM_DEBUG
+ 253              		.loc 1 73 3 is_stmt 1 view .LVU92
+ 254 002a 0548     		ldr	r0, .L12+8
+ 255              	.LVL14:
+  73:src/util/mem_pool.c **** #ifdef MEM_DEBUG
+ 256              		.loc 1 73 3 is_stmt 0 view .LVU93
+ 257 002c FFF7FEFF 		bl	die
+ 258              	.LVL15:
+ 259              	.L10:
+  70:src/util/mem_pool.c **** 
+ 260              		.loc 1 70 3 is_stmt 1 view .LVU94
+ 261 0030 0146     		mov	r1, r0
+ 262              	.LVL16:
+  70:src/util/mem_pool.c **** 
+ 263              		.loc 1 70 3 is_stmt 0 view .LVU95
+ 264 0032 0448     		ldr	r0, .L12+12
+ 265              	.LVL17:
+  70:src/util/mem_pool.c **** 
+ 266              		.loc 1 70 3 view .LVU96
+ 267 0034 FFF7FEFF 		bl	die
+ 268              	.LVL18:
+ 269              	.L13:
+  70:src/util/mem_pool.c **** 
+ 270              		.loc 1 70 3 view .LVU97
+ 271              		.align	2
+ 272              	.L12:
+ 273 0038 00000000 		.word	pool
+ 274 003c 00000000 		.word	.LC0
+ 275 0040 34000000 		.word	.LC2
+ 276 0044 1C000000 		.word	.LC1
+ 277              		.cfi_endproc
+ 278              	.LFE12:
+ 280              		.section	.text.mem_pool_free,"ax",%progbits
+ARM GAS  /tmp/cctx2xKZ.s 			page 9
+
+
+ 281              		.align	1
+ 282              		.p2align 2,,3
+ 283              		.global	mem_pool_free
+ 284              		.syntax unified
+ 285              		.thumb
+ 286              		.thumb_func
+ 288              	mem_pool_free:
+ 289              	.LVL19:
+ 290              	.LFB13:
+  87:src/util/mem_pool.c **** 
+  88:src/util/mem_pool.c **** void mem_pool_free(void *p)
+  89:src/util/mem_pool.c **** {
+ 291              		.loc 1 89 1 is_stmt 1 view -0
+ 292              		.cfi_startproc
+ 293              		@ args = 0, pretend = 0, frame = 0
+ 294              		@ frame_needed = 0, uses_anonymous_args = 0
+ 295              		@ link register save eliminated.
+ 296              		.loc 1 89 1 is_stmt 0 view .LVU99
+  90:src/util/mem_pool.c **** #ifdef MEM_DEBUG
+  91:src/util/mem_pool.c **** 	uint32_t lr = get_lr();
+  92:src/util/mem_pool.c **** #endif
+  93:src/util/mem_pool.c **** 	pool_el_t * el = (pool_el_t*)((unsigned long)p-offsetof(pool_el_t, buf));
+ 297              		.loc 1 93 2 is_stmt 1 view .LVU100
+ 298              		.loc 1 93 48 is_stmt 0 view .LVU101
+ 299 0000 011F     		subs	r1, r0, #4
+ 300              	.LVL20:
+  94:src/util/mem_pool.c **** 	uint32_t flags = irq_save_disable();
+ 301              		.loc 1 94 2 is_stmt 1 view .LVU102
+ 302              	.LBB14:
+ 303              	.LBI14:
+   5:include/ubtbr/system.h **** {
+ 304              		.loc 2 5 24 view .LVU103
+ 305              	.LBB15:
+   7:include/ubtbr/system.h **** 
+ 306              		.loc 2 7 2 view .LVU104
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 307              		.loc 2 9 2 view .LVU105
+ 308              		.syntax unified
+ 309              	@ 9 "include/ubtbr/system.h" 1
+ 310 0002 EFF31082 			mrs    r2, primask
+ 311 0006 72B6     		cpsid  i
+ 312              	
+ 313              	@ 0 "" 2
+  16:include/ubtbr/system.h **** }
+ 314              		.loc 2 16 2 view .LVU106
+ 315              	.LVL21:
+  16:include/ubtbr/system.h **** }
+ 316              		.loc 2 16 2 is_stmt 0 view .LVU107
+ 317              		.thumb
+ 318              		.syntax unified
+ 319              	.LBE15:
+ 320              	.LBE14:
+  95:src/util/mem_pool.c **** 
+  96:src/util/mem_pool.c **** #ifdef MEM_DEBUG
+  97:src/util/mem_pool.c **** 	if (el->allocated != 1)
+  98:src/util/mem_pool.c **** 		DIE("el not allocated %08x|%d\n",lr,el->allocated);
+  99:src/util/mem_pool.c **** 	el->allocated = 0;
+ARM GAS  /tmp/cctx2xKZ.s 			page 10
+
+
+ 100:src/util/mem_pool.c **** #endif
+ 101:src/util/mem_pool.c **** 
+ 102:src/util/mem_pool.c **** 	el->li = pool.li;
+ 321              		.loc 1 102 2 is_stmt 1 view .LVU108
+ 322              		.loc 1 102 15 is_stmt 0 view .LVU109
+ 323 0008 044B     		ldr	r3, .L15
+ 324              		.loc 1 102 9 view .LVU110
+ 325 000a D3F804C0 		ldr	ip, [r3, #4]
+ 326 000e 40F804CC 		str	ip, [r0, #-4]
+ 103:src/util/mem_pool.c **** 	pool.li = el;
+ 327              		.loc 1 103 2 is_stmt 1 view .LVU111
+ 328              		.loc 1 103 10 is_stmt 0 view .LVU112
+ 329 0012 5960     		str	r1, [r3, #4]
+ 104:src/util/mem_pool.c **** 
+ 105:src/util/mem_pool.c **** 	irq_restore(flags);
+ 330              		.loc 1 105 2 is_stmt 1 view .LVU113
+ 331              	.LVL22:
+ 332              	.LBB16:
+ 333              	.LBI16:
+  19:include/ubtbr/system.h **** {
+ 334              		.loc 2 19 20 view .LVU114
+ 335              	.LBB17:
+ 336              		.loc 2 21 2 view .LVU115
+ 337              		.syntax unified
+ 338              	@ 21 "include/ubtbr/system.h" 1
+ 339 0014 82F31088 		msr primask, r2
+ 340              	@ 0 "" 2
+ 341              	.LVL23:
+ 342              		.loc 2 21 2 is_stmt 0 view .LVU116
+ 343              		.thumb
+ 344              		.syntax unified
+ 345              	.LBE17:
+ 346              	.LBE16:
+ 106:src/util/mem_pool.c **** }
+ 347              		.loc 1 106 1 view .LVU117
+ 348 0018 7047     		bx	lr
+ 349              	.L16:
+ 350 001a 00BF     		.align	2
+ 351              	.L15:
+ 352 001c 00000000 		.word	pool
+ 353              		.cfi_endproc
+ 354              	.LFE13:
+ 356              		.bss
+ 357              		.align	3
+ 360              	pool:
+ 361 0000 00000000 		.space	6024
+ 361      00000000 
+ 361      00000000 
+ 361      00000000 
+ 361      00000000 
+ 362              		.text
+ 363              	.Letext0:
+ 364              		.file 3 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 365              		.file 4 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 366              		.file 5 "include/ubtbr/debug.h"
+ARM GAS  /tmp/cctx2xKZ.s 			page 11
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 mem_pool.c
+     /tmp/cctx2xKZ.s:19     .text.mem_pool_init:00000000 $t
+     /tmp/cctx2xKZ.s:26     .text.mem_pool_init:00000000 mem_pool_init
+     /tmp/cctx2xKZ.s:143    .text.mem_pool_init:00000090 $d
+     /tmp/cctx2xKZ.s:360    .bss:00000000 pool
+     /tmp/cctx2xKZ.s:150    .rodata.str1.4:00000000 $d
+     /tmp/cctx2xKZ.s:160    .text.mem_pool_alloc:00000000 $t
+     /tmp/cctx2xKZ.s:167    .text.mem_pool_alloc:00000000 mem_pool_alloc
+     /tmp/cctx2xKZ.s:273    .text.mem_pool_alloc:00000038 $d
+     /tmp/cctx2xKZ.s:281    .text.mem_pool_free:00000000 $t
+     /tmp/cctx2xKZ.s:288    .text.mem_pool_free:00000000 mem_pool_free
+     /tmp/cctx2xKZ.s:352    .text.mem_pool_free:0000001c $d
+     /tmp/cctx2xKZ.s:357    .bss:00000000 $d
+
+UNDEFINED SYMBOLS
+die

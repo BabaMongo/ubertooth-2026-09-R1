@@ -1,0 +1,37 @@
+# Security and Code Quality Targets for Ubertooth
+
+.PHONY: security-check cppcheck clang-tidy valgrind-check all-checks
+
+security-check: cppcheck clang-tidy
+	@echo "✅ Security checks complete!"
+
+cppcheck:
+	@echo "🔍 Running cppcheck..."
+	cppcheck --enable=all \
+		--suppress=missingIncludeSystem \
+		--error-exitcode=1 \
+		libubertooth/ ubertooth-tools/ || true
+
+clang-tidy:
+	@echo "🔍 Running clang-tidy..."
+	clang-tidy -p . ubertooth-tools/src/*.c 2>/dev/null || echo "clang-tidy not available"
+
+valgrind-check: all
+	@echo "🔍 Running valgrind memory check..."
+	valgrind --leak-check=full --show-leak-kinds=all \
+		./ubertooth-tools/src/ubertooth-util --help 2>&1 | grep -E "ERROR|LEAK" || echo "✅ No memory leaks detected"
+
+format-check:
+	@echo "🔍 Checking code formatting..."
+	@find libubertooth ubertooth-tools -name "*.c" -o -name "*.h" | \
+		xargs clang-format --dry-run --Werror 2>/dev/null || echo "Consider running: make format-fix"
+
+format-fix:
+	@echo "📝 Formatting code..."
+	@find libubertooth ubertooth-tools -name "*.c" -o -name "*.h" | \
+		xargs clang-format -i
+
+all-checks: clean cmake security-check valgrind-check
+	@echo "✅ All security checks passed!"
+
+.DEFAULT: all

@@ -1,0 +1,2619 @@
+ARM GAS  /tmp/ccQUvOq0.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 4
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"tinyprintf.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "tinyprintf.c"
+  18              		.section	.text.ulli2a,"ax",%progbits
+  19              		.align	1
+  20              		.syntax unified
+  21              		.thumb
+  22              		.thumb_func
+  24              	ulli2a:
+  25              	.LVL0:
+  26              	.LFB0:
+   1:tinyprintf.c  **** /*
+   2:tinyprintf.c  **** File: tinyprintf.c
+   3:tinyprintf.c  **** 
+   4:tinyprintf.c  **** Copyright (C) 2004  Kustaa Nyholm
+   5:tinyprintf.c  **** 
+   6:tinyprintf.c  **** This library is free software; you can redistribute it and/or
+   7:tinyprintf.c  **** modify it under the terms of the GNU Lesser General Public
+   8:tinyprintf.c  **** License as published by the Free Software Foundation; either
+   9:tinyprintf.c  **** version 2.1 of the License, or (at your option) any later version.
+  10:tinyprintf.c  **** 
+  11:tinyprintf.c  **** This library is distributed in the hope that it will be useful,
+  12:tinyprintf.c  **** but WITHOUT ANY WARRANTY; without even the implied warranty of
+  13:tinyprintf.c  **** MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+  14:tinyprintf.c  **** Lesser General Public License for more details.
+  15:tinyprintf.c  **** 
+  16:tinyprintf.c  **** You should have received a copy of the GNU Lesser General Public
+  17:tinyprintf.c  **** License along with this library; if not, write to the Free Software
+  18:tinyprintf.c  **** Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+  19:tinyprintf.c  **** 
+  20:tinyprintf.c  **** */
+  21:tinyprintf.c  **** 
+  22:tinyprintf.c  **** #include "tinyprintf.h"
+  23:tinyprintf.c  **** 
+  24:tinyprintf.c  **** 
+  25:tinyprintf.c  **** /*
+  26:tinyprintf.c  ****  * Configuration
+  27:tinyprintf.c  ****  */
+  28:tinyprintf.c  **** 
+  29:tinyprintf.c  **** /* Enable long int support */
+  30:tinyprintf.c  **** #define PRINTF_LONG_SUPPORT
+  31:tinyprintf.c  **** 
+  32:tinyprintf.c  **** /* Enable long long int support (implies long int support) */
+ARM GAS  /tmp/ccQUvOq0.s 			page 2
+
+
+  33:tinyprintf.c  **** #define PRINTF_LONG_LONG_SUPPORT
+  34:tinyprintf.c  **** 
+  35:tinyprintf.c  **** /* Enable %z (size_t) support */
+  36:tinyprintf.c  **** #define PRINTF_SIZE_T_SUPPORT
+  37:tinyprintf.c  **** 
+  38:tinyprintf.c  **** /*
+  39:tinyprintf.c  ****  * Configuration adjustments
+  40:tinyprintf.c  ****  */
+  41:tinyprintf.c  **** #ifdef PRINTF_SIZE_T_SUPPORT
+  42:tinyprintf.c  **** #include <sys/types.h>
+  43:tinyprintf.c  **** #endif
+  44:tinyprintf.c  **** 
+  45:tinyprintf.c  **** #ifdef PRINTF_LONG_LONG_SUPPORT
+  46:tinyprintf.c  **** # define PRINTF_LONG_SUPPORT
+  47:tinyprintf.c  **** #endif
+  48:tinyprintf.c  **** 
+  49:tinyprintf.c  **** /* __SIZEOF_<type>__ defined at least by gcc */
+  50:tinyprintf.c  **** #ifdef __SIZEOF_POINTER__
+  51:tinyprintf.c  **** # define SIZEOF_POINTER __SIZEOF_POINTER__
+  52:tinyprintf.c  **** #endif
+  53:tinyprintf.c  **** #ifdef __SIZEOF_LONG_LONG__
+  54:tinyprintf.c  **** # define SIZEOF_LONG_LONG __SIZEOF_LONG_LONG__
+  55:tinyprintf.c  **** #endif
+  56:tinyprintf.c  **** #ifdef __SIZEOF_LONG__
+  57:tinyprintf.c  **** # define SIZEOF_LONG __SIZEOF_LONG__
+  58:tinyprintf.c  **** #endif
+  59:tinyprintf.c  **** #ifdef __SIZEOF_INT__
+  60:tinyprintf.c  **** # define SIZEOF_INT __SIZEOF_INT__
+  61:tinyprintf.c  **** #endif
+  62:tinyprintf.c  **** 
+  63:tinyprintf.c  **** #ifdef __GNUC__
+  64:tinyprintf.c  **** # define _TFP_GCC_NO_INLINE_  __attribute__ ((noinline))
+  65:tinyprintf.c  **** #else
+  66:tinyprintf.c  **** # define _TFP_GCC_NO_INLINE_
+  67:tinyprintf.c  **** #endif
+  68:tinyprintf.c  **** 
+  69:tinyprintf.c  **** /*
+  70:tinyprintf.c  ****  * Implementation
+  71:tinyprintf.c  ****  */
+  72:tinyprintf.c  **** struct param {
+  73:tinyprintf.c  ****     char lz:1;          /**<  Leading zeros */
+  74:tinyprintf.c  ****     char alt:1;         /**<  alternate form */
+  75:tinyprintf.c  ****     char uc:1;          /**<  Upper case (for base16 only) */
+  76:tinyprintf.c  ****     char align_left:1;  /**<  0 == align right (default), 1 == align left */
+  77:tinyprintf.c  ****     unsigned int width; /**<  field width */
+  78:tinyprintf.c  ****     char sign;          /**<  The sign to display (if any) */
+  79:tinyprintf.c  ****     unsigned int base;  /**<  number base (e.g.: 8, 10, 16) */
+  80:tinyprintf.c  ****     char *bf;           /**<  Buffer to output */
+  81:tinyprintf.c  **** };
+  82:tinyprintf.c  **** 
+  83:tinyprintf.c  **** 
+  84:tinyprintf.c  **** #ifdef PRINTF_LONG_LONG_SUPPORT
+  85:tinyprintf.c  **** static void _TFP_GCC_NO_INLINE_ ulli2a(
+  86:tinyprintf.c  ****     unsigned long long int num, struct param *p)
+  87:tinyprintf.c  **** {
+  27              		.loc 1 87 1 view -0
+  28              		.cfi_startproc
+ARM GAS  /tmp/ccQUvOq0.s 			page 3
+
+
+  29              		@ args = 0, pretend = 0, frame = 8
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		.loc 1 87 1 is_stmt 0 view .LVU1
+  32 0000 2DE9F74F 		push	{r0, r1, r2, r4, r5, r6, r7, r8, r9, r10, fp, lr}
+  33              		.cfi_def_cfa_offset 48
+  34              		.cfi_offset 4, -36
+  35              		.cfi_offset 5, -32
+  36              		.cfi_offset 6, -28
+  37              		.cfi_offset 7, -24
+  38              		.cfi_offset 8, -20
+  39              		.cfi_offset 9, -16
+  40              		.cfi_offset 10, -12
+  41              		.cfi_offset 11, -8
+  42              		.cfi_offset 14, -4
+  88:tinyprintf.c  ****     int n = 0;
+  43              		.loc 1 88 5 is_stmt 1 view .LVU2
+  44              	.LVL1:
+  89:tinyprintf.c  ****     unsigned long long int d = 1;
+  45              		.loc 1 89 5 view .LVU3
+  90:tinyprintf.c  ****     char *bf = p->bf;
+  46              		.loc 1 90 5 view .LVU4
+  89:tinyprintf.c  ****     unsigned long long int d = 1;
+  47              		.loc 1 89 28 is_stmt 0 view .LVU5
+  48 0004 0125     		movs	r5, #1
+  91:tinyprintf.c  ****     while (num / d >= p->base)
+  49              		.loc 1 91 24 view .LVU6
+  50 0006 D2E903A6 		ldrd	r10, r6, [r2, #12]
+  87:tinyprintf.c  ****     int n = 0;
+  51              		.loc 1 87 1 view .LVU7
+  52 000a 0746     		mov	r7, r0
+  53 000c 8846     		mov	r8, r1
+  54 000e 9146     		mov	r9, r2
+  89:tinyprintf.c  ****     char *bf = p->bf;
+  55              		.loc 1 89 28 view .LVU8
+  56 0010 0024     		movs	r4, #0
+  57              	.LVL2:
+  58              	.L2:
+  59              		.loc 1 91 20 is_stmt 1 view .LVU9
+  60              		.loc 1 91 16 is_stmt 0 view .LVU10
+  61 0012 2A46     		mov	r2, r5
+  62 0014 2346     		mov	r3, r4
+  63 0016 3846     		mov	r0, r7
+  64 0018 4146     		mov	r1, r8
+  65 001a FFF7FEFF 		bl	__aeabi_uldivmod
+  66              	.LVL3:
+  67              		.loc 1 91 20 view .LVU11
+  68 001e 5045     		cmp	r0, r10
+  69 0020 71F10001 		sbcs	r1, r1, #0
+  70 0024 09D2     		bcs	.L3
+  88:tinyprintf.c  ****     unsigned long long int d = 1;
+  71              		.loc 1 88 9 view .LVU12
+  72 0026 4FF0000A 		mov	r10, #0
+  73              	.LVL4:
+  74              	.L4:
+  92:tinyprintf.c  ****         d *= p->base;
+  93:tinyprintf.c  ****     while (d != 0) {
+  75              		.loc 1 93 14 is_stmt 1 view .LVU13
+ARM GAS  /tmp/ccQUvOq0.s 			page 4
+
+
+  76 002a 55EA0403 		orrs	r3, r5, r4
+  77 002e 0AD1     		bne	.L8
+  94:tinyprintf.c  ****         int dgt = num / d;
+  95:tinyprintf.c  ****         num %= d;
+  96:tinyprintf.c  ****         d /= p->base;
+  97:tinyprintf.c  ****         if (n || dgt > 0 || d == 0) {
+  98:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+  99:tinyprintf.c  ****             ++n;
+ 100:tinyprintf.c  ****         }
+ 101:tinyprintf.c  ****     }
+ 102:tinyprintf.c  ****     *bf = 0;
+  78              		.loc 1 102 5 view .LVU14
+  79              		.loc 1 102 9 is_stmt 0 view .LVU15
+  80 0030 0023     		movs	r3, #0
+  81 0032 3370     		strb	r3, [r6]
+ 103:tinyprintf.c  **** }
+  82              		.loc 1 103 1 view .LVU16
+  83 0034 03B0     		add	sp, sp, #12
+  84              		.cfi_remember_state
+  85              		.cfi_def_cfa_offset 36
+  86              		@ sp needed
+  87 0036 BDE8F08F 		pop	{r4, r5, r6, r7, r8, r9, r10, fp, pc}
+  88              	.LVL5:
+  89              	.L3:
+  90              		.cfi_restore_state
+  92:tinyprintf.c  ****         d *= p->base;
+  91              		.loc 1 92 9 is_stmt 1 view .LVU17
+  92:tinyprintf.c  ****         d *= p->base;
+  92              		.loc 1 92 11 is_stmt 0 view .LVU18
+  93 003a 0AFB04F3 		mul	r3, r10, r4
+  94 003e A5FB0A54 		umull	r5, r4, r5, r10
+  95              	.LVL6:
+  92:tinyprintf.c  ****         d *= p->base;
+  96              		.loc 1 92 11 view .LVU19
+  97 0042 1C44     		add	r4, r4, r3
+  98 0044 E5E7     		b	.L2
+  99              	.LVL7:
+ 100              	.L8:
+ 101              	.LBB2:
+  94:tinyprintf.c  ****         int dgt = num / d;
+ 102              		.loc 1 94 9 is_stmt 1 view .LVU20
+ 103 0046 3846     		mov	r0, r7
+ 104 0048 4146     		mov	r1, r8
+ 105 004a 2A46     		mov	r2, r5
+ 106 004c 2346     		mov	r3, r4
+ 107 004e FFF7FEFF 		bl	__aeabi_uldivmod
+ 108              	.LVL8:
+ 109 0052 1746     		mov	r7, r2
+ 110              	.LVL9:
+  96:tinyprintf.c  ****         if (n || dgt > 0 || d == 0) {
+ 111              		.loc 1 96 15 is_stmt 0 view .LVU21
+ 112 0054 D9F80C20 		ldr	r2, [r9, #12]
+ 113 0058 8346     		mov	fp, r0
+ 114 005a 9846     		mov	r8, r3
+ 115              	.LVL10:
+  95:tinyprintf.c  ****         d /= p->base;
+ 116              		.loc 1 95 9 is_stmt 1 view .LVU22
+ARM GAS  /tmp/ccQUvOq0.s 			page 5
+
+
+  96:tinyprintf.c  ****         if (n || dgt > 0 || d == 0) {
+ 117              		.loc 1 96 9 view .LVU23
+  96:tinyprintf.c  ****         if (n || dgt > 0 || d == 0) {
+ 118              		.loc 1 96 11 is_stmt 0 view .LVU24
+ 119 005c 2846     		mov	r0, r5
+ 120              	.LVL11:
+  96:tinyprintf.c  ****         if (n || dgt > 0 || d == 0) {
+ 121              		.loc 1 96 11 view .LVU25
+ 122 005e 0023     		movs	r3, #0
+ 123 0060 2146     		mov	r1, r4
+ 124 0062 0192     		str	r2, [sp, #4]
+ 125 0064 FFF7FEFF 		bl	__aeabi_uldivmod
+ 126              	.LVL12:
+  97:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+ 127              		.loc 1 97 9 is_stmt 1 view .LVU26
+  97:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+ 128              		.loc 1 97 12 is_stmt 0 view .LVU27
+ 129 0068 BAF1000F 		cmp	r10, #0
+ 130 006c 09D1     		bne	.L5
+  97:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+ 131              		.loc 1 97 15 discriminator 1 view .LVU28
+ 132 006e D345     		cmp	fp, r10
+ 133 0070 07DC     		bgt	.L5
+  97:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+ 134              		.loc 1 97 26 discriminator 2 view .LVU29
+ 135 0072 019A     		ldr	r2, [sp, #4]
+ 136 0074 9542     		cmp	r5, r2
+ 137 0076 74F10004 		sbcs	r4, r4, #0
+ 138 007a 12D3     		bcc	.L10
+ 139              	.L7:
+  98:tinyprintf.c  ****             ++n;
+ 140              		.loc 1 98 16 discriminator 5 view .LVU30
+ 141 007c 0546     		mov	r5, r0
+ 142 007e 0C46     		mov	r4, r1
+ 143 0080 D3E7     		b	.L4
+ 144              	.L5:
+  98:tinyprintf.c  ****             ++n;
+ 145              		.loc 1 98 13 is_stmt 1 view .LVU31
+  98:tinyprintf.c  ****             ++n;
+ 146              		.loc 1 98 25 is_stmt 0 view .LVU32
+ 147 0082 BBF1090F 		cmp	fp, #9
+ 148 0086 0CDD     		ble	.L10
+  98:tinyprintf.c  ****             ++n;
+ 149              		.loc 1 98 52 discriminator 1 view .LVU33
+ 150 0088 99F80030 		ldrb	r3, [r9]	@ zero_extendqisi2
+  98:tinyprintf.c  ****             ++n;
+ 151              		.loc 1 98 25 discriminator 3 view .LVU34
+ 152 008c 13F0040F 		tst	r3, #4
+ 153 0090 0CBF     		ite	eq
+ 154 0092 5723     		moveq	r3, #87
+ 155 0094 3723     		movne	r3, #55
+ 156              	.L6:
+ 157              	.LVL13:
+  98:tinyprintf.c  ****             ++n;
+ 158              		.loc 1 98 25 discriminator 5 view .LVU35
+ 159 0096 5B44     		add	r3, r3, fp
+  98:tinyprintf.c  ****             ++n;
+ARM GAS  /tmp/ccQUvOq0.s 			page 6
+
+
+ 160              		.loc 1 98 19 discriminator 5 view .LVU36
+ 161 0098 06F8013B 		strb	r3, [r6], #1
+ 162              	.LVL14:
+  99:tinyprintf.c  ****         }
+ 163              		.loc 1 99 13 is_stmt 1 view .LVU37
+ 164 009c 0AF1010A 		add	r10, r10, #1
+ 165              	.LVL15:
+  99:tinyprintf.c  ****         }
+ 166              		.loc 1 99 13 is_stmt 0 view .LVU38
+ 167 00a0 ECE7     		b	.L7
+ 168              	.L10:
+  98:tinyprintf.c  ****             ++n;
+ 169              		.loc 1 98 25 discriminator 2 view .LVU39
+ 170 00a2 3023     		movs	r3, #48
+ 171 00a4 F7E7     		b	.L6
+ 172              	.LBE2:
+ 173              		.cfi_endproc
+ 174              	.LFE0:
+ 176              		.section	.text.uli2a,"ax",%progbits
+ 177              		.align	1
+ 178              		.syntax unified
+ 179              		.thumb
+ 180              		.thumb_func
+ 182              	uli2a:
+ 183              	.LVL16:
+ 184              	.LFB2:
+ 104:tinyprintf.c  **** 
+ 105:tinyprintf.c  **** static void lli2a(long long int num, struct param *p)
+ 106:tinyprintf.c  **** {
+ 107:tinyprintf.c  ****     if (num < 0) {
+ 108:tinyprintf.c  ****         num = -num;
+ 109:tinyprintf.c  ****         p->sign = '-';
+ 110:tinyprintf.c  ****     }
+ 111:tinyprintf.c  ****     ulli2a(num, p);
+ 112:tinyprintf.c  **** }
+ 113:tinyprintf.c  **** #endif
+ 114:tinyprintf.c  **** 
+ 115:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 116:tinyprintf.c  **** static void uli2a(unsigned long int num, struct param *p)
+ 117:tinyprintf.c  **** {
+ 185              		.loc 1 117 1 is_stmt 1 view -0
+ 186              		.cfi_startproc
+ 187              		@ args = 0, pretend = 0, frame = 0
+ 188              		@ frame_needed = 0, uses_anonymous_args = 0
+ 189              		.loc 1 117 1 is_stmt 0 view .LVU41
+ 190 0000 F0B5     		push	{r4, r5, r6, r7, lr}
+ 191              		.cfi_def_cfa_offset 20
+ 192              		.cfi_offset 4, -20
+ 193              		.cfi_offset 5, -16
+ 194              		.cfi_offset 6, -12
+ 195              		.cfi_offset 7, -8
+ 196              		.cfi_offset 14, -4
+ 118:tinyprintf.c  ****     int n = 0;
+ 197              		.loc 1 118 5 is_stmt 1 view .LVU42
+ 198              	.LVL17:
+ 119:tinyprintf.c  ****     unsigned long int d = 1;
+ 199              		.loc 1 119 5 view .LVU43
+ARM GAS  /tmp/ccQUvOq0.s 			page 7
+
+
+ 120:tinyprintf.c  ****     char *bf = p->bf;
+ 200              		.loc 1 120 5 view .LVU44
+ 119:tinyprintf.c  ****     unsigned long int d = 1;
+ 201              		.loc 1 119 23 is_stmt 0 view .LVU45
+ 202 0002 0123     		movs	r3, #1
+ 121:tinyprintf.c  ****     while (num / d >= p->base)
+ 203              		.loc 1 121 24 view .LVU46
+ 204 0004 D1E90342 		ldrd	r4, r2, [r1, #12]
+ 205              	.LVL18:
+ 206              	.L13:
+ 207              		.loc 1 121 20 is_stmt 1 view .LVU47
+ 208              		.loc 1 121 16 is_stmt 0 view .LVU48
+ 209 0008 B0FBF3F5 		udiv	r5, r0, r3
+ 210              		.loc 1 121 20 view .LVU49
+ 211 000c A542     		cmp	r5, r4
+ 212 000e 03D2     		bcs	.L14
+ 118:tinyprintf.c  ****     unsigned long int d = 1;
+ 213              		.loc 1 118 9 view .LVU50
+ 214 0010 0025     		movs	r5, #0
+ 215              	.LVL19:
+ 216              	.L15:
+ 122:tinyprintf.c  ****         d *= p->base;
+ 123:tinyprintf.c  ****     while (d != 0) {
+ 217              		.loc 1 123 14 is_stmt 1 view .LVU51
+ 218 0012 1BB9     		cbnz	r3, .L19
+ 124:tinyprintf.c  ****         int dgt = num / d;
+ 125:tinyprintf.c  ****         num %= d;
+ 126:tinyprintf.c  ****         d /= p->base;
+ 127:tinyprintf.c  ****         if (n || dgt > 0 || d == 0) {
+ 128:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+ 129:tinyprintf.c  ****             ++n;
+ 130:tinyprintf.c  ****         }
+ 131:tinyprintf.c  ****     }
+ 132:tinyprintf.c  ****     *bf = 0;
+ 219              		.loc 1 132 5 view .LVU52
+ 220              		.loc 1 132 9 is_stmt 0 view .LVU53
+ 221 0014 1370     		strb	r3, [r2]
+ 133:tinyprintf.c  **** }
+ 222              		.loc 1 133 1 view .LVU54
+ 223 0016 F0BD     		pop	{r4, r5, r6, r7, pc}
+ 224              	.LVL20:
+ 225              	.L14:
+ 122:tinyprintf.c  ****         d *= p->base;
+ 226              		.loc 1 122 9 is_stmt 1 view .LVU55
+ 122:tinyprintf.c  ****         d *= p->base;
+ 227              		.loc 1 122 11 is_stmt 0 view .LVU56
+ 228 0018 6343     		muls	r3, r4, r3
+ 229              	.LVL21:
+ 122:tinyprintf.c  ****         d *= p->base;
+ 230              		.loc 1 122 11 view .LVU57
+ 231 001a F5E7     		b	.L13
+ 232              	.LVL22:
+ 233              	.L19:
+ 234              	.LBB3:
+ 124:tinyprintf.c  ****         int dgt = num / d;
+ 235              		.loc 1 124 9 is_stmt 1 view .LVU58
+ 124:tinyprintf.c  ****         int dgt = num / d;
+ARM GAS  /tmp/ccQUvOq0.s 			page 8
+
+
+ 236              		.loc 1 124 23 is_stmt 0 view .LVU59
+ 237 001c B0FBF3F4 		udiv	r4, r0, r3
+ 238              	.LVL23:
+ 125:tinyprintf.c  ****         d /= p->base;
+ 239              		.loc 1 125 9 is_stmt 1 view .LVU60
+ 126:tinyprintf.c  ****         if (n || dgt > 0 || d == 0) {
+ 240              		.loc 1 126 15 is_stmt 0 view .LVU61
+ 241 0020 CE68     		ldr	r6, [r1, #12]
+ 125:tinyprintf.c  ****         d /= p->base;
+ 242              		.loc 1 125 13 view .LVU62
+ 243 0022 03FB1400 		mls	r0, r3, r4, r0
+ 244              	.LVL24:
+ 126:tinyprintf.c  ****         if (n || dgt > 0 || d == 0) {
+ 245              		.loc 1 126 9 is_stmt 1 view .LVU63
+ 126:tinyprintf.c  ****         if (n || dgt > 0 || d == 0) {
+ 246              		.loc 1 126 11 is_stmt 0 view .LVU64
+ 247 0026 B3FBF6F7 		udiv	r7, r3, r6
+ 248              	.LVL25:
+ 127:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+ 249              		.loc 1 127 9 is_stmt 1 view .LVU65
+ 127:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+ 250              		.loc 1 127 12 is_stmt 0 view .LVU66
+ 251 002a 2DB9     		cbnz	r5, .L16
+ 127:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+ 252              		.loc 1 127 15 discriminator 1 view .LVU67
+ 253 002c AC42     		cmp	r4, r5
+ 254 002e 03DC     		bgt	.L16
+ 127:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+ 255              		.loc 1 127 26 discriminator 2 view .LVU68
+ 256 0030 9E42     		cmp	r6, r3
+ 257 0032 0ED8     		bhi	.L21
+ 258              	.L18:
+ 128:tinyprintf.c  ****             ++n;
+ 259              		.loc 1 128 16 discriminator 5 view .LVU69
+ 260 0034 3B46     		mov	r3, r7
+ 261 0036 ECE7     		b	.L15
+ 262              	.L16:
+ 128:tinyprintf.c  ****             ++n;
+ 263              		.loc 1 128 13 is_stmt 1 view .LVU70
+ 128:tinyprintf.c  ****             ++n;
+ 264              		.loc 1 128 25 is_stmt 0 view .LVU71
+ 265 0038 092C     		cmp	r4, #9
+ 266 003a 0ADD     		ble	.L21
+ 128:tinyprintf.c  ****             ++n;
+ 267              		.loc 1 128 52 discriminator 1 view .LVU72
+ 268 003c 0B78     		ldrb	r3, [r1]	@ zero_extendqisi2
+ 128:tinyprintf.c  ****             ++n;
+ 269              		.loc 1 128 25 discriminator 3 view .LVU73
+ 270 003e 13F0040F 		tst	r3, #4
+ 271 0042 0CBF     		ite	eq
+ 272 0044 5723     		moveq	r3, #87
+ 273 0046 3723     		movne	r3, #55
+ 274              	.L17:
+ 275              	.LVL26:
+ 128:tinyprintf.c  ****             ++n;
+ 276              		.loc 1 128 25 discriminator 5 view .LVU74
+ 277 0048 2344     		add	r3, r3, r4
+ARM GAS  /tmp/ccQUvOq0.s 			page 9
+
+
+ 128:tinyprintf.c  ****             ++n;
+ 278              		.loc 1 128 19 discriminator 5 view .LVU75
+ 279 004a 02F8013B 		strb	r3, [r2], #1
+ 280              	.LVL27:
+ 129:tinyprintf.c  ****         }
+ 281              		.loc 1 129 13 is_stmt 1 view .LVU76
+ 282 004e 0135     		adds	r5, r5, #1
+ 283              	.LVL28:
+ 129:tinyprintf.c  ****         }
+ 284              		.loc 1 129 13 is_stmt 0 view .LVU77
+ 285 0050 F0E7     		b	.L18
+ 286              	.L21:
+ 128:tinyprintf.c  ****             ++n;
+ 287              		.loc 1 128 25 discriminator 2 view .LVU78
+ 288 0052 3023     		movs	r3, #48
+ 289 0054 F8E7     		b	.L17
+ 290              	.LBE3:
+ 291              		.cfi_endproc
+ 292              	.LFE2:
+ 294              		.thumb_set ui2a,uli2a
+ 295              		.section	.text.putchw,"ax",%progbits
+ 296              		.align	1
+ 297              		.syntax unified
+ 298              		.thumb
+ 299              		.thumb_func
+ 301              	putchw:
+ 302              	.LVL29:
+ 303              	.LFB8:
+ 134:tinyprintf.c  **** 
+ 135:tinyprintf.c  **** static void li2a(long num, struct param *p)
+ 136:tinyprintf.c  **** {
+ 137:tinyprintf.c  ****     if (num < 0) {
+ 138:tinyprintf.c  ****         num = -num;
+ 139:tinyprintf.c  ****         p->sign = '-';
+ 140:tinyprintf.c  ****     }
+ 141:tinyprintf.c  ****     uli2a(num, p);
+ 142:tinyprintf.c  **** }
+ 143:tinyprintf.c  **** #endif
+ 144:tinyprintf.c  **** 
+ 145:tinyprintf.c  **** static void ui2a(unsigned int num, struct param *p)
+ 146:tinyprintf.c  **** {
+ 147:tinyprintf.c  ****     int n = 0;
+ 148:tinyprintf.c  ****     unsigned int d = 1;
+ 149:tinyprintf.c  ****     char *bf = p->bf;
+ 150:tinyprintf.c  ****     while (num / d >= p->base)
+ 151:tinyprintf.c  ****         d *= p->base;
+ 152:tinyprintf.c  ****     while (d != 0) {
+ 153:tinyprintf.c  ****         int dgt = num / d;
+ 154:tinyprintf.c  ****         num %= d;
+ 155:tinyprintf.c  ****         d /= p->base;
+ 156:tinyprintf.c  ****         if (n || dgt > 0 || d == 0) {
+ 157:tinyprintf.c  ****             *bf++ = dgt + (dgt < 10 ? '0' : (p->uc ? 'A' : 'a') - 10);
+ 158:tinyprintf.c  ****             ++n;
+ 159:tinyprintf.c  ****         }
+ 160:tinyprintf.c  ****     }
+ 161:tinyprintf.c  ****     *bf = 0;
+ 162:tinyprintf.c  **** }
+ARM GAS  /tmp/ccQUvOq0.s 			page 10
+
+
+ 163:tinyprintf.c  **** 
+ 164:tinyprintf.c  **** static void i2a(int num, struct param *p)
+ 165:tinyprintf.c  **** {
+ 166:tinyprintf.c  ****     if (num < 0) {
+ 167:tinyprintf.c  ****         num = -num;
+ 168:tinyprintf.c  ****         p->sign = '-';
+ 169:tinyprintf.c  ****     }
+ 170:tinyprintf.c  ****     ui2a(num, p);
+ 171:tinyprintf.c  **** }
+ 172:tinyprintf.c  **** 
+ 173:tinyprintf.c  **** static int a2d(char ch)
+ 174:tinyprintf.c  **** {
+ 175:tinyprintf.c  ****     if (ch >= '0' && ch <= '9')
+ 176:tinyprintf.c  ****         return ch - '0';
+ 177:tinyprintf.c  ****     else if (ch >= 'a' && ch <= 'f')
+ 178:tinyprintf.c  ****         return ch - 'a' + 10;
+ 179:tinyprintf.c  ****     else if (ch >= 'A' && ch <= 'F')
+ 180:tinyprintf.c  ****         return ch - 'A' + 10;
+ 181:tinyprintf.c  ****     else
+ 182:tinyprintf.c  ****         return -1;
+ 183:tinyprintf.c  **** }
+ 184:tinyprintf.c  **** 
+ 185:tinyprintf.c  **** static char a2u(char ch, const char **src, int base, unsigned int *nump)
+ 186:tinyprintf.c  **** {
+ 187:tinyprintf.c  ****     const char *p = *src;
+ 188:tinyprintf.c  ****     unsigned int num = 0;
+ 189:tinyprintf.c  ****     int digit;
+ 190:tinyprintf.c  ****     while ((digit = a2d(ch)) >= 0) {
+ 191:tinyprintf.c  ****         if (digit > base)
+ 192:tinyprintf.c  ****             break;
+ 193:tinyprintf.c  ****         num = num * base + digit;
+ 194:tinyprintf.c  ****         ch = *p++;
+ 195:tinyprintf.c  ****     }
+ 196:tinyprintf.c  ****     *src = p;
+ 197:tinyprintf.c  ****     *nump = num;
+ 198:tinyprintf.c  ****     return ch;
+ 199:tinyprintf.c  **** }
+ 200:tinyprintf.c  **** 
+ 201:tinyprintf.c  **** static void putchw(void *putp, putcf putf, struct param *p)
+ 202:tinyprintf.c  **** {
+ 304              		.loc 1 202 1 is_stmt 1 view -0
+ 305              		.cfi_startproc
+ 306              		@ args = 0, pretend = 0, frame = 0
+ 307              		@ frame_needed = 0, uses_anonymous_args = 0
+ 308              		.loc 1 202 1 is_stmt 0 view .LVU80
+ 309 0000 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+ 310              		.cfi_def_cfa_offset 24
+ 311              		.cfi_offset 4, -24
+ 312              		.cfi_offset 5, -20
+ 313              		.cfi_offset 6, -16
+ 314              		.cfi_offset 7, -12
+ 315              		.cfi_offset 8, -8
+ 316              		.cfi_offset 14, -4
+ 203:tinyprintf.c  ****     char ch;
+ 317              		.loc 1 203 5 is_stmt 1 view .LVU81
+ 204:tinyprintf.c  ****     int n = p->width;
+ 318              		.loc 1 204 5 view .LVU82
+ARM GAS  /tmp/ccQUvOq0.s 			page 11
+
+
+ 202:tinyprintf.c  ****     char ch;
+ 319              		.loc 1 202 1 is_stmt 0 view .LVU83
+ 320 0004 0646     		mov	r6, r0
+ 321 0006 0F46     		mov	r7, r1
+ 322 0008 1546     		mov	r5, r2
+ 323 000a 1369     		ldr	r3, [r2, #16]
+ 324              		.loc 1 204 9 view .LVU84
+ 325 000c 5468     		ldr	r4, [r2, #4]
+ 326              	.LVL30:
+ 205:tinyprintf.c  ****     char *bf = p->bf;
+ 327              		.loc 1 205 5 is_stmt 1 view .LVU85
+ 206:tinyprintf.c  **** 
+ 207:tinyprintf.c  ****     /* Number of filling characters */
+ 208:tinyprintf.c  ****     while (*bf++ && n > 0)
+ 328              		.loc 1 208 5 view .LVU86
+ 329 000e 013B     		subs	r3, r3, #1
+ 330              	.LVL31:
+ 331              	.L24:
+ 332              		.loc 1 208 18 view .LVU87
+ 333              		.loc 1 208 18 is_stmt 0 view .LVU88
+ 334 0010 13F8012F 		ldrb	r2, [r3, #1]!	@ zero_extendqisi2
+ 335              	.LVL32:
+ 336              		.loc 1 208 18 view .LVU89
+ 337 0014 0AB1     		cbz	r2, .L25
+ 338              		.loc 1 208 18 discriminator 1 view .LVU90
+ 339 0016 002C     		cmp	r4, #0
+ 340 0018 45DC     		bgt	.L26
+ 341              	.L25:
+ 209:tinyprintf.c  ****         n--;
+ 210:tinyprintf.c  ****     if (p->sign)
+ 342              		.loc 1 210 5 is_stmt 1 view .LVU91
+ 343              		.loc 1 210 8 is_stmt 0 view .LVU92
+ 344 001a 2B7A     		ldrb	r3, [r5, #8]	@ zero_extendqisi2
+ 345              	.LVL33:
+ 346              		.loc 1 210 8 view .LVU93
+ 347 001c 03B1     		cbz	r3, .L27
+ 211:tinyprintf.c  ****         n--;
+ 348              		.loc 1 211 9 is_stmt 1 view .LVU94
+ 349              		.loc 1 211 10 is_stmt 0 view .LVU95
+ 350 001e 013C     		subs	r4, r4, #1
+ 351              	.LVL34:
+ 352              	.L27:
+ 212:tinyprintf.c  ****     if (p->alt && p->base == 16)
+ 353              		.loc 1 212 5 is_stmt 1 view .LVU96
+ 354              		.loc 1 212 9 is_stmt 0 view .LVU97
+ 355 0020 2B78     		ldrb	r3, [r5]	@ zero_extendqisi2
+ 356              		.loc 1 212 8 view .LVU98
+ 357 0022 9907     		lsls	r1, r3, #30
+ 358              	.LVL35:
+ 359              		.loc 1 212 8 view .LVU99
+ 360 0024 03D5     		bpl	.L28
+ 361              		.loc 1 212 20 discriminator 1 view .LVU100
+ 362 0026 EA68     		ldr	r2, [r5, #12]
+ 363              		.loc 1 212 16 discriminator 1 view .LVU101
+ 364 0028 102A     		cmp	r2, #16
+ 365 002a 3ED1     		bne	.L29
+ 213:tinyprintf.c  ****         n -= 2;
+ARM GAS  /tmp/ccQUvOq0.s 			page 12
+
+
+ 366              		.loc 1 213 9 is_stmt 1 view .LVU102
+ 367              		.loc 1 213 11 is_stmt 0 view .LVU103
+ 368 002c 023C     		subs	r4, r4, #2
+ 369              	.LVL36:
+ 370              	.L28:
+ 214:tinyprintf.c  ****     else if (p->alt && p->base == 8)
+ 215:tinyprintf.c  ****         n--;
+ 216:tinyprintf.c  **** 
+ 217:tinyprintf.c  ****     /* Fill with space to align to the right, before alternate or sign */
+ 218:tinyprintf.c  ****     if (!p->lz && !p->align_left) {
+ 371              		.loc 1 218 5 is_stmt 1 view .LVU104
+ 372              		.loc 1 218 16 is_stmt 0 discriminator 1 view .LVU105
+ 373 002e 13F0090F 		tst	r3, #9
+ 374 0032 08D1     		bne	.L30
+ 375 0034 A046     		mov	r8, r4
+ 376              	.LVL37:
+ 377              	.L31:
+ 219:tinyprintf.c  ****         while (n-- > 0)
+ 378              		.loc 1 219 20 is_stmt 1 view .LVU106
+ 379              		.loc 1 219 20 is_stmt 0 view .LVU107
+ 380 0036 B8F1000F 		cmp	r8, #0
+ 381 003a 3BDC     		bgt	.L32
+ 382 003c 631E     		subs	r3, r4, #1
+ 383 003e 002C     		cmp	r4, #0
+ 384 0040 B4BF     		ite	lt
+ 385 0042 1C46     		movlt	r4, r3
+ 386 0044 1C1B     		subge	r4, r3, r4
+ 387              	.LVL38:
+ 388              	.L30:
+ 220:tinyprintf.c  ****             putf(putp, ' ');
+ 221:tinyprintf.c  ****     }
+ 222:tinyprintf.c  **** 
+ 223:tinyprintf.c  ****     /* print sign */
+ 224:tinyprintf.c  ****     if (p->sign)
+ 389              		.loc 1 224 5 is_stmt 1 view .LVU108
+ 390              		.loc 1 224 10 is_stmt 0 view .LVU109
+ 391 0046 297A     		ldrb	r1, [r5, #8]	@ zero_extendqisi2
+ 392              		.loc 1 224 8 view .LVU110
+ 393 0048 09B1     		cbz	r1, .L33
+ 225:tinyprintf.c  ****         putf(putp, p->sign);
+ 394              		.loc 1 225 9 is_stmt 1 view .LVU111
+ 395 004a 3046     		mov	r0, r6
+ 396 004c B847     		blx	r7
+ 397              	.LVL39:
+ 398              	.L33:
+ 226:tinyprintf.c  **** 
+ 227:tinyprintf.c  ****     /* Alternate */
+ 228:tinyprintf.c  ****     if (p->alt && p->base == 16) {
+ 399              		.loc 1 228 5 view .LVU112
+ 400              		.loc 1 228 9 is_stmt 0 view .LVU113
+ 401 004e 2B78     		ldrb	r3, [r5]	@ zero_extendqisi2
+ 402              		.loc 1 228 8 view .LVU114
+ 403 0050 9A07     		lsls	r2, r3, #30
+ 404 0052 0DD5     		bpl	.L34
+ 405              		.loc 1 228 20 discriminator 1 view .LVU115
+ 406 0054 EB68     		ldr	r3, [r5, #12]
+ 407              		.loc 1 228 16 discriminator 1 view .LVU116
+ARM GAS  /tmp/ccQUvOq0.s 			page 13
+
+
+ 408 0056 102B     		cmp	r3, #16
+ 409 0058 32D1     		bne	.L35
+ 229:tinyprintf.c  ****         putf(putp, '0');
+ 410              		.loc 1 229 9 is_stmt 1 view .LVU117
+ 411 005a 3021     		movs	r1, #48
+ 412 005c 3046     		mov	r0, r6
+ 413 005e B847     		blx	r7
+ 414              	.LVL40:
+ 230:tinyprintf.c  ****         putf(putp, (p->uc ? 'X' : 'x'));
+ 415              		.loc 1 230 9 view .LVU118
+ 416              		.loc 1 230 27 is_stmt 0 view .LVU119
+ 417 0060 2B78     		ldrb	r3, [r5]	@ zero_extendqisi2
+ 418              		.loc 1 230 9 discriminator 1 view .LVU120
+ 419 0062 13F0040F 		tst	r3, #4
+ 420              		.loc 1 230 9 discriminator 4 view .LVU121
+ 421 0066 0CBF     		ite	eq
+ 422 0068 7821     		moveq	r1, #120
+ 423 006a 5821     		movne	r1, #88
+ 424              	.L65:
+ 231:tinyprintf.c  ****     } else if (p->alt && p->base == 8) {
+ 232:tinyprintf.c  ****         putf(putp, '0');
+ 425              		.loc 1 232 9 view .LVU122
+ 426 006c 3046     		mov	r0, r6
+ 427 006e B847     		blx	r7
+ 428              	.LVL41:
+ 429              	.L34:
+ 233:tinyprintf.c  ****     }
+ 234:tinyprintf.c  **** 
+ 235:tinyprintf.c  ****     /* Fill with zeros, after alternate or sign */
+ 236:tinyprintf.c  ****     if (p->lz) {
+ 430              		.loc 1 236 5 is_stmt 1 view .LVU123
+ 431              		.loc 1 236 9 is_stmt 0 view .LVU124
+ 432 0070 2B78     		ldrb	r3, [r5]	@ zero_extendqisi2
+ 433              		.loc 1 236 8 view .LVU125
+ 434 0072 DB07     		lsls	r3, r3, #31
+ 435 0074 08D5     		bpl	.L37
+ 436 0076 A046     		mov	r8, r4
+ 437              	.LVL42:
+ 438              	.L38:
+ 237:tinyprintf.c  ****         while (n-- > 0)
+ 439              		.loc 1 237 20 is_stmt 1 view .LVU126
+ 440              		.loc 1 237 20 is_stmt 0 view .LVU127
+ 441 0078 B8F1000F 		cmp	r8, #0
+ 442 007c 24DC     		bgt	.L39
+ 443 007e 631E     		subs	r3, r4, #1
+ 444 0080 002C     		cmp	r4, #0
+ 445 0082 B4BF     		ite	lt
+ 446 0084 1C46     		movlt	r4, r3
+ 447 0086 1C1B     		subge	r4, r3, r4
+ 448              	.LVL43:
+ 449              	.L37:
+ 238:tinyprintf.c  ****             putf(putp, '0');
+ 239:tinyprintf.c  ****     }
+ 240:tinyprintf.c  **** 
+ 241:tinyprintf.c  ****     /* Put actual buffer */
+ 242:tinyprintf.c  ****     bf = p->bf;
+ 450              		.loc 1 242 5 is_stmt 1 view .LVU128
+ARM GAS  /tmp/ccQUvOq0.s 			page 14
+
+
+ 243:tinyprintf.c  ****     while ((ch = *bf++))
+ 451              		.loc 1 243 5 view .LVU129
+ 452 0088 2B69     		ldr	r3, [r5, #16]
+ 453 008a 03F1FF38 		add	r8, r3, #-1
+ 454              	.LVL44:
+ 455              	.L40:
+ 456              		.loc 1 243 12 view .LVU130
+ 457              		.loc 1 243 16 is_stmt 0 view .LVU131
+ 458 008e 18F8011F 		ldrb	r1, [r8, #1]!	@ zero_extendqisi2
+ 459              	.LVL45:
+ 460              		.loc 1 243 12 view .LVU132
+ 461 0092 F9B9     		cbnz	r1, .L41
+ 244:tinyprintf.c  ****         putf(putp, ch);
+ 245:tinyprintf.c  **** 
+ 246:tinyprintf.c  ****     /* Fill with space to align to the left, after string */
+ 247:tinyprintf.c  ****     if (!p->lz && p->align_left) {
+ 462              		.loc 1 247 5 is_stmt 1 view .LVU133
+ 463              		.loc 1 247 8 is_stmt 0 view .LVU134
+ 464 0094 2B78     		ldrb	r3, [r5]	@ zero_extendqisi2
+ 465              		.loc 1 247 16 discriminator 1 view .LVU135
+ 466 0096 03F00903 		and	r3, r3, #9
+ 467 009a 082B     		cmp	r3, #8
+ 468 009c 01D1     		bne	.L23
+ 469              	.LVL46:
+ 470              	.L42:
+ 248:tinyprintf.c  ****         while (n-- > 0)
+ 471              		.loc 1 248 20 is_stmt 1 view .LVU136
+ 472              		.loc 1 248 20 is_stmt 0 view .LVU137
+ 473 009e 002C     		cmp	r4, #0
+ 474 00a0 1BDC     		bgt	.L43
+ 475              	.LVL47:
+ 476              	.L23:
+ 249:tinyprintf.c  ****             putf(putp, ' ');
+ 250:tinyprintf.c  ****     }
+ 251:tinyprintf.c  **** }
+ 477              		.loc 1 251 1 view .LVU138
+ 478 00a2 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 479              	.LVL48:
+ 480              	.L26:
+ 209:tinyprintf.c  ****     if (p->sign)
+ 481              		.loc 1 209 9 is_stmt 1 view .LVU139
+ 209:tinyprintf.c  ****     if (p->sign)
+ 482              		.loc 1 209 10 is_stmt 0 view .LVU140
+ 483 00a6 013C     		subs	r4, r4, #1
+ 484              	.LVL49:
+ 209:tinyprintf.c  ****     if (p->sign)
+ 485              		.loc 1 209 10 view .LVU141
+ 486 00a8 B2E7     		b	.L24
+ 487              	.LVL50:
+ 488              	.L29:
+ 214:tinyprintf.c  ****         n--;
+ 489              		.loc 1 214 10 is_stmt 1 view .LVU142
+ 214:tinyprintf.c  ****         n--;
+ 490              		.loc 1 214 21 is_stmt 0 discriminator 1 view .LVU143
+ 491 00aa 082A     		cmp	r2, #8
+ 215:tinyprintf.c  **** 
+ 492              		.loc 1 215 9 is_stmt 1 view .LVU144
+ARM GAS  /tmp/ccQUvOq0.s 			page 15
+
+
+ 215:tinyprintf.c  **** 
+ 493              		.loc 1 215 10 is_stmt 0 view .LVU145
+ 494 00ac 08BF     		it	eq
+ 495 00ae 04F1FF34 		addeq	r4, r4, #-1
+ 496              	.LVL51:
+ 215:tinyprintf.c  **** 
+ 497              		.loc 1 215 10 view .LVU146
+ 498 00b2 BCE7     		b	.L28
+ 499              	.LVL52:
+ 500              	.L32:
+ 220:tinyprintf.c  ****     }
+ 501              		.loc 1 220 13 is_stmt 1 view .LVU147
+ 502 00b4 2021     		movs	r1, #32
+ 503 00b6 3046     		mov	r0, r6
+ 504 00b8 B847     		blx	r7
+ 505              	.LVL53:
+ 506 00ba 08F1FF38 		add	r8, r8, #-1
+ 507              	.LVL54:
+ 220:tinyprintf.c  ****     }
+ 508              		.loc 1 220 13 is_stmt 0 view .LVU148
+ 509 00be BAE7     		b	.L31
+ 510              	.LVL55:
+ 511              	.L35:
+ 231:tinyprintf.c  ****         putf(putp, '0');
+ 512              		.loc 1 231 12 is_stmt 1 view .LVU149
+ 231:tinyprintf.c  ****         putf(putp, '0');
+ 513              		.loc 1 231 23 is_stmt 0 discriminator 1 view .LVU150
+ 514 00c0 082B     		cmp	r3, #8
+ 515 00c2 D5D1     		bne	.L34
+ 232:tinyprintf.c  ****     }
+ 516              		.loc 1 232 9 is_stmt 1 view .LVU151
+ 517 00c4 3021     		movs	r1, #48
+ 518 00c6 D1E7     		b	.L65
+ 519              	.LVL56:
+ 520              	.L39:
+ 238:tinyprintf.c  ****     }
+ 521              		.loc 1 238 13 view .LVU152
+ 522 00c8 3021     		movs	r1, #48
+ 523 00ca 3046     		mov	r0, r6
+ 524 00cc B847     		blx	r7
+ 525              	.LVL57:
+ 526 00ce 08F1FF38 		add	r8, r8, #-1
+ 527              	.LVL58:
+ 238:tinyprintf.c  ****     }
+ 528              		.loc 1 238 13 is_stmt 0 view .LVU153
+ 529 00d2 D1E7     		b	.L38
+ 530              	.LVL59:
+ 531              	.L41:
+ 244:tinyprintf.c  **** 
+ 532              		.loc 1 244 9 is_stmt 1 view .LVU154
+ 533 00d4 3046     		mov	r0, r6
+ 534 00d6 B847     		blx	r7
+ 535              	.LVL60:
+ 244:tinyprintf.c  **** 
+ 536              		.loc 1 244 9 is_stmt 0 view .LVU155
+ 537 00d8 D9E7     		b	.L40
+ 538              	.LVL61:
+ARM GAS  /tmp/ccQUvOq0.s 			page 16
+
+
+ 539              	.L43:
+ 249:tinyprintf.c  ****     }
+ 540              		.loc 1 249 13 view .LVU156
+ 541 00da 2021     		movs	r1, #32
+ 542 00dc 3046     		mov	r0, r6
+ 248:tinyprintf.c  ****             putf(putp, ' ');
+ 543              		.loc 1 248 17 view .LVU157
+ 544 00de 013C     		subs	r4, r4, #1
+ 545              	.LVL62:
+ 249:tinyprintf.c  ****     }
+ 546              		.loc 1 249 13 is_stmt 1 view .LVU158
+ 547 00e0 B847     		blx	r7
+ 548              	.LVL63:
+ 549 00e2 DCE7     		b	.L42
+ 550              		.cfi_endproc
+ 551              	.LFE8:
+ 553              		.section	.text._vsnprintf_putcf,"ax",%progbits
+ 554              		.align	1
+ 555              		.syntax unified
+ 556              		.thumb
+ 557              		.thumb_func
+ 559              	_vsnprintf_putcf:
+ 560              	.LVL64:
+ 561              	.LFB12:
+ 252:tinyprintf.c  **** 
+ 253:tinyprintf.c  **** void tfp_format(void *putp, putcf putf, const char *fmt, va_list va)
+ 254:tinyprintf.c  **** {
+ 255:tinyprintf.c  ****     struct param p;
+ 256:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 257:tinyprintf.c  ****     char bf[23];  /* long = 64b on some architectures */
+ 258:tinyprintf.c  **** #else
+ 259:tinyprintf.c  ****     char bf[12];  /* int = 32b on some architectures */
+ 260:tinyprintf.c  **** #endif
+ 261:tinyprintf.c  ****     char ch;
+ 262:tinyprintf.c  ****     p.bf = bf;
+ 263:tinyprintf.c  **** 
+ 264:tinyprintf.c  ****     while ((ch = *(fmt++))) {
+ 265:tinyprintf.c  ****         if (ch != '%') {
+ 266:tinyprintf.c  **** 			// Ubertooth-specific hack: turn \n into \r\n
+ 267:tinyprintf.c  **** 			if (ch == '\n')
+ 268:tinyprintf.c  **** 				putf(putp, '\r');
+ 269:tinyprintf.c  ****             putf(putp, ch);
+ 270:tinyprintf.c  ****         } else {
+ 271:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 272:tinyprintf.c  ****             char lng = 0;  /* 1 for long, 2 for long long */
+ 273:tinyprintf.c  **** #endif
+ 274:tinyprintf.c  ****             /* Init parameter struct */
+ 275:tinyprintf.c  ****             p.lz = 0;
+ 276:tinyprintf.c  ****             p.alt = 0;
+ 277:tinyprintf.c  ****             p.width = 0;
+ 278:tinyprintf.c  ****             p.align_left = 0;
+ 279:tinyprintf.c  ****             p.sign = 0;
+ 280:tinyprintf.c  **** 
+ 281:tinyprintf.c  ****             /* Flags */
+ 282:tinyprintf.c  ****             while ((ch = *(fmt++))) {
+ 283:tinyprintf.c  ****                 switch (ch) {
+ 284:tinyprintf.c  ****                 case '-':
+ARM GAS  /tmp/ccQUvOq0.s 			page 17
+
+
+ 285:tinyprintf.c  ****                     p.align_left = 1;
+ 286:tinyprintf.c  ****                     continue;
+ 287:tinyprintf.c  ****                 case '0':
+ 288:tinyprintf.c  ****                     p.lz = 1;
+ 289:tinyprintf.c  ****                     continue;
+ 290:tinyprintf.c  ****                 case '#':
+ 291:tinyprintf.c  ****                     p.alt = 1;
+ 292:tinyprintf.c  ****                     continue;
+ 293:tinyprintf.c  ****                 default:
+ 294:tinyprintf.c  ****                     break;
+ 295:tinyprintf.c  ****                 }
+ 296:tinyprintf.c  ****                 break;
+ 297:tinyprintf.c  ****             }
+ 298:tinyprintf.c  **** 
+ 299:tinyprintf.c  ****             /* Width */
+ 300:tinyprintf.c  ****             if (ch >= '0' && ch <= '9') {
+ 301:tinyprintf.c  ****                 ch = a2u(ch, &fmt, 10, &(p.width));
+ 302:tinyprintf.c  ****             }
+ 303:tinyprintf.c  **** 
+ 304:tinyprintf.c  ****             /* We accept 'x.y' format but don't support it completely:
+ 305:tinyprintf.c  ****              * we ignore the 'y' digit => this ignores 0-fill
+ 306:tinyprintf.c  ****              * size and makes it == width (ie. 'x') */
+ 307:tinyprintf.c  ****             if (ch == '.') {
+ 308:tinyprintf.c  ****               p.lz = 1;  /* zero-padding */
+ 309:tinyprintf.c  ****               /* ignore actual 0-fill size: */
+ 310:tinyprintf.c  ****               do {
+ 311:tinyprintf.c  ****                 ch = *(fmt++);
+ 312:tinyprintf.c  ****               } while ((ch >= '0') && (ch <= '9'));
+ 313:tinyprintf.c  ****             }
+ 314:tinyprintf.c  **** 
+ 315:tinyprintf.c  **** #ifdef PRINTF_SIZE_T_SUPPORT
+ 316:tinyprintf.c  **** # ifdef PRINTF_LONG_SUPPORT
+ 317:tinyprintf.c  ****             if (ch == 'z') {
+ 318:tinyprintf.c  ****                 ch = *(fmt++);
+ 319:tinyprintf.c  ****                 if (sizeof(size_t) == sizeof(unsigned long int))
+ 320:tinyprintf.c  ****                     lng = 1;
+ 321:tinyprintf.c  **** #  ifdef PRINTF_LONG_LONG_SUPPORT
+ 322:tinyprintf.c  ****                 else if (sizeof(size_t) == sizeof(unsigned long long int))
+ 323:tinyprintf.c  ****                     lng = 2;
+ 324:tinyprintf.c  **** #  endif
+ 325:tinyprintf.c  ****             } else
+ 326:tinyprintf.c  **** # endif
+ 327:tinyprintf.c  **** #endif
+ 328:tinyprintf.c  **** 
+ 329:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 330:tinyprintf.c  ****             if (ch == 'l') {
+ 331:tinyprintf.c  ****                 ch = *(fmt++);
+ 332:tinyprintf.c  ****                 lng = 1;
+ 333:tinyprintf.c  **** #ifdef PRINTF_LONG_LONG_SUPPORT
+ 334:tinyprintf.c  ****                 if (ch == 'l') {
+ 335:tinyprintf.c  ****                   ch = *(fmt++);
+ 336:tinyprintf.c  ****                   lng = 2;
+ 337:tinyprintf.c  ****                 }
+ 338:tinyprintf.c  **** #endif
+ 339:tinyprintf.c  ****             }
+ 340:tinyprintf.c  **** #endif
+ 341:tinyprintf.c  ****             switch (ch) {
+ARM GAS  /tmp/ccQUvOq0.s 			page 18
+
+
+ 342:tinyprintf.c  ****             case 0:
+ 343:tinyprintf.c  ****                 goto abort;
+ 344:tinyprintf.c  ****             case 'u':
+ 345:tinyprintf.c  ****                 p.base = 10;
+ 346:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 347:tinyprintf.c  **** #ifdef PRINTF_LONG_LONG_SUPPORT
+ 348:tinyprintf.c  ****                 if (2 == lng)
+ 349:tinyprintf.c  ****                     ulli2a(va_arg(va, unsigned long long int), &p);
+ 350:tinyprintf.c  ****                 else
+ 351:tinyprintf.c  **** #endif
+ 352:tinyprintf.c  ****                   if (1 == lng)
+ 353:tinyprintf.c  ****                     uli2a(va_arg(va, unsigned long int), &p);
+ 354:tinyprintf.c  ****                 else
+ 355:tinyprintf.c  **** #endif
+ 356:tinyprintf.c  ****                     ui2a(va_arg(va, unsigned int), &p);
+ 357:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 358:tinyprintf.c  ****                 break;
+ 359:tinyprintf.c  ****             case 'd':
+ 360:tinyprintf.c  ****             case 'i':
+ 361:tinyprintf.c  ****                 p.base = 10;
+ 362:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 363:tinyprintf.c  **** #ifdef PRINTF_LONG_LONG_SUPPORT
+ 364:tinyprintf.c  ****                 if (2 == lng)
+ 365:tinyprintf.c  ****                     lli2a(va_arg(va, long long int), &p);
+ 366:tinyprintf.c  ****                 else
+ 367:tinyprintf.c  **** #endif
+ 368:tinyprintf.c  ****                   if (1 == lng)
+ 369:tinyprintf.c  ****                     li2a(va_arg(va, long int), &p);
+ 370:tinyprintf.c  ****                 else
+ 371:tinyprintf.c  **** #endif
+ 372:tinyprintf.c  ****                     i2a(va_arg(va, int), &p);
+ 373:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 374:tinyprintf.c  ****                 break;
+ 375:tinyprintf.c  **** #ifdef SIZEOF_POINTER
+ 376:tinyprintf.c  ****             case 'p':
+ 377:tinyprintf.c  ****                 p.alt = 1;
+ 378:tinyprintf.c  **** # if defined(SIZEOF_INT) && SIZEOF_POINTER <= SIZEOF_INT
+ 379:tinyprintf.c  ****                 lng = 0;
+ 380:tinyprintf.c  **** # elif defined(SIZEOF_LONG) && SIZEOF_POINTER <= SIZEOF_LONG
+ 381:tinyprintf.c  ****                 lng = 1;
+ 382:tinyprintf.c  **** # elif defined(SIZEOF_LONG_LONG) && SIZEOF_POINTER <= SIZEOF_LONG_LONG
+ 383:tinyprintf.c  ****                 lng = 2;
+ 384:tinyprintf.c  **** # endif
+ 385:tinyprintf.c  **** #endif
+ 386:tinyprintf.c  ****             case 'x':
+ 387:tinyprintf.c  ****             case 'X':
+ 388:tinyprintf.c  ****                 p.base = 16;
+ 389:tinyprintf.c  ****                 p.uc = (ch == 'X')?1:0;
+ 390:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 391:tinyprintf.c  **** #ifdef PRINTF_LONG_LONG_SUPPORT
+ 392:tinyprintf.c  ****                 if (2 == lng)
+ 393:tinyprintf.c  ****                     ulli2a(va_arg(va, unsigned long long int), &p);
+ 394:tinyprintf.c  ****                 else
+ 395:tinyprintf.c  **** #endif
+ 396:tinyprintf.c  ****                   if (1 == lng)
+ 397:tinyprintf.c  ****                     uli2a(va_arg(va, unsigned long int), &p);
+ 398:tinyprintf.c  ****                 else
+ARM GAS  /tmp/ccQUvOq0.s 			page 19
+
+
+ 399:tinyprintf.c  **** #endif
+ 400:tinyprintf.c  ****                     ui2a(va_arg(va, unsigned int), &p);
+ 401:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 402:tinyprintf.c  ****                 break;
+ 403:tinyprintf.c  ****             case 'o':
+ 404:tinyprintf.c  ****                 p.base = 8;
+ 405:tinyprintf.c  ****                 ui2a(va_arg(va, unsigned int), &p);
+ 406:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 407:tinyprintf.c  ****                 break;
+ 408:tinyprintf.c  ****             case 'c':
+ 409:tinyprintf.c  ****                 putf(putp, (char)(va_arg(va, int)));
+ 410:tinyprintf.c  ****                 break;
+ 411:tinyprintf.c  ****             case 's':
+ 412:tinyprintf.c  ****                 p.bf = va_arg(va, char *);
+ 413:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 414:tinyprintf.c  ****                 p.bf = bf;
+ 415:tinyprintf.c  ****                 break;
+ 416:tinyprintf.c  ****             case '%':
+ 417:tinyprintf.c  ****                 putf(putp, ch);
+ 418:tinyprintf.c  ****             default:
+ 419:tinyprintf.c  ****                 break;
+ 420:tinyprintf.c  ****             }
+ 421:tinyprintf.c  ****         }
+ 422:tinyprintf.c  ****     }
+ 423:tinyprintf.c  ****  abort:;
+ 424:tinyprintf.c  **** }
+ 425:tinyprintf.c  **** 
+ 426:tinyprintf.c  **** #if TINYPRINTF_DEFINE_TFP_PRINTF
+ 427:tinyprintf.c  **** static putcf stdout_putf;
+ 428:tinyprintf.c  **** static void *stdout_putp;
+ 429:tinyprintf.c  **** 
+ 430:tinyprintf.c  **** void init_printf(void *putp, putcf putf)
+ 431:tinyprintf.c  **** {
+ 432:tinyprintf.c  ****     stdout_putf = putf;
+ 433:tinyprintf.c  ****     stdout_putp = putp;
+ 434:tinyprintf.c  **** }
+ 435:tinyprintf.c  **** 
+ 436:tinyprintf.c  **** void tfp_printf(char *fmt, ...)
+ 437:tinyprintf.c  **** {
+ 438:tinyprintf.c  ****     va_list va;
+ 439:tinyprintf.c  ****     va_start(va, fmt);
+ 440:tinyprintf.c  ****     tfp_format(stdout_putp, stdout_putf, fmt, va);
+ 441:tinyprintf.c  ****     va_end(va);
+ 442:tinyprintf.c  **** }
+ 443:tinyprintf.c  **** #endif
+ 444:tinyprintf.c  **** 
+ 445:tinyprintf.c  **** #if TINYPRINTF_DEFINE_TFP_SPRINTF
+ 446:tinyprintf.c  **** struct _vsnprintf_putcf_data
+ 447:tinyprintf.c  **** {
+ 448:tinyprintf.c  ****   size_t dest_capacity;
+ 449:tinyprintf.c  ****   char *dest;
+ 450:tinyprintf.c  ****   size_t num_chars;
+ 451:tinyprintf.c  **** };
+ 452:tinyprintf.c  **** 
+ 453:tinyprintf.c  **** static void _vsnprintf_putcf(void *p, char c)
+ 454:tinyprintf.c  **** {
+ 562              		.loc 1 454 1 view -0
+ARM GAS  /tmp/ccQUvOq0.s 			page 20
+
+
+ 563              		.cfi_startproc
+ 564              		@ args = 0, pretend = 0, frame = 0
+ 565              		@ frame_needed = 0, uses_anonymous_args = 0
+ 566              		@ link register save eliminated.
+ 567              		.loc 1 454 1 is_stmt 0 view .LVU160
+ 455:tinyprintf.c  ****   struct _vsnprintf_putcf_data *data = (struct _vsnprintf_putcf_data*)p;
+ 568              		.loc 1 455 3 is_stmt 1 view .LVU161
+ 569              	.LVL65:
+ 456:tinyprintf.c  ****   if (data->num_chars < data->dest_capacity)
+ 570              		.loc 1 456 3 view .LVU162
+ 571              		.loc 1 456 11 is_stmt 0 view .LVU163
+ 572 0000 8368     		ldr	r3, [r0, #8]
+ 573              		.loc 1 456 6 view .LVU164
+ 574 0002 0268     		ldr	r2, [r0]
+ 575 0004 9342     		cmp	r3, r2
+ 457:tinyprintf.c  ****     data->dest[data->num_chars] = c;
+ 576              		.loc 1 457 5 is_stmt 1 view .LVU165
+ 577              		.loc 1 457 33 is_stmt 0 view .LVU166
+ 578 0006 3CBF     		itt	cc
+ 579 0008 4268     		ldrcc	r2, [r0, #4]
+ 580 000a D154     		strbcc	r1, [r2, r3]
+ 458:tinyprintf.c  ****   data->num_chars ++;
+ 581              		.loc 1 458 3 is_stmt 1 view .LVU167
+ 582              		.loc 1 458 19 is_stmt 0 view .LVU168
+ 583 000c 8368     		ldr	r3, [r0, #8]
+ 584 000e 0133     		adds	r3, r3, #1
+ 585 0010 8360     		str	r3, [r0, #8]
+ 459:tinyprintf.c  **** }
+ 586              		.loc 1 459 1 view .LVU169
+ 587 0012 7047     		bx	lr
+ 588              		.cfi_endproc
+ 589              	.LFE12:
+ 591              		.section	.text._vsprintf_putcf,"ax",%progbits
+ 592              		.align	1
+ 593              		.syntax unified
+ 594              		.thumb
+ 595              		.thumb_func
+ 597              	_vsprintf_putcf:
+ 598              	.LVL66:
+ 599              	.LFB15:
+ 460:tinyprintf.c  **** 
+ 461:tinyprintf.c  **** int tfp_vsnprintf(char *str, size_t size, const char *format, va_list ap)
+ 462:tinyprintf.c  **** {
+ 463:tinyprintf.c  ****   struct _vsnprintf_putcf_data data;
+ 464:tinyprintf.c  **** 
+ 465:tinyprintf.c  ****   if (size < 1)
+ 466:tinyprintf.c  ****     return 0;
+ 467:tinyprintf.c  **** 
+ 468:tinyprintf.c  ****   data.dest = str;
+ 469:tinyprintf.c  ****   data.dest_capacity = size-1;
+ 470:tinyprintf.c  ****   data.num_chars = 0;
+ 471:tinyprintf.c  ****   tfp_format(&data, _vsnprintf_putcf, format, ap);
+ 472:tinyprintf.c  **** 
+ 473:tinyprintf.c  ****   if (data.num_chars < data.dest_capacity)
+ 474:tinyprintf.c  ****     data.dest[data.num_chars] = '\0';
+ 475:tinyprintf.c  ****   else
+ 476:tinyprintf.c  ****     data.dest[data.dest_capacity] = '\0';
+ARM GAS  /tmp/ccQUvOq0.s 			page 21
+
+
+ 477:tinyprintf.c  **** 
+ 478:tinyprintf.c  ****   return data.num_chars;
+ 479:tinyprintf.c  **** }
+ 480:tinyprintf.c  **** 
+ 481:tinyprintf.c  **** int tfp_snprintf(char *str, size_t size, const char *format, ...)
+ 482:tinyprintf.c  **** {
+ 483:tinyprintf.c  ****   va_list ap;
+ 484:tinyprintf.c  ****   int retval;
+ 485:tinyprintf.c  **** 
+ 486:tinyprintf.c  ****   va_start(ap, format);
+ 487:tinyprintf.c  ****   retval = tfp_vsnprintf(str, size, format, ap);
+ 488:tinyprintf.c  ****   va_end(ap);
+ 489:tinyprintf.c  ****   return retval;
+ 490:tinyprintf.c  **** }
+ 491:tinyprintf.c  **** 
+ 492:tinyprintf.c  **** struct _vsprintf_putcf_data
+ 493:tinyprintf.c  **** {
+ 494:tinyprintf.c  ****   char *dest;
+ 495:tinyprintf.c  ****   size_t num_chars;
+ 496:tinyprintf.c  **** };
+ 497:tinyprintf.c  **** 
+ 498:tinyprintf.c  **** static void _vsprintf_putcf(void *p, char c)
+ 499:tinyprintf.c  **** {
+ 600              		.loc 1 499 1 is_stmt 1 view -0
+ 601              		.cfi_startproc
+ 602              		@ args = 0, pretend = 0, frame = 0
+ 603              		@ frame_needed = 0, uses_anonymous_args = 0
+ 604              		.loc 1 499 1 is_stmt 0 view .LVU171
+ 605 0000 10B5     		push	{r4, lr}
+ 606              		.cfi_def_cfa_offset 8
+ 607              		.cfi_offset 4, -8
+ 608              		.cfi_offset 14, -4
+ 500:tinyprintf.c  ****   struct _vsprintf_putcf_data *data = (struct _vsprintf_putcf_data*)p;
+ 609              		.loc 1 500 3 is_stmt 1 view .LVU172
+ 610              	.LVL67:
+ 501:tinyprintf.c  ****   data->dest[data->num_chars++] = c;
+ 611              		.loc 1 501 3 view .LVU173
+ 612              		.loc 1 501 18 is_stmt 0 view .LVU174
+ 613 0002 D0E90023 		ldrd	r2, r3, [r0]
+ 614              		.loc 1 501 29 view .LVU175
+ 615 0006 5C1C     		adds	r4, r3, #1
+ 616 0008 4460     		str	r4, [r0, #4]
+ 617              		.loc 1 501 33 view .LVU176
+ 618 000a D154     		strb	r1, [r2, r3]
+ 502:tinyprintf.c  **** }
+ 619              		.loc 1 502 1 view .LVU177
+ 620 000c 10BD     		pop	{r4, pc}
+ 621              		.cfi_endproc
+ 622              	.LFE15:
+ 624              		.section	.text.tfp_format,"ax",%progbits
+ 625              		.align	1
+ 626              		.global	tfp_format
+ 627              		.syntax unified
+ 628              		.thumb
+ 629              		.thumb_func
+ 631              	tfp_format:
+ 632              	.LVL68:
+ARM GAS  /tmp/ccQUvOq0.s 			page 22
+
+
+ 633              	.LFB9:
+ 254:tinyprintf.c  ****     struct param p;
+ 634              		.loc 1 254 1 is_stmt 1 view -0
+ 635              		.cfi_startproc
+ 636              		@ args = 0, pretend = 0, frame = 48
+ 637              		@ frame_needed = 0, uses_anonymous_args = 0
+ 254:tinyprintf.c  ****     struct param p;
+ 638              		.loc 1 254 1 is_stmt 0 view .LVU179
+ 639 0000 2DE9F047 		push	{r4, r5, r6, r7, r8, r9, r10, lr}
+ 640              		.cfi_def_cfa_offset 32
+ 641              		.cfi_offset 4, -32
+ 642              		.cfi_offset 5, -28
+ 643              		.cfi_offset 6, -24
+ 644              		.cfi_offset 7, -20
+ 645              		.cfi_offset 8, -16
+ 646              		.cfi_offset 9, -12
+ 647              		.cfi_offset 10, -8
+ 648              		.cfi_offset 14, -4
+ 649 0004 8CB0     		sub	sp, sp, #48
+ 650              		.cfi_def_cfa_offset 80
+ 651              	.LBB15:
+ 277:tinyprintf.c  ****             p.align_left = 0;
+ 652              		.loc 1 277 21 view .LVU180
+ 653 0006 4FF00009 		mov	r9, #0
+ 654              	.LBE15:
+ 254:tinyprintf.c  ****     struct param p;
+ 655              		.loc 1 254 1 view .LVU181
+ 656 000a 0646     		mov	r6, r0
+ 657 000c 0F46     		mov	r7, r1
+ 658 000e 1546     		mov	r5, r2
+ 659 0010 1C46     		mov	r4, r3
+ 660              	.LVL69:
+ 255:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 661              		.loc 1 255 5 is_stmt 1 view .LVU182
+ 257:tinyprintf.c  **** #else
+ 662              		.loc 1 257 5 view .LVU183
+ 261:tinyprintf.c  ****     p.bf = bf;
+ 663              		.loc 1 261 5 view .LVU184
+ 262:tinyprintf.c  **** 
+ 664              		.loc 1 262 5 view .LVU185
+ 262:tinyprintf.c  **** 
+ 665              		.loc 1 262 10 is_stmt 0 view .LVU186
+ 666 0012 0DF11808 		add	r8, sp, #24
+ 667 0016 CDF81480 		str	r8, [sp, #20]
+ 264:tinyprintf.c  ****         if (ch != '%') {
+ 668              		.loc 1 264 5 is_stmt 1 view .LVU187
+ 669              	.LVL70:
+ 670              	.L70:
+ 264:tinyprintf.c  ****         if (ch != '%') {
+ 671              		.loc 1 264 12 view .LVU188
+ 264:tinyprintf.c  ****         if (ch != '%') {
+ 672              		.loc 1 264 16 is_stmt 0 view .LVU189
+ 673 001a 95F800A0 		ldrb	r10, [r5]	@ zero_extendqisi2
+ 674              	.LVL71:
+ 264:tinyprintf.c  ****         if (ch != '%') {
+ 675              		.loc 1 264 12 view .LVU190
+ 676 001e BAF1000F 		cmp	r10, #0
+ARM GAS  /tmp/ccQUvOq0.s 			page 23
+
+
+ 677 0022 66D0     		beq	.L69
+ 265:tinyprintf.c  **** 			// Ubertooth-specific hack: turn \n into \r\n
+ 678              		.loc 1 265 12 view .LVU191
+ 679 0024 BAF1250F 		cmp	r10, #37
+ 264:tinyprintf.c  ****         if (ch != '%') {
+ 680              		.loc 1 264 23 view .LVU192
+ 681 0028 05F10105 		add	r5, r5, #1
+ 682              	.LVL72:
+ 265:tinyprintf.c  **** 			// Ubertooth-specific hack: turn \n into \r\n
+ 683              		.loc 1 265 9 is_stmt 1 view .LVU193
+ 265:tinyprintf.c  **** 			// Ubertooth-specific hack: turn \n into \r\n
+ 684              		.loc 1 265 12 is_stmt 0 view .LVU194
+ 685 002c 09D0     		beq	.L71
+ 267:tinyprintf.c  **** 				putf(putp, '\r');
+ 686              		.loc 1 267 4 is_stmt 1 view .LVU195
+ 267:tinyprintf.c  **** 				putf(putp, '\r');
+ 687              		.loc 1 267 7 is_stmt 0 view .LVU196
+ 688 002e BAF10A0F 		cmp	r10, #10
+ 689 0032 02D1     		bne	.L72
+ 268:tinyprintf.c  ****             putf(putp, ch);
+ 690              		.loc 1 268 5 is_stmt 1 view .LVU197
+ 691 0034 0D21     		movs	r1, #13
+ 692 0036 3046     		mov	r0, r6
+ 693 0038 B847     		blx	r7
+ 694              	.LVL73:
+ 695              	.L72:
+ 269:tinyprintf.c  ****         } else {
+ 696              		.loc 1 269 13 view .LVU198
+ 697 003a 5146     		mov	r1, r10
+ 698              	.LVL74:
+ 699              	.L95:
+ 700              	.LBB36:
+ 417:tinyprintf.c  ****             default:
+ 701              		.loc 1 417 17 view .LVU199
+ 702 003c 3046     		mov	r0, r6
+ 703 003e B847     		blx	r7
+ 704              	.LVL75:
+ 417:tinyprintf.c  ****             default:
+ 705              		.loc 1 417 17 is_stmt 0 view .LVU200
+ 706 0040 EBE7     		b	.L70
+ 707              	.LVL76:
+ 708              	.L71:
+ 272:tinyprintf.c  **** #endif
+ 709              		.loc 1 272 13 is_stmt 1 view .LVU201
+ 275:tinyprintf.c  ****             p.alt = 0;
+ 710              		.loc 1 275 13 view .LVU202
+ 276:tinyprintf.c  ****             p.width = 0;
+ 711              		.loc 1 276 13 view .LVU203
+ 277:tinyprintf.c  ****             p.align_left = 0;
+ 712              		.loc 1 277 13 view .LVU204
+ 275:tinyprintf.c  ****             p.alt = 0;
+ 713              		.loc 1 275 18 is_stmt 0 view .LVU205
+ 714 0042 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 715              	.LVL77:
+ 277:tinyprintf.c  ****             p.align_left = 0;
+ 716              		.loc 1 277 21 view .LVU206
+ 717 0046 CDF80890 		str	r9, [sp, #8]
+ARM GAS  /tmp/ccQUvOq0.s 			page 24
+
+
+ 278:tinyprintf.c  ****             p.sign = 0;
+ 718              		.loc 1 278 13 is_stmt 1 view .LVU207
+ 275:tinyprintf.c  ****             p.alt = 0;
+ 719              		.loc 1 275 18 is_stmt 0 view .LVU208
+ 720 004a 23F00B03 		bic	r3, r3, #11
+ 721 004e 8DF80430 		strb	r3, [sp, #4]
+ 279:tinyprintf.c  **** 
+ 722              		.loc 1 279 13 is_stmt 1 view .LVU209
+ 279:tinyprintf.c  **** 
+ 723              		.loc 1 279 20 is_stmt 0 view .LVU210
+ 724 0052 8DF80C90 		strb	r9, [sp, #12]
+ 282:tinyprintf.c  ****                 switch (ch) {
+ 725              		.loc 1 282 13 is_stmt 1 view .LVU211
+ 726              	.LVL78:
+ 727              	.L74:
+ 282:tinyprintf.c  ****                 switch (ch) {
+ 728              		.loc 1 282 20 view .LVU212
+ 282:tinyprintf.c  ****                 switch (ch) {
+ 729              		.loc 1 282 24 is_stmt 0 view .LVU213
+ 730 0056 15F8011B 		ldrb	r1, [r5], #1	@ zero_extendqisi2
+ 731              	.LVL79:
+ 282:tinyprintf.c  ****                 switch (ch) {
+ 732              		.loc 1 282 20 view .LVU214
+ 733 005a 09B9     		cbnz	r1, .L80
+ 734              	.LVL80:
+ 735              	.L122:
+ 272:tinyprintf.c  **** #endif
+ 736              		.loc 1 272 18 view .LVU215
+ 737 005c 0023     		movs	r3, #0
+ 738 005e 3DE0     		b	.L92
+ 739              	.LVL81:
+ 740              	.L80:
+ 283:tinyprintf.c  ****                 case '-':
+ 741              		.loc 1 283 17 is_stmt 1 view .LVU216
+ 742 0060 2D29     		cmp	r1, #45
+ 743 0062 0AD0     		beq	.L75
+ 744 0064 3029     		cmp	r1, #48
+ 745 0066 0FD0     		beq	.L76
+ 746 0068 2329     		cmp	r1, #35
+ 747 006a 12D0     		beq	.L77
+ 300:tinyprintf.c  ****                 ch = a2u(ch, &fmt, 10, &(p.width));
+ 748              		.loc 1 300 13 view .LVU217
+ 300:tinyprintf.c  ****                 ch = a2u(ch, &fmt, 10, &(p.width));
+ 749              		.loc 1 300 16 is_stmt 0 view .LVU218
+ 750 006c A1F13003 		sub	r3, r1, #48
+ 751 0070 092B     		cmp	r3, #9
+ 752 0072 42D8     		bhi	.L83
+ 753              	.LBB16:
+ 754              	.LBB17:
+ 188:tinyprintf.c  ****     int digit;
+ 755              		.loc 1 188 18 view .LVU219
+ 756 0074 0022     		movs	r2, #0
+ 193:tinyprintf.c  ****         ch = *p++;
+ 757              		.loc 1 193 19 view .LVU220
+ 758 0076 0A20     		movs	r0, #10
+ 759 0078 1CE0     		b	.L82
+ 760              	.L75:
+ARM GAS  /tmp/ccQUvOq0.s 			page 25
+
+
+ 761              	.LBE17:
+ 762              	.LBE16:
+ 285:tinyprintf.c  ****                     continue;
+ 763              		.loc 1 285 21 is_stmt 1 view .LVU221
+ 285:tinyprintf.c  ****                     continue;
+ 764              		.loc 1 285 34 is_stmt 0 view .LVU222
+ 765 007a 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 766 007e 43F00803 		orr	r3, r3, #8
+ 767              	.L133:
+ 291:tinyprintf.c  ****                     continue;
+ 768              		.loc 1 291 27 view .LVU223
+ 769 0082 8DF80430 		strb	r3, [sp, #4]
+ 292:tinyprintf.c  ****                 default:
+ 770              		.loc 1 292 21 is_stmt 1 view .LVU224
+ 771 0086 E6E7     		b	.L74
+ 772              	.L76:
+ 288:tinyprintf.c  ****                     continue;
+ 773              		.loc 1 288 21 view .LVU225
+ 288:tinyprintf.c  ****                     continue;
+ 774              		.loc 1 288 26 is_stmt 0 view .LVU226
+ 775 0088 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 776 008c 43F00103 		orr	r3, r3, #1
+ 777 0090 F7E7     		b	.L133
+ 778              	.L77:
+ 291:tinyprintf.c  ****                     continue;
+ 779              		.loc 1 291 21 is_stmt 1 view .LVU227
+ 291:tinyprintf.c  ****                     continue;
+ 780              		.loc 1 291 27 is_stmt 0 view .LVU228
+ 781 0092 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 782 0096 43F00203 		orr	r3, r3, #2
+ 783 009a F2E7     		b	.L133
+ 784              	.LVL82:
+ 785              	.L87:
+ 786              	.LBB24:
+ 787              	.LBB22:
+ 788              	.LBB18:
+ 789              	.LBB19:
+ 179:tinyprintf.c  ****         return ch - 'A' + 10;
+ 790              		.loc 1 179 10 is_stmt 1 view .LVU229
+ 179:tinyprintf.c  ****         return ch - 'A' + 10;
+ 791              		.loc 1 179 13 is_stmt 0 view .LVU230
+ 792 009c A1F14103 		sub	r3, r1, #65
+ 793 00a0 052B     		cmp	r3, #5
+ 794 00a2 29D8     		bhi	.L89
+ 180:tinyprintf.c  ****     else
+ 795              		.loc 1 180 9 is_stmt 1 view .LVU231
+ 180:tinyprintf.c  ****     else
+ 796              		.loc 1 180 25 is_stmt 0 view .LVU232
+ 797 00a4 A1F13703 		sub	r3, r1, #55
+ 798              	.LVL83:
+ 799              	.L88:
+ 180:tinyprintf.c  ****     else
+ 800              		.loc 1 180 25 view .LVU233
+ 801              	.LBE19:
+ 802              	.LBE18:
+ 191:tinyprintf.c  ****             break;
+ 803              		.loc 1 191 9 is_stmt 1 view .LVU234
+ARM GAS  /tmp/ccQUvOq0.s 			page 26
+
+
+ 191:tinyprintf.c  ****             break;
+ 804              		.loc 1 191 12 is_stmt 0 view .LVU235
+ 805 00a8 0A2B     		cmp	r3, #10
+ 806 00aa 11D1     		bne	.L84
+ 807              	.L86:
+ 193:tinyprintf.c  ****         ch = *p++;
+ 808              		.loc 1 193 9 is_stmt 1 view .LVU236
+ 193:tinyprintf.c  ****         ch = *p++;
+ 809              		.loc 1 193 13 is_stmt 0 view .LVU237
+ 810 00ac 00FB0232 		mla	r2, r0, r2, r3
+ 811              	.LVL84:
+ 194:tinyprintf.c  ****     }
+ 812              		.loc 1 194 9 is_stmt 1 view .LVU238
+ 194:tinyprintf.c  ****     }
+ 813              		.loc 1 194 12 is_stmt 0 view .LVU239
+ 814 00b0 15F8011B 		ldrb	r1, [r5], #1	@ zero_extendqisi2
+ 815              	.LVL85:
+ 816              	.L82:
+ 190:tinyprintf.c  ****         if (digit > base)
+ 817              		.loc 1 190 30 is_stmt 1 view .LVU240
+ 818              	.LBB21:
+ 819              	.LBI18:
+ 173:tinyprintf.c  **** {
+ 820              		.loc 1 173 12 view .LVU241
+ 821              	.LBB20:
+ 175:tinyprintf.c  ****         return ch - '0';
+ 822              		.loc 1 175 5 view .LVU242
+ 175:tinyprintf.c  ****         return ch - '0';
+ 823              		.loc 1 175 19 is_stmt 0 view .LVU243
+ 824 00b4 A1F13003 		sub	r3, r1, #48
+ 175:tinyprintf.c  ****         return ch - '0';
+ 825              		.loc 1 175 8 view .LVU244
+ 826 00b8 5FFA83FC 		uxtb	ip, r3
+ 827 00bc BCF1090F 		cmp	ip, #9
+ 828 00c0 F4D9     		bls	.L86
+ 177:tinyprintf.c  ****         return ch - 'a' + 10;
+ 829              		.loc 1 177 10 is_stmt 1 view .LVU245
+ 177:tinyprintf.c  ****         return ch - 'a' + 10;
+ 830              		.loc 1 177 13 is_stmt 0 view .LVU246
+ 831 00c2 A1F16103 		sub	r3, r1, #97
+ 832 00c6 052B     		cmp	r3, #5
+ 833 00c8 E8D8     		bhi	.L87
+ 178:tinyprintf.c  ****     else if (ch >= 'A' && ch <= 'F')
+ 834              		.loc 1 178 9 is_stmt 1 view .LVU247
+ 178:tinyprintf.c  ****     else if (ch >= 'A' && ch <= 'F')
+ 835              		.loc 1 178 25 is_stmt 0 view .LVU248
+ 836 00ca A1F15703 		sub	r3, r1, #87
+ 837              	.LVL86:
+ 178:tinyprintf.c  ****     else if (ch >= 'A' && ch <= 'F')
+ 838              		.loc 1 178 25 view .LVU249
+ 839 00ce EBE7     		b	.L88
+ 840              	.LVL87:
+ 841              	.L84:
+ 178:tinyprintf.c  ****     else if (ch >= 'A' && ch <= 'F')
+ 842              		.loc 1 178 25 view .LVU250
+ 843              	.LBE20:
+ 844              	.LBE21:
+ARM GAS  /tmp/ccQUvOq0.s 			page 27
+
+
+ 196:tinyprintf.c  ****     *nump = num;
+ 845              		.loc 1 196 5 is_stmt 1 view .LVU251
+ 197:tinyprintf.c  ****     return ch;
+ 846              		.loc 1 197 5 view .LVU252
+ 197:tinyprintf.c  ****     return ch;
+ 847              		.loc 1 197 11 is_stmt 0 view .LVU253
+ 848 00d0 0292     		str	r2, [sp, #8]
+ 198:tinyprintf.c  **** }
+ 849              		.loc 1 198 5 is_stmt 1 view .LVU254
+ 850              	.LVL88:
+ 198:tinyprintf.c  **** }
+ 851              		.loc 1 198 5 is_stmt 0 view .LVU255
+ 852              	.LBE22:
+ 853              	.LBE24:
+ 307:tinyprintf.c  ****               p.lz = 1;  /* zero-padding */
+ 854              		.loc 1 307 13 is_stmt 1 view .LVU256
+ 855              	.L90:
+ 317:tinyprintf.c  ****                 ch = *(fmt++);
+ 856              		.loc 1 317 13 view .LVU257
+ 317:tinyprintf.c  ****                 ch = *(fmt++);
+ 857              		.loc 1 317 16 is_stmt 0 view .LVU258
+ 858 00d2 7A29     		cmp	r1, #122
+ 859 00d4 20D1     		bne	.L81
+ 318:tinyprintf.c  ****                 if (sizeof(size_t) == sizeof(unsigned long int))
+ 860              		.loc 1 318 17 is_stmt 1 view .LVU259
+ 861              	.LVL89:
+ 318:tinyprintf.c  ****                 if (sizeof(size_t) == sizeof(unsigned long int))
+ 862              		.loc 1 318 20 is_stmt 0 view .LVU260
+ 863 00d6 15F8011B 		ldrb	r1, [r5], #1	@ zero_extendqisi2
+ 864              	.LVL90:
+ 319:tinyprintf.c  ****                     lng = 1;
+ 865              		.loc 1 319 17 is_stmt 1 view .LVU261
+ 320:tinyprintf.c  **** #  ifdef PRINTF_LONG_LONG_SUPPORT
+ 866              		.loc 1 320 21 view .LVU262
+ 867              	.L134:
+ 332:tinyprintf.c  **** #ifdef PRINTF_LONG_LONG_SUPPORT
+ 868              		.loc 1 332 21 is_stmt 0 view .LVU263
+ 869 00da 0123     		movs	r3, #1
+ 870              	.LVL91:
+ 871              	.L92:
+ 341:tinyprintf.c  ****             case 0:
+ 872              		.loc 1 341 13 is_stmt 1 view .LVU264
+ 873 00dc 7829     		cmp	r1, #120
+ 874 00de 9CD8     		bhi	.L70
+ 341:tinyprintf.c  ****             case 0:
+ 875              		.loc 1 341 13 is_stmt 0 view .LVU265
+ 876 00e0 6229     		cmp	r1, #98
+ 877 00e2 24D8     		bhi	.L94
+ 878 00e4 2529     		cmp	r1, #37
+ 879 00e6 A9D0     		beq	.L95
+ 880 00e8 5829     		cmp	r1, #88
+ 881 00ea 00F09280 		beq	.L96
+ 882 00ee 0029     		cmp	r1, #0
+ 883 00f0 93D1     		bne	.L70
+ 884              	.L97:
+ 885              	.LVL92:
+ 886              	.L69:
+ARM GAS  /tmp/ccQUvOq0.s 			page 28
+
+
+ 341:tinyprintf.c  ****             case 0:
+ 887              		.loc 1 341 13 view .LVU266
+ 888              	.LBE36:
+ 424:tinyprintf.c  **** 
+ 889              		.loc 1 424 1 view .LVU267
+ 890 00f2 0CB0     		add	sp, sp, #48
+ 891              		.cfi_remember_state
+ 892              		.cfi_def_cfa_offset 32
+ 893              		@ sp needed
+ 894 00f4 BDE8F087 		pop	{r4, r5, r6, r7, r8, r9, r10, pc}
+ 895              	.LVL93:
+ 896              	.L89:
+ 897              		.cfi_restore_state
+ 898              	.LBB37:
+ 899              	.LBB25:
+ 900              	.LBB23:
+ 196:tinyprintf.c  ****     *nump = num;
+ 901              		.loc 1 196 5 is_stmt 1 view .LVU268
+ 197:tinyprintf.c  ****     return ch;
+ 902              		.loc 1 197 5 view .LVU269
+ 197:tinyprintf.c  ****     return ch;
+ 903              		.loc 1 197 11 is_stmt 0 view .LVU270
+ 904 00f8 0292     		str	r2, [sp, #8]
+ 198:tinyprintf.c  **** }
+ 905              		.loc 1 198 5 is_stmt 1 view .LVU271
+ 906              	.LVL94:
+ 907              	.L83:
+ 198:tinyprintf.c  **** }
+ 908              		.loc 1 198 5 is_stmt 0 view .LVU272
+ 909              	.LBE23:
+ 910              	.LBE25:
+ 307:tinyprintf.c  ****               p.lz = 1;  /* zero-padding */
+ 911              		.loc 1 307 13 is_stmt 1 view .LVU273
+ 307:tinyprintf.c  ****               p.lz = 1;  /* zero-padding */
+ 912              		.loc 1 307 16 is_stmt 0 view .LVU274
+ 913 00fa 2E29     		cmp	r1, #46
+ 914 00fc E9D1     		bne	.L90
+ 308:tinyprintf.c  ****               /* ignore actual 0-fill size: */
+ 915              		.loc 1 308 15 is_stmt 1 view .LVU275
+ 308:tinyprintf.c  ****               /* ignore actual 0-fill size: */
+ 916              		.loc 1 308 20 is_stmt 0 view .LVU276
+ 917 00fe 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 918 0102 43F00103 		orr	r3, r3, #1
+ 919 0106 8DF80430 		strb	r3, [sp, #4]
+ 920              	.LVL95:
+ 921              	.L91:
+ 310:tinyprintf.c  ****                 ch = *(fmt++);
+ 922              		.loc 1 310 15 is_stmt 1 view .LVU277
+ 311:tinyprintf.c  ****               } while ((ch >= '0') && (ch <= '9'));
+ 923              		.loc 1 311 17 view .LVU278
+ 311:tinyprintf.c  ****               } while ((ch >= '0') && (ch <= '9'));
+ 924              		.loc 1 311 20 is_stmt 0 view .LVU279
+ 925 010a 15F8011B 		ldrb	r1, [r5], #1	@ zero_extendqisi2
+ 926              	.LVL96:
+ 312:tinyprintf.c  ****             }
+ 927              		.loc 1 312 36 is_stmt 1 discriminator 1 view .LVU280
+ 928 010e A1F13003 		sub	r3, r1, #48
+ARM GAS  /tmp/ccQUvOq0.s 			page 29
+
+
+ 929 0112 092B     		cmp	r3, #9
+ 930 0114 F9D9     		bls	.L91
+ 931 0116 DCE7     		b	.L90
+ 932              	.L81:
+ 933              	.LVL97:
+ 330:tinyprintf.c  ****                 ch = *(fmt++);
+ 934              		.loc 1 330 13 view .LVU281
+ 330:tinyprintf.c  ****                 ch = *(fmt++);
+ 935              		.loc 1 330 16 is_stmt 0 view .LVU282
+ 936 0118 6C29     		cmp	r1, #108
+ 937 011a 9FD1     		bne	.L122
+ 331:tinyprintf.c  ****                 lng = 1;
+ 938              		.loc 1 331 17 is_stmt 1 view .LVU283
+ 939              	.LVL98:
+ 331:tinyprintf.c  ****                 lng = 1;
+ 940              		.loc 1 331 20 is_stmt 0 view .LVU284
+ 941 011c 2978     		ldrb	r1, [r5]	@ zero_extendqisi2
+ 942              	.LVL99:
+ 332:tinyprintf.c  **** #ifdef PRINTF_LONG_LONG_SUPPORT
+ 943              		.loc 1 332 17 is_stmt 1 view .LVU285
+ 334:tinyprintf.c  ****                   ch = *(fmt++);
+ 944              		.loc 1 334 17 view .LVU286
+ 334:tinyprintf.c  ****                   ch = *(fmt++);
+ 945              		.loc 1 334 20 is_stmt 0 view .LVU287
+ 946 011e 6C29     		cmp	r1, #108
+ 947 0120 01D0     		beq	.L93
+ 331:tinyprintf.c  ****                 lng = 1;
+ 948              		.loc 1 331 27 view .LVU288
+ 949 0122 0135     		adds	r5, r5, #1
+ 950              	.LVL100:
+ 331:tinyprintf.c  ****                 lng = 1;
+ 951              		.loc 1 331 27 view .LVU289
+ 952 0124 D9E7     		b	.L134
+ 953              	.LVL101:
+ 954              	.L93:
+ 335:tinyprintf.c  ****                   lng = 2;
+ 955              		.loc 1 335 19 is_stmt 1 view .LVU290
+ 335:tinyprintf.c  ****                   lng = 2;
+ 956              		.loc 1 335 22 is_stmt 0 view .LVU291
+ 957 0126 6978     		ldrb	r1, [r5, #1]	@ zero_extendqisi2
+ 958              	.LVL102:
+ 336:tinyprintf.c  ****                 }
+ 959              		.loc 1 336 19 is_stmt 1 view .LVU292
+ 336:tinyprintf.c  ****                 }
+ 960              		.loc 1 336 23 is_stmt 0 view .LVU293
+ 961 0128 0223     		movs	r3, #2
+ 335:tinyprintf.c  ****                   lng = 2;
+ 962              		.loc 1 335 29 view .LVU294
+ 963 012a 0235     		adds	r5, r5, #2
+ 964              	.LVL103:
+ 335:tinyprintf.c  ****                   lng = 2;
+ 965              		.loc 1 335 29 view .LVU295
+ 966 012c D6E7     		b	.L92
+ 967              	.LVL104:
+ 968              	.L94:
+ 341:tinyprintf.c  ****             case 0:
+ 969              		.loc 1 341 13 view .LVU296
+ARM GAS  /tmp/ccQUvOq0.s 			page 30
+
+
+ 970 012e A1F16302 		sub	r2, r1, #99
+ 971 0132 152A     		cmp	r2, #21
+ 972 0134 3FF671AF 		bhi	.L70
+ 973 0138 01A0     		adr	r0, .L98
+ 974 013a 50F822F0 		ldr	pc, [r0, r2, lsl #2]
+ 975 013e 00BF     		.p2align 2
+ 976              	.L98:
+ 977 0140 55020000 		.word	.L104+1
+ 978 0144 AF010000 		.word	.L103+1
+ 979 0148 1B000000 		.word	.L70+1
+ 980 014c 1B000000 		.word	.L70+1
+ 981 0150 1B000000 		.word	.L70+1
+ 982 0154 1B000000 		.word	.L70+1
+ 983 0158 AF010000 		.word	.L103+1
+ 984 015c 1B000000 		.word	.L70+1
+ 985 0160 1B000000 		.word	.L70+1
+ 986 0164 1B000000 		.word	.L70+1
+ 987 0168 1B000000 		.word	.L70+1
+ 988 016c 1B000000 		.word	.L70+1
+ 989 0170 43020000 		.word	.L102+1
+ 990 0174 05020000 		.word	.L101+1
+ 991 0178 1B000000 		.word	.L70+1
+ 992 017c 1B000000 		.word	.L70+1
+ 993 0180 5B020000 		.word	.L100+1
+ 994 0184 1B000000 		.word	.L70+1
+ 995 0188 99010000 		.word	.L99+1
+ 996 018c 1B000000 		.word	.L70+1
+ 997 0190 1B000000 		.word	.L70+1
+ 998 0194 13020000 		.word	.L96+1
+ 999              		.p2align 1
+ 1000              	.L99:
+ 345:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 1001              		.loc 1 345 17 is_stmt 1 view .LVU297
+ 345:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 1002              		.loc 1 345 24 is_stmt 0 view .LVU298
+ 1003 0198 0A22     		movs	r2, #10
+ 1004 019a 0492     		str	r2, [sp, #16]
+ 348:tinyprintf.c  ****                     ulli2a(va_arg(va, unsigned long long int), &p);
+ 1005              		.loc 1 348 17 is_stmt 1 view .LVU299
+ 1006              	.LVL105:
+ 1007              	.L144:
+ 392:tinyprintf.c  ****                     ulli2a(va_arg(va, unsigned long long int), &p);
+ 1008              		.loc 1 392 17 view .LVU300
+ 392:tinyprintf.c  ****                     ulli2a(va_arg(va, unsigned long long int), &p);
+ 1009              		.loc 1 392 20 is_stmt 0 view .LVU301
+ 1010 019c 022B     		cmp	r3, #2
+ 1011 019e 45D1     		bne	.L116
+ 1012              	.LVL106:
+ 393:tinyprintf.c  ****                 else
+ 1013              		.loc 1 393 21 is_stmt 1 view .LVU302
+ 1014 01a0 0734     		adds	r4, r4, #7
+ 1015              	.LVL107:
+ 393:tinyprintf.c  ****                 else
+ 1016              		.loc 1 393 21 is_stmt 0 view .LVU303
+ 1017 01a2 24F00704 		bic	r4, r4, #7
+ 1018              	.LVL108:
+ 393:tinyprintf.c  ****                 else
+ARM GAS  /tmp/ccQUvOq0.s 			page 31
+
+
+ 1019              		.loc 1 393 21 discriminator 1 view .LVU304
+ 1020 01a6 01AA     		add	r2, sp, #4
+ 1021 01a8 F4E80201 		ldrd	r0, [r4], #8
+ 1022 01ac 13E0     		b	.L139
+ 1023              	.LVL109:
+ 1024              	.L103:
+ 361:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 1025              		.loc 1 361 17 is_stmt 1 view .LVU305
+ 361:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 1026              		.loc 1 361 24 is_stmt 0 view .LVU306
+ 1027 01ae 0A22     		movs	r2, #10
+ 364:tinyprintf.c  ****                     lli2a(va_arg(va, long long int), &p);
+ 1028              		.loc 1 364 20 view .LVU307
+ 1029 01b0 022B     		cmp	r3, #2
+ 361:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 1030              		.loc 1 361 24 view .LVU308
+ 1031 01b2 0492     		str	r2, [sp, #16]
+ 364:tinyprintf.c  ****                     lli2a(va_arg(va, long long int), &p);
+ 1032              		.loc 1 364 17 is_stmt 1 view .LVU309
+ 364:tinyprintf.c  ****                     lli2a(va_arg(va, long long int), &p);
+ 1033              		.loc 1 364 20 is_stmt 0 view .LVU310
+ 1034 01b4 12D1     		bne	.L109
+ 365:tinyprintf.c  ****                 else
+ 1035              		.loc 1 365 21 is_stmt 1 view .LVU311
+ 1036 01b6 E31D     		adds	r3, r4, #7
+ 1037 01b8 23F00703 		bic	r3, r3, #7
+ 1038              	.LVL110:
+ 365:tinyprintf.c  ****                 else
+ 1039              		.loc 1 365 21 is_stmt 0 view .LVU312
+ 1040 01bc 1C46     		mov	r4, r3
+ 365:tinyprintf.c  ****                 else
+ 1041              		.loc 1 365 21 view .LVU313
+ 1042 01be 5968     		ldr	r1, [r3, #4]
+ 1043              	.LVL111:
+ 1044              	.LBB26:
+ 1045              	.LBI26:
+ 105:tinyprintf.c  **** {
+ 1046              		.loc 1 105 13 is_stmt 1 view .LVU314
+ 1047              	.LBB27:
+ 107:tinyprintf.c  ****         num = -num;
+ 1048              		.loc 1 107 5 view .LVU315
+ 1049              	.LBE27:
+ 1050              	.LBE26:
+ 365:tinyprintf.c  ****                 else
+ 1051              		.loc 1 365 21 is_stmt 0 view .LVU316
+ 1052 01c0 54F8080B 		ldr	r0, [r4], #8
+ 1053              	.LVL112:
+ 1054              	.LBB29:
+ 1055              	.LBB28:
+ 107:tinyprintf.c  ****         num = -num;
+ 1056              		.loc 1 107 8 view .LVU317
+ 1057 01c4 0029     		cmp	r1, #0
+ 1058 01c6 05DA     		bge	.L110
+ 108:tinyprintf.c  ****         p->sign = '-';
+ 1059              		.loc 1 108 9 is_stmt 1 view .LVU318
+ 109:tinyprintf.c  ****     }
+ 1060              		.loc 1 109 17 is_stmt 0 view .LVU319
+ARM GAS  /tmp/ccQUvOq0.s 			page 32
+
+
+ 1061 01c8 2D23     		movs	r3, #45
+ 108:tinyprintf.c  ****         p->sign = '-';
+ 1062              		.loc 1 108 13 view .LVU320
+ 1063 01ca 4042     		negs	r0, r0
+ 1064 01cc 61EB4101 		sbc	r1, r1, r1, lsl #1
+ 1065              	.LVL113:
+ 109:tinyprintf.c  ****     }
+ 1066              		.loc 1 109 9 is_stmt 1 view .LVU321
+ 109:tinyprintf.c  ****     }
+ 1067              		.loc 1 109 17 is_stmt 0 view .LVU322
+ 1068 01d0 8DF80C30 		strb	r3, [sp, #12]
+ 1069              	.LVL114:
+ 1070              	.L110:
+ 111:tinyprintf.c  **** }
+ 1071              		.loc 1 111 5 is_stmt 1 view .LVU323
+ 1072 01d4 01AA     		add	r2, sp, #4
+ 1073              	.LVL115:
+ 1074              	.L139:
+ 111:tinyprintf.c  **** }
+ 1075              		.loc 1 111 5 is_stmt 0 view .LVU324
+ 1076              	.LBE28:
+ 1077              	.LBE29:
+ 393:tinyprintf.c  ****                 else
+ 1078              		.loc 1 393 21 discriminator 1 view .LVU325
+ 1079 01d6 FFF7FEFF 		bl	ulli2a
+ 1080              	.LVL116:
+ 1081 01da 0DE0     		b	.L117
+ 1082              	.LVL117:
+ 1083              	.L109:
+ 368:tinyprintf.c  ****                     li2a(va_arg(va, long int), &p);
+ 1084              		.loc 1 368 19 is_stmt 1 view .LVU326
+ 369:tinyprintf.c  ****                 else
+ 1085              		.loc 1 369 21 is_stmt 0 view .LVU327
+ 1086 01dc 2068     		ldr	r0, [r4]
+ 369:tinyprintf.c  ****                 else
+ 1087              		.loc 1 369 21 is_stmt 1 view .LVU328
+ 1088              	.LVL118:
+ 1089              	.LBB30:
+ 1090              	.LBI30:
+ 135:tinyprintf.c  **** {
+ 1091              		.loc 1 135 13 view .LVU329
+ 1092              	.LBB31:
+ 137:tinyprintf.c  ****         num = -num;
+ 1093              		.loc 1 137 5 view .LVU330
+ 1094              	.LBE31:
+ 1095              	.LBE30:
+ 353:tinyprintf.c  ****                 else
+ 1096              		.loc 1 353 21 is_stmt 0 view .LVU331
+ 1097 01de 04F1040A 		add	r10, r4, #4
+ 1098              	.LBB34:
+ 1099              	.LBB32:
+ 137:tinyprintf.c  ****         num = -num;
+ 1100              		.loc 1 137 8 view .LVU332
+ 1101 01e2 0028     		cmp	r0, #0
+ 138:tinyprintf.c  ****         p->sign = '-';
+ 1102              		.loc 1 138 9 is_stmt 1 view .LVU333
+ 139:tinyprintf.c  ****     }
+ARM GAS  /tmp/ccQUvOq0.s 			page 33
+
+
+ 1103              		.loc 1 139 17 is_stmt 0 view .LVU334
+ 1104 01e4 BCBF     		itt	lt
+ 1105 01e6 2D23     		movlt	r3, #45
+ 138:tinyprintf.c  ****         p->sign = '-';
+ 1106              		.loc 1 138 13 view .LVU335
+ 1107 01e8 4042     		rsblt	r0, r0, #0
+ 1108              	.LVL119:
+ 139:tinyprintf.c  ****     }
+ 1109              		.loc 1 139 9 is_stmt 1 view .LVU336
+ 141:tinyprintf.c  **** }
+ 1110              		.loc 1 141 5 is_stmt 0 view .LVU337
+ 1111 01ea 01A9     		add	r1, sp, #4
+ 1112              	.LVL120:
+ 139:tinyprintf.c  ****     }
+ 1113              		.loc 1 139 17 view .LVU338
+ 1114 01ec B8BF     		it	lt
+ 1115 01ee 8DF80C30 		strblt	r3, [sp, #12]
+ 141:tinyprintf.c  **** }
+ 1116              		.loc 1 141 5 is_stmt 1 view .LVU339
+ 1117              	.LBE32:
+ 1118              	.LBE34:
+ 369:tinyprintf.c  ****                 else
+ 1119              		.loc 1 369 21 is_stmt 0 view .LVU340
+ 1120 01f2 5446     		mov	r4, r10
+ 1121              	.LBB35:
+ 1122              	.LBB33:
+ 141:tinyprintf.c  **** }
+ 1123              		.loc 1 141 5 view .LVU341
+ 1124 01f4 FFF7FEFF 		bl	uli2a
+ 1125              	.LVL121:
+ 1126              	.L117:
+ 141:tinyprintf.c  **** }
+ 1127              		.loc 1 141 5 view .LVU342
+ 1128              	.LBE33:
+ 1129              	.LBE35:
+ 401:tinyprintf.c  ****                 break;
+ 1130              		.loc 1 401 17 is_stmt 1 view .LVU343
+ 1131 01f8 01AA     		add	r2, sp, #4
+ 1132              	.LVL122:
+ 1133              	.L135:
+ 406:tinyprintf.c  ****                 break;
+ 1134              		.loc 1 406 17 is_stmt 0 view .LVU344
+ 1135 01fa 3946     		mov	r1, r7
+ 1136 01fc 3046     		mov	r0, r6
+ 1137 01fe FFF7FEFF 		bl	putchw
+ 1138              	.LVL123:
+ 407:tinyprintf.c  ****             case 'c':
+ 1139              		.loc 1 407 17 is_stmt 1 view .LVU345
+ 1140 0202 0AE7     		b	.L70
+ 1141              	.LVL124:
+ 1142              	.L101:
+ 377:tinyprintf.c  **** # if defined(SIZEOF_INT) && SIZEOF_POINTER <= SIZEOF_INT
+ 1143              		.loc 1 377 17 view .LVU346
+ 377:tinyprintf.c  **** # if defined(SIZEOF_INT) && SIZEOF_POINTER <= SIZEOF_INT
+ 1144              		.loc 1 377 23 is_stmt 0 view .LVU347
+ 1145 0204 9DF80430 		ldrb	r3, [sp, #4]	@ zero_extendqisi2
+ 1146 0208 43F00203 		orr	r3, r3, #2
+ARM GAS  /tmp/ccQUvOq0.s 			page 34
+
+
+ 1147 020c 8DF80430 		strb	r3, [sp, #4]
+ 379:tinyprintf.c  **** # elif defined(SIZEOF_LONG) && SIZEOF_POINTER <= SIZEOF_LONG
+ 1148              		.loc 1 379 17 is_stmt 1 view .LVU348
+ 1149              	.LVL125:
+ 379:tinyprintf.c  **** # elif defined(SIZEOF_LONG) && SIZEOF_POINTER <= SIZEOF_LONG
+ 1150              		.loc 1 379 21 is_stmt 0 view .LVU349
+ 1151 0210 0023     		movs	r3, #0
+ 1152              	.LVL126:
+ 1153              	.L96:
+ 388:tinyprintf.c  ****                 p.uc = (ch == 'X')?1:0;
+ 1154              		.loc 1 388 17 is_stmt 1 view .LVU350
+ 388:tinyprintf.c  ****                 p.uc = (ch == 'X')?1:0;
+ 1155              		.loc 1 388 24 is_stmt 0 view .LVU351
+ 1156 0212 1022     		movs	r2, #16
+ 1157 0214 0492     		str	r2, [sp, #16]
+ 389:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 1158              		.loc 1 389 17 is_stmt 1 view .LVU352
+ 389:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 1159              		.loc 1 389 37 is_stmt 0 view .LVU353
+ 1160 0216 A1F15802 		sub	r2, r1, #88
+ 1161 021a 5142     		rsbs	r1, r2, #0
+ 1162              	.LVL127:
+ 389:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 1163              		.loc 1 389 37 view .LVU354
+ 1164 021c 5141     		adcs	r1, r1, r2
+ 389:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 1165              		.loc 1 389 22 view .LVU355
+ 1166 021e 9DF80420 		ldrb	r2, [sp, #4]	@ zero_extendqisi2
+ 1167              	.LVL128:
+ 389:tinyprintf.c  **** #ifdef PRINTF_LONG_SUPPORT
+ 1168              		.loc 1 389 22 view .LVU356
+ 1169 0222 61F38202 		bfi	r2, r1, #2, #1
+ 1170 0226 8DF80420 		strb	r2, [sp, #4]
+ 1171 022a B7E7     		b	.L144
+ 1172              	.LVL129:
+ 1173              	.L116:
+ 396:tinyprintf.c  ****                     uli2a(va_arg(va, unsigned long int), &p);
+ 1174              		.loc 1 396 19 is_stmt 1 view .LVU357
+ 396:tinyprintf.c  ****                     uli2a(va_arg(va, unsigned long int), &p);
+ 1175              		.loc 1 396 22 is_stmt 0 view .LVU358
+ 1176 022c 012B     		cmp	r3, #1
+ 369:tinyprintf.c  ****                 else
+ 1177              		.loc 1 369 21 view .LVU359
+ 1178 022e 54F8040B 		ldr	r0, [r4], #4
+ 397:tinyprintf.c  ****                 else
+ 1179              		.loc 1 397 21 discriminator 1 view .LVU360
+ 1180 0232 01A9     		add	r1, sp, #4
+ 396:tinyprintf.c  ****                     uli2a(va_arg(va, unsigned long int), &p);
+ 1181              		.loc 1 396 22 view .LVU361
+ 1182 0234 02D1     		bne	.L118
+ 1183              	.LVL130:
+ 397:tinyprintf.c  ****                 else
+ 1184              		.loc 1 397 21 is_stmt 1 view .LVU362
+ 397:tinyprintf.c  ****                 else
+ 1185              		.loc 1 397 21 is_stmt 0 discriminator 1 view .LVU363
+ 1186 0236 FFF7FEFF 		bl	uli2a
+ 1187              	.LVL131:
+ARM GAS  /tmp/ccQUvOq0.s 			page 35
+
+
+ 397:tinyprintf.c  ****                 else
+ 1188              		.loc 1 397 21 discriminator 1 view .LVU364
+ 1189 023a DDE7     		b	.L117
+ 1190              	.LVL132:
+ 1191              	.L118:
+ 400:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 1192              		.loc 1 400 21 is_stmt 1 view .LVU365
+ 400:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 1193              		.loc 1 400 21 is_stmt 0 discriminator 1 view .LVU366
+ 1194 023c FFF7FEFF 		bl	ui2a
+ 1195              	.LVL133:
+ 1196 0240 DAE7     		b	.L117
+ 1197              	.LVL134:
+ 1198              	.L102:
+ 404:tinyprintf.c  ****                 ui2a(va_arg(va, unsigned int), &p);
+ 1199              		.loc 1 404 17 is_stmt 1 view .LVU367
+ 404:tinyprintf.c  ****                 ui2a(va_arg(va, unsigned int), &p);
+ 1200              		.loc 1 404 24 is_stmt 0 view .LVU368
+ 1201 0242 0823     		movs	r3, #8
+ 405:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 1202              		.loc 1 405 17 discriminator 1 view .LVU369
+ 1203 0244 01A9     		add	r1, sp, #4
+ 1204              	.LVL135:
+ 405:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 1205              		.loc 1 405 17 discriminator 1 view .LVU370
+ 1206 0246 54F8040B 		ldr	r0, [r4], #4
+ 404:tinyprintf.c  ****                 ui2a(va_arg(va, unsigned int), &p);
+ 1207              		.loc 1 404 24 view .LVU371
+ 1208 024a 0493     		str	r3, [sp, #16]
+ 405:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 1209              		.loc 1 405 17 is_stmt 1 view .LVU372
+ 1210              	.LVL136:
+ 405:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 1211              		.loc 1 405 17 is_stmt 0 discriminator 1 view .LVU373
+ 1212 024c FFF7FEFF 		bl	ui2a
+ 1213              	.LVL137:
+ 406:tinyprintf.c  ****                 break;
+ 1214              		.loc 1 406 17 is_stmt 1 view .LVU374
+ 1215 0250 0A46     		mov	r2, r1
+ 1216 0252 D2E7     		b	.L135
+ 1217              	.LVL138:
+ 1218              	.L104:
+ 409:tinyprintf.c  ****                 break;
+ 1219              		.loc 1 409 17 view .LVU375
+ 409:tinyprintf.c  ****                 break;
+ 1220              		.loc 1 409 17 is_stmt 0 discriminator 1 view .LVU376
+ 1221 0254 14F8041B 		ldrb	r1, [r4], #4	@ zero_extendqisi2
+ 1222              	.LVL139:
+ 409:tinyprintf.c  ****                 break;
+ 1223              		.loc 1 409 17 discriminator 1 view .LVU377
+ 1224 0258 F0E6     		b	.L95
+ 1225              	.LVL140:
+ 1226              	.L100:
+ 412:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 1227              		.loc 1 412 17 is_stmt 1 view .LVU378
+ 412:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 1228              		.loc 1 412 22 is_stmt 0 discriminator 1 view .LVU379
+ARM GAS  /tmp/ccQUvOq0.s 			page 36
+
+
+ 1229 025a 54F8043B 		ldr	r3, [r4], #4
+ 1230              	.LVL141:
+ 413:tinyprintf.c  ****                 p.bf = bf;
+ 1231              		.loc 1 413 17 view .LVU380
+ 1232 025e 3946     		mov	r1, r7
+ 1233              	.LVL142:
+ 413:tinyprintf.c  ****                 p.bf = bf;
+ 1234              		.loc 1 413 17 view .LVU381
+ 1235 0260 3046     		mov	r0, r6
+ 1236 0262 01AA     		add	r2, sp, #4
+ 1237              	.LVL143:
+ 412:tinyprintf.c  ****                 putchw(putp, putf, &p);
+ 1238              		.loc 1 412 22 discriminator 1 view .LVU382
+ 1239 0264 0593     		str	r3, [sp, #20]
+ 413:tinyprintf.c  ****                 p.bf = bf;
+ 1240              		.loc 1 413 17 is_stmt 1 view .LVU383
+ 1241 0266 FFF7FEFF 		bl	putchw
+ 1242              	.LVL144:
+ 414:tinyprintf.c  ****                 break;
+ 1243              		.loc 1 414 17 view .LVU384
+ 414:tinyprintf.c  ****                 break;
+ 1244              		.loc 1 414 22 is_stmt 0 view .LVU385
+ 1245 026a CDF81480 		str	r8, [sp, #20]
+ 415:tinyprintf.c  ****             case '%':
+ 1246              		.loc 1 415 17 is_stmt 1 view .LVU386
+ 1247 026e D4E6     		b	.L70
+ 1248              	.LBE37:
+ 1249              		.cfi_endproc
+ 1250              	.LFE9:
+ 1252              		.section	.text.init_printf,"ax",%progbits
+ 1253              		.align	1
+ 1254              		.global	init_printf
+ 1255              		.syntax unified
+ 1256              		.thumb
+ 1257              		.thumb_func
+ 1259              	init_printf:
+ 1260              	.LVL145:
+ 1261              	.LFB10:
+ 431:tinyprintf.c  ****     stdout_putf = putf;
+ 1262              		.loc 1 431 1 view -0
+ 1263              		.cfi_startproc
+ 1264              		@ args = 0, pretend = 0, frame = 0
+ 1265              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1266              		@ link register save eliminated.
+ 431:tinyprintf.c  ****     stdout_putf = putf;
+ 1267              		.loc 1 431 1 is_stmt 0 view .LVU388
+ 432:tinyprintf.c  ****     stdout_putp = putp;
+ 1268              		.loc 1 432 5 is_stmt 1 view .LVU389
+ 432:tinyprintf.c  ****     stdout_putp = putp;
+ 1269              		.loc 1 432 17 is_stmt 0 view .LVU390
+ 1270 0000 014B     		ldr	r3, .L146
+ 433:tinyprintf.c  **** }
+ 1271              		.loc 1 433 17 view .LVU391
+ 1272 0002 C3E90010 		strd	r1, r0, [r3]
+ 434:tinyprintf.c  **** 
+ 1273              		.loc 1 434 1 view .LVU392
+ 1274 0006 7047     		bx	lr
+ARM GAS  /tmp/ccQUvOq0.s 			page 37
+
+
+ 1275              	.L147:
+ 1276              		.align	2
+ 1277              	.L146:
+ 1278 0008 00000000 		.word	.LANCHOR0
+ 1279              		.cfi_endproc
+ 1280              	.LFE10:
+ 1282              		.section	.text.tfp_printf,"ax",%progbits
+ 1283              		.align	1
+ 1284              		.global	tfp_printf
+ 1285              		.syntax unified
+ 1286              		.thumb
+ 1287              		.thumb_func
+ 1289              	tfp_printf:
+ 1290              	.LVL146:
+ 1291              	.LFB11:
+ 437:tinyprintf.c  ****     va_list va;
+ 1292              		.loc 1 437 1 is_stmt 1 view -0
+ 1293              		.cfi_startproc
+ 1294              		@ args = 4, pretend = 16, frame = 8
+ 1295              		@ frame_needed = 0, uses_anonymous_args = 1
+ 437:tinyprintf.c  ****     va_list va;
+ 1296              		.loc 1 437 1 is_stmt 0 view .LVU394
+ 1297 0000 0FB4     		push	{r0, r1, r2, r3}
+ 1298              		.cfi_def_cfa_offset 16
+ 1299              		.cfi_offset 0, -16
+ 1300              		.cfi_offset 1, -12
+ 1301              		.cfi_offset 2, -8
+ 1302              		.cfi_offset 3, -4
+ 1303 0002 07B5     		push	{r0, r1, r2, lr}
+ 1304              		.cfi_def_cfa_offset 32
+ 1305              		.cfi_offset 14, -20
+ 438:tinyprintf.c  ****     va_start(va, fmt);
+ 1306              		.loc 1 438 5 is_stmt 1 view .LVU395
+ 439:tinyprintf.c  ****     tfp_format(stdout_putp, stdout_putf, fmt, va);
+ 1307              		.loc 1 439 5 view .LVU396
+ 440:tinyprintf.c  ****     va_end(va);
+ 1308              		.loc 1 440 5 is_stmt 0 view .LVU397
+ 1309 0004 0648     		ldr	r0, .L149
+ 437:tinyprintf.c  ****     va_list va;
+ 1310              		.loc 1 437 1 view .LVU398
+ 1311 0006 04AB     		add	r3, sp, #16
+ 1312 0008 53F8042B 		ldr	r2, [r3], #4
+ 440:tinyprintf.c  ****     va_end(va);
+ 1313              		.loc 1 440 5 view .LVU399
+ 1314 000c D0E90010 		ldrd	r1, r0, [r0]
+ 439:tinyprintf.c  ****     tfp_format(stdout_putp, stdout_putf, fmt, va);
+ 1315              		.loc 1 439 5 view .LVU400
+ 1316 0010 0193     		str	r3, [sp, #4]
+ 440:tinyprintf.c  ****     va_end(va);
+ 1317              		.loc 1 440 5 is_stmt 1 view .LVU401
+ 1318 0012 FFF7FEFF 		bl	tfp_format
+ 1319              	.LVL147:
+ 441:tinyprintf.c  **** }
+ 1320              		.loc 1 441 5 view .LVU402
+ 442:tinyprintf.c  **** #endif
+ 1321              		.loc 1 442 1 is_stmt 0 view .LVU403
+ 1322 0016 03B0     		add	sp, sp, #12
+ARM GAS  /tmp/ccQUvOq0.s 			page 38
+
+
+ 1323              		.cfi_def_cfa_offset 20
+ 1324              		@ sp needed
+ 1325 0018 5DF804EB 		ldr	lr, [sp], #4
+ 1326              		.cfi_restore 14
+ 1327              		.cfi_def_cfa_offset 16
+ 1328 001c 04B0     		add	sp, sp, #16
+ 1329              		.cfi_restore 3
+ 1330              		.cfi_restore 2
+ 1331              		.cfi_restore 1
+ 1332              		.cfi_restore 0
+ 1333              		.cfi_def_cfa_offset 0
+ 1334 001e 7047     		bx	lr
+ 1335              	.L150:
+ 1336              		.align	2
+ 1337              	.L149:
+ 1338 0020 00000000 		.word	.LANCHOR0
+ 1339              		.cfi_endproc
+ 1340              	.LFE11:
+ 1342              		.section	.text.tfp_vsnprintf,"ax",%progbits
+ 1343              		.align	1
+ 1344              		.global	tfp_vsnprintf
+ 1345              		.syntax unified
+ 1346              		.thumb
+ 1347              		.thumb_func
+ 1349              	tfp_vsnprintf:
+ 1350              	.LVL148:
+ 1351              	.LFB13:
+ 462:tinyprintf.c  ****   struct _vsnprintf_putcf_data data;
+ 1352              		.loc 1 462 1 is_stmt 1 view -0
+ 1353              		.cfi_startproc
+ 1354              		@ args = 0, pretend = 0, frame = 16
+ 1355              		@ frame_needed = 0, uses_anonymous_args = 0
+ 462:tinyprintf.c  ****   struct _vsnprintf_putcf_data data;
+ 1356              		.loc 1 462 1 is_stmt 0 view .LVU405
+ 1357 0000 1FB5     		push	{r0, r1, r2, r3, r4, lr}
+ 1358              		.cfi_def_cfa_offset 24
+ 1359              		.cfi_offset 4, -8
+ 1360              		.cfi_offset 14, -4
+ 1361              	.LVL149:
+ 462:tinyprintf.c  ****   struct _vsnprintf_putcf_data data;
+ 1362              		.loc 1 462 1 view .LVU406
+ 463:tinyprintf.c  **** 
+ 1363              		.loc 1 463 3 is_stmt 1 view .LVU407
+ 465:tinyprintf.c  ****     return 0;
+ 1364              		.loc 1 465 3 view .LVU408
+ 1365 0002 0024     		movs	r4, #0
+ 465:tinyprintf.c  ****     return 0;
+ 1366              		.loc 1 465 6 is_stmt 0 view .LVU409
+ 1367 0004 89B1     		cbz	r1, .L155
+ 468:tinyprintf.c  ****   data.dest_capacity = size-1;
+ 1368              		.loc 1 468 3 is_stmt 1 view .LVU410
+ 469:tinyprintf.c  ****   data.num_chars = 0;
+ 1369              		.loc 1 469 28 is_stmt 0 view .LVU411
+ 1370 0006 0139     		subs	r1, r1, #1
+ 1371              	.LVL150:
+ 468:tinyprintf.c  ****   data.dest_capacity = size-1;
+ 1372              		.loc 1 468 13 view .LVU412
+ARM GAS  /tmp/ccQUvOq0.s 			page 39
+
+
+ 1373 0008 0290     		str	r0, [sp, #8]
+ 469:tinyprintf.c  ****   data.num_chars = 0;
+ 1374              		.loc 1 469 3 is_stmt 1 view .LVU413
+ 469:tinyprintf.c  ****   data.num_chars = 0;
+ 1375              		.loc 1 469 22 is_stmt 0 view .LVU414
+ 1376 000a 0191     		str	r1, [sp, #4]
+ 470:tinyprintf.c  ****   tfp_format(&data, _vsnprintf_putcf, format, ap);
+ 1377              		.loc 1 470 3 is_stmt 1 view .LVU415
+ 471:tinyprintf.c  **** 
+ 1378              		.loc 1 471 3 is_stmt 0 view .LVU416
+ 1379 000c 01A8     		add	r0, sp, #4
+ 1380              	.LVL151:
+ 471:tinyprintf.c  **** 
+ 1381              		.loc 1 471 3 view .LVU417
+ 1382 000e 0849     		ldr	r1, .L156
+ 1383              	.LVL152:
+ 470:tinyprintf.c  ****   tfp_format(&data, _vsnprintf_putcf, format, ap);
+ 1384              		.loc 1 470 18 view .LVU418
+ 1385 0010 0394     		str	r4, [sp, #12]
+ 471:tinyprintf.c  **** 
+ 1386              		.loc 1 471 3 is_stmt 1 view .LVU419
+ 1387 0012 FFF7FEFF 		bl	tfp_format
+ 1388              	.LVL153:
+ 473:tinyprintf.c  ****     data.dest[data.num_chars] = '\0';
+ 1389              		.loc 1 473 3 view .LVU420
+ 474:tinyprintf.c  ****   else
+ 1390              		.loc 1 474 9 is_stmt 0 view .LVU421
+ 1391 0016 DDE90132 		ldrd	r3, r2, [sp, #4]
+ 473:tinyprintf.c  ****     data.dest[data.num_chars] = '\0';
+ 1392              		.loc 1 473 11 view .LVU422
+ 1393 001a 0399     		ldr	r1, [sp, #12]
+ 473:tinyprintf.c  ****     data.dest[data.num_chars] = '\0';
+ 1394              		.loc 1 473 6 view .LVU423
+ 1395 001c 9942     		cmp	r1, r3
+ 474:tinyprintf.c  ****   else
+ 1396              		.loc 1 474 5 is_stmt 1 view .LVU424
+ 474:tinyprintf.c  ****   else
+ 1397              		.loc 1 474 31 is_stmt 0 view .LVU425
+ 1398 001e 34BF     		ite	cc
+ 1399 0020 5454     		strbcc	r4, [r2, r1]
+ 476:tinyprintf.c  **** 
+ 1400              		.loc 1 476 5 is_stmt 1 view .LVU426
+ 476:tinyprintf.c  **** 
+ 1401              		.loc 1 476 35 is_stmt 0 view .LVU427
+ 1402 0022 D454     		strbcs	r4, [r2, r3]
+ 478:tinyprintf.c  **** }
+ 1403              		.loc 1 478 3 is_stmt 1 view .LVU428
+ 478:tinyprintf.c  **** }
+ 1404              		.loc 1 478 14 is_stmt 0 view .LVU429
+ 1405 0024 0398     		ldr	r0, [sp, #12]
+ 1406              	.L151:
+ 479:tinyprintf.c  **** 
+ 1407              		.loc 1 479 1 view .LVU430
+ 1408 0026 04B0     		add	sp, sp, #16
+ 1409              		.cfi_remember_state
+ 1410              		.cfi_def_cfa_offset 8
+ 1411              		@ sp needed
+ARM GAS  /tmp/ccQUvOq0.s 			page 40
+
+
+ 1412 0028 10BD     		pop	{r4, pc}
+ 1413              	.LVL154:
+ 1414              	.L155:
+ 1415              		.cfi_restore_state
+ 466:tinyprintf.c  **** 
+ 1416              		.loc 1 466 12 view .LVU431
+ 1417 002a 0846     		mov	r0, r1
+ 1418              	.LVL155:
+ 466:tinyprintf.c  **** 
+ 1419              		.loc 1 466 12 view .LVU432
+ 1420 002c FBE7     		b	.L151
+ 1421              	.L157:
+ 1422 002e 00BF     		.align	2
+ 1423              	.L156:
+ 1424 0030 00000000 		.word	_vsnprintf_putcf
+ 1425              		.cfi_endproc
+ 1426              	.LFE13:
+ 1428              		.section	.text.tfp_snprintf,"ax",%progbits
+ 1429              		.align	1
+ 1430              		.global	tfp_snprintf
+ 1431              		.syntax unified
+ 1432              		.thumb
+ 1433              		.thumb_func
+ 1435              	tfp_snprintf:
+ 1436              	.LVL156:
+ 1437              	.LFB14:
+ 482:tinyprintf.c  ****   va_list ap;
+ 1438              		.loc 1 482 1 is_stmt 1 view -0
+ 1439              		.cfi_startproc
+ 1440              		@ args = 4, pretend = 8, frame = 8
+ 1441              		@ frame_needed = 0, uses_anonymous_args = 1
+ 482:tinyprintf.c  ****   va_list ap;
+ 1442              		.loc 1 482 1 is_stmt 0 view .LVU434
+ 1443 0000 0CB4     		push	{r2, r3}
+ 1444              		.cfi_def_cfa_offset 8
+ 1445              		.cfi_offset 2, -8
+ 1446              		.cfi_offset 3, -4
+ 1447 0002 07B5     		push	{r0, r1, r2, lr}
+ 1448              		.cfi_def_cfa_offset 24
+ 1449              		.cfi_offset 14, -12
+ 483:tinyprintf.c  ****   int retval;
+ 1450              		.loc 1 483 3 is_stmt 1 view .LVU435
+ 484:tinyprintf.c  **** 
+ 1451              		.loc 1 484 3 view .LVU436
+ 486:tinyprintf.c  ****   retval = tfp_vsnprintf(str, size, format, ap);
+ 1452              		.loc 1 486 3 view .LVU437
+ 482:tinyprintf.c  ****   va_list ap;
+ 1453              		.loc 1 482 1 is_stmt 0 view .LVU438
+ 1454 0004 04AB     		add	r3, sp, #16
+ 1455 0006 53F8042B 		ldr	r2, [r3], #4
+ 486:tinyprintf.c  ****   retval = tfp_vsnprintf(str, size, format, ap);
+ 1456              		.loc 1 486 3 view .LVU439
+ 1457 000a 0193     		str	r3, [sp, #4]
+ 487:tinyprintf.c  ****   va_end(ap);
+ 1458              		.loc 1 487 3 is_stmt 1 view .LVU440
+ 487:tinyprintf.c  ****   va_end(ap);
+ 1459              		.loc 1 487 12 is_stmt 0 view .LVU441
+ARM GAS  /tmp/ccQUvOq0.s 			page 41
+
+
+ 1460 000c FFF7FEFF 		bl	tfp_vsnprintf
+ 1461              	.LVL157:
+ 488:tinyprintf.c  ****   return retval;
+ 1462              		.loc 1 488 3 is_stmt 1 view .LVU442
+ 489:tinyprintf.c  **** }
+ 1463              		.loc 1 489 3 view .LVU443
+ 490:tinyprintf.c  **** 
+ 1464              		.loc 1 490 1 is_stmt 0 view .LVU444
+ 1465 0010 03B0     		add	sp, sp, #12
+ 1466              		.cfi_def_cfa_offset 12
+ 1467              		@ sp needed
+ 1468 0012 5DF804EB 		ldr	lr, [sp], #4
+ 1469              		.cfi_restore 14
+ 1470              		.cfi_def_cfa_offset 8
+ 1471 0016 02B0     		add	sp, sp, #8
+ 1472              		.cfi_restore 3
+ 1473              		.cfi_restore 2
+ 1474              		.cfi_def_cfa_offset 0
+ 1475 0018 7047     		bx	lr
+ 1476              		.cfi_endproc
+ 1477              	.LFE14:
+ 1479              		.section	.text.tfp_vsprintf,"ax",%progbits
+ 1480              		.align	1
+ 1481              		.global	tfp_vsprintf
+ 1482              		.syntax unified
+ 1483              		.thumb
+ 1484              		.thumb_func
+ 1486              	tfp_vsprintf:
+ 1487              	.LVL158:
+ 1488              	.LFB16:
+ 503:tinyprintf.c  **** 
+ 504:tinyprintf.c  **** int tfp_vsprintf(char *str, const char *format, va_list ap)
+ 505:tinyprintf.c  **** {
+ 1489              		.loc 1 505 1 is_stmt 1 view -0
+ 1490              		.cfi_startproc
+ 1491              		@ args = 0, pretend = 0, frame = 8
+ 1492              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1493              		.loc 1 505 1 is_stmt 0 view .LVU446
+ 1494 0000 13B5     		push	{r0, r1, r4, lr}
+ 1495              		.cfi_def_cfa_offset 16
+ 1496              		.cfi_offset 4, -8
+ 1497              		.cfi_offset 14, -4
+ 506:tinyprintf.c  ****   struct _vsprintf_putcf_data data;
+ 1498              		.loc 1 506 3 is_stmt 1 view .LVU447
+ 507:tinyprintf.c  ****   data.dest = str;
+ 1499              		.loc 1 507 3 view .LVU448
+ 508:tinyprintf.c  ****   data.num_chars = 0;
+ 1500              		.loc 1 508 18 is_stmt 0 view .LVU449
+ 1501 0002 0024     		movs	r4, #0
+ 505:tinyprintf.c  ****   struct _vsprintf_putcf_data data;
+ 1502              		.loc 1 505 1 view .LVU450
+ 1503 0004 1346     		mov	r3, r2
+ 507:tinyprintf.c  ****   data.dest = str;
+ 1504              		.loc 1 507 13 view .LVU451
+ 1505 0006 0090     		str	r0, [sp]
+ 1506              		.loc 1 508 3 is_stmt 1 view .LVU452
+ 509:tinyprintf.c  ****   tfp_format(&data, _vsprintf_putcf, format, ap);
+ARM GAS  /tmp/ccQUvOq0.s 			page 42
+
+
+ 1507              		.loc 1 509 3 is_stmt 0 view .LVU453
+ 1508 0008 0A46     		mov	r2, r1
+ 1509              	.LVL159:
+ 1510              		.loc 1 509 3 view .LVU454
+ 1511 000a 6846     		mov	r0, sp
+ 1512              	.LVL160:
+ 1513              		.loc 1 509 3 view .LVU455
+ 1514 000c 0449     		ldr	r1, .L160
+ 1515              	.LVL161:
+ 508:tinyprintf.c  ****   data.num_chars = 0;
+ 1516              		.loc 1 508 18 view .LVU456
+ 1517 000e 0194     		str	r4, [sp, #4]
+ 1518              		.loc 1 509 3 is_stmt 1 view .LVU457
+ 1519 0010 FFF7FEFF 		bl	tfp_format
+ 1520              	.LVL162:
+ 510:tinyprintf.c  ****   data.dest[data.num_chars] = '\0';
+ 1521              		.loc 1 510 3 view .LVU458
+ 1522              		.loc 1 510 29 is_stmt 0 view .LVU459
+ 1523 0014 DDE90023 		ldrd	r2, r3, [sp]
+ 1524 0018 D454     		strb	r4, [r2, r3]
+ 511:tinyprintf.c  ****   return data.num_chars;
+ 1525              		.loc 1 511 3 is_stmt 1 view .LVU460
+ 512:tinyprintf.c  **** }
+ 1526              		.loc 1 512 1 is_stmt 0 view .LVU461
+ 1527 001a 0198     		ldr	r0, [sp, #4]
+ 1528 001c 02B0     		add	sp, sp, #8
+ 1529              		.cfi_def_cfa_offset 8
+ 1530              		@ sp needed
+ 1531 001e 10BD     		pop	{r4, pc}
+ 1532              	.L161:
+ 1533              		.align	2
+ 1534              	.L160:
+ 1535 0020 00000000 		.word	_vsprintf_putcf
+ 1536              		.cfi_endproc
+ 1537              	.LFE16:
+ 1539              		.section	.text.tfp_sprintf,"ax",%progbits
+ 1540              		.align	1
+ 1541              		.global	tfp_sprintf
+ 1542              		.syntax unified
+ 1543              		.thumb
+ 1544              		.thumb_func
+ 1546              	tfp_sprintf:
+ 1547              	.LVL163:
+ 1548              	.LFB17:
+ 513:tinyprintf.c  **** 
+ 514:tinyprintf.c  **** int tfp_sprintf(char *str, const char *format, ...)
+ 515:tinyprintf.c  **** {
+ 1549              		.loc 1 515 1 is_stmt 1 view -0
+ 1550              		.cfi_startproc
+ 1551              		@ args = 4, pretend = 12, frame = 8
+ 1552              		@ frame_needed = 0, uses_anonymous_args = 1
+ 1553              		.loc 1 515 1 is_stmt 0 view .LVU463
+ 1554 0000 0EB4     		push	{r1, r2, r3}
+ 1555              		.cfi_def_cfa_offset 12
+ 1556              		.cfi_offset 1, -12
+ 1557              		.cfi_offset 2, -8
+ 1558              		.cfi_offset 3, -4
+ARM GAS  /tmp/ccQUvOq0.s 			page 43
+
+
+ 1559 0002 03B5     		push	{r0, r1, lr}
+ 1560              		.cfi_def_cfa_offset 24
+ 1561              		.cfi_offset 14, -16
+ 516:tinyprintf.c  ****   va_list ap;
+ 1562              		.loc 1 516 3 is_stmt 1 view .LVU464
+ 517:tinyprintf.c  ****   int retval;
+ 1563              		.loc 1 517 3 view .LVU465
+ 518:tinyprintf.c  **** 
+ 519:tinyprintf.c  ****   va_start(ap, format);
+ 1564              		.loc 1 519 3 view .LVU466
+ 515:tinyprintf.c  ****   va_list ap;
+ 1565              		.loc 1 515 1 is_stmt 0 view .LVU467
+ 1566 0004 03AA     		add	r2, sp, #12
+ 1567 0006 52F8041B 		ldr	r1, [r2], #4
+ 1568              		.loc 1 519 3 view .LVU468
+ 1569 000a 0192     		str	r2, [sp, #4]
+ 520:tinyprintf.c  ****   retval = tfp_vsprintf(str, format, ap);
+ 1570              		.loc 1 520 3 is_stmt 1 view .LVU469
+ 1571              		.loc 1 520 12 is_stmt 0 view .LVU470
+ 1572 000c FFF7FEFF 		bl	tfp_vsprintf
+ 1573              	.LVL164:
+ 521:tinyprintf.c  ****   va_end(ap);
+ 1574              		.loc 1 521 3 is_stmt 1 view .LVU471
+ 522:tinyprintf.c  ****   return retval;
+ 1575              		.loc 1 522 3 view .LVU472
+ 523:tinyprintf.c  **** }
+ 1576              		.loc 1 523 1 is_stmt 0 view .LVU473
+ 1577 0010 02B0     		add	sp, sp, #8
+ 1578              		.cfi_def_cfa_offset 16
+ 1579              		@ sp needed
+ 1580 0012 5DF804EB 		ldr	lr, [sp], #4
+ 1581              		.cfi_restore 14
+ 1582              		.cfi_def_cfa_offset 12
+ 1583 0016 03B0     		add	sp, sp, #12
+ 1584              		.cfi_restore 3
+ 1585              		.cfi_restore 2
+ 1586              		.cfi_restore 1
+ 1587              		.cfi_def_cfa_offset 0
+ 1588 0018 7047     		bx	lr
+ 1589              		.cfi_endproc
+ 1590              	.LFE17:
+ 1592              		.bss
+ 1593              		.align	2
+ 1594              		.set	.LANCHOR0,. + 0
+ 1597              	stdout_putf:
+ 1598 0000 00000000 		.space	4
+ 1601              	stdout_putp:
+ 1602 0004 00000000 		.space	4
+ 1603              		.text
+ 1604              	.Letext0:
+ 1605              		.file 2 "/usr/lib/gcc/arm-none-eabi/15/include/stdarg.h"
+ 1606              		.file 3 "/usr/lib/gcc/arm-none-eabi/15/include/stddef.h"
+ 1607              		.file 4 "tinyprintf.h"
+ 1608              		.file 5 "<built-in>"
+ARM GAS  /tmp/ccQUvOq0.s 			page 44
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 tinyprintf.c
+     /tmp/ccQUvOq0.s:19     .text.ulli2a:00000000 $t
+     /tmp/ccQUvOq0.s:24     .text.ulli2a:00000000 ulli2a
+     /tmp/ccQUvOq0.s:177    .text.uli2a:00000000 $t
+     /tmp/ccQUvOq0.s:182    .text.uli2a:00000000 uli2a
+     /tmp/ccQUvOq0.s:182    .text.uli2a:00000000 ui2a
+     /tmp/ccQUvOq0.s:296    .text.putchw:00000000 $t
+     /tmp/ccQUvOq0.s:301    .text.putchw:00000000 putchw
+     /tmp/ccQUvOq0.s:554    .text._vsnprintf_putcf:00000000 $t
+     /tmp/ccQUvOq0.s:559    .text._vsnprintf_putcf:00000000 _vsnprintf_putcf
+     /tmp/ccQUvOq0.s:592    .text._vsprintf_putcf:00000000 $t
+     /tmp/ccQUvOq0.s:597    .text._vsprintf_putcf:00000000 _vsprintf_putcf
+     /tmp/ccQUvOq0.s:625    .text.tfp_format:00000000 $t
+     /tmp/ccQUvOq0.s:631    .text.tfp_format:00000000 tfp_format
+     /tmp/ccQUvOq0.s:977    .text.tfp_format:00000140 $d
+     /tmp/ccQUvOq0.s:999    .text.tfp_format:00000198 $t
+     /tmp/ccQUvOq0.s:1253   .text.init_printf:00000000 $t
+     /tmp/ccQUvOq0.s:1259   .text.init_printf:00000000 init_printf
+     /tmp/ccQUvOq0.s:1278   .text.init_printf:00000008 $d
+     /tmp/ccQUvOq0.s:1283   .text.tfp_printf:00000000 $t
+     /tmp/ccQUvOq0.s:1289   .text.tfp_printf:00000000 tfp_printf
+     /tmp/ccQUvOq0.s:1338   .text.tfp_printf:00000020 $d
+     /tmp/ccQUvOq0.s:1343   .text.tfp_vsnprintf:00000000 $t
+     /tmp/ccQUvOq0.s:1349   .text.tfp_vsnprintf:00000000 tfp_vsnprintf
+     /tmp/ccQUvOq0.s:1424   .text.tfp_vsnprintf:00000030 $d
+     /tmp/ccQUvOq0.s:1429   .text.tfp_snprintf:00000000 $t
+     /tmp/ccQUvOq0.s:1435   .text.tfp_snprintf:00000000 tfp_snprintf
+     /tmp/ccQUvOq0.s:1480   .text.tfp_vsprintf:00000000 $t
+     /tmp/ccQUvOq0.s:1486   .text.tfp_vsprintf:00000000 tfp_vsprintf
+     /tmp/ccQUvOq0.s:1535   .text.tfp_vsprintf:00000020 $d
+     /tmp/ccQUvOq0.s:1540   .text.tfp_sprintf:00000000 $t
+     /tmp/ccQUvOq0.s:1546   .text.tfp_sprintf:00000000 tfp_sprintf
+     /tmp/ccQUvOq0.s:1593   .bss:00000000 $d
+     /tmp/ccQUvOq0.s:1597   .bss:00000000 stdout_putf
+     /tmp/ccQUvOq0.s:1601   .bss:00000004 stdout_putp
+
+UNDEFINED SYMBOLS
+__aeabi_uldivmod

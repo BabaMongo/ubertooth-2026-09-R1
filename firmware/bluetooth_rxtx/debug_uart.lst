@@ -1,0 +1,540 @@
+ARM GAS  /tmp/ccPrxDiN.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 4
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"debug_uart.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "debug_uart.c"
+  18              		.section	.text.debug_uart_init,"ax",%progbits
+  19              		.align	1
+  20              		.global	debug_uart_init
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	debug_uart_init:
+  26              	.LVL0:
+  27              	.LFB1:
+   1:debug_uart.c  **** #include <stdarg.h>
+   2:debug_uart.c  **** #include <stdio.h>
+   3:debug_uart.c  **** #include <string.h>
+   4:debug_uart.c  **** 
+   5:debug_uart.c  **** #include "ubertooth.h"
+   6:debug_uart.c  **** #include "tinyprintf.h"
+   7:debug_uart.c  **** 
+   8:debug_uart.c  **** int debug_dma_active = 0;
+   9:debug_uart.c  **** char debug_buffer[256];
+  10:debug_uart.c  **** 
+  11:debug_uart.c  **** void debug_uart_init(int flow_control) {
+  28              		.loc 1 11 40 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		@ link register save eliminated.
+  33              		.loc 1 11 40 is_stmt 0 view .LVU1
+  12:debug_uart.c  **** 	// power on UART1 peripheral
+  13:debug_uart.c  **** 	PCONP |= PCONP_PCUART1;
+  34              		.loc 1 13 2 is_stmt 1 view .LVU2
+  35 0000 254A     		ldr	r2, .L8
+  36 0002 D2F8C430 		ldr	r3, [r2, #196]
+  37              		.loc 1 13 8 is_stmt 0 view .LVU3
+  38 0006 43F01003 		orr	r3, r3, #16
+  39 000a C2F8C430 		str	r3, [r2, #196]
+  14:debug_uart.c  **** 
+  15:debug_uart.c  **** 	// 8N1, enable access to divisor latches
+  16:debug_uart.c  **** 	U1LCR = 0b10000011;
+  40              		.loc 1 16 2 is_stmt 1 view .LVU4
+  41              		.loc 1 16 8 is_stmt 0 view .LVU5
+  42 000e 8322     		movs	r2, #131
+ARM GAS  /tmp/ccPrxDiN.s 			page 2
+
+
+  43 0010 224B     		ldr	r3, .L8+4
+  44 0012 DA60     		str	r2, [r3, #12]
+  17:debug_uart.c  **** 
+  18:debug_uart.c  **** 	// divisor: 11, fractional: 3/13. final baud: 115,411
+  19:debug_uart.c  **** 	U1DLL = 11;
+  45              		.loc 1 19 2 is_stmt 1 view .LVU6
+  46              		.loc 1 19 8 is_stmt 0 view .LVU7
+  47 0014 0B22     		movs	r2, #11
+  48 0016 1A60     		str	r2, [r3]
+  20:debug_uart.c  **** 	U1DLM = 0;
+  49              		.loc 1 20 2 is_stmt 1 view .LVU8
+  50              		.loc 1 20 8 is_stmt 0 view .LVU9
+  51 0018 0022     		movs	r2, #0
+  52 001a 5A60     		str	r2, [r3, #4]
+  21:debug_uart.c  **** 	U1FDR = (3 << 0) | (13 << 4);
+  53              		.loc 1 21 2 is_stmt 1 view .LVU10
+  54              		.loc 1 21 8 is_stmt 0 view .LVU11
+  55 001c D322     		movs	r2, #211
+  56 001e 9A62     		str	r2, [r3, #40]
+  22:debug_uart.c  **** 
+  23:debug_uart.c  **** 	// block access to divisor latches
+  24:debug_uart.c  **** 	U1LCR &= ~0b10000000;
+  57              		.loc 1 24 2 is_stmt 1 view .LVU12
+  58              		.loc 1 24 8 is_stmt 0 view .LVU13
+  59 0020 DA68     		ldr	r2, [r3, #12]
+  60 0022 22F08002 		bic	r2, r2, #128
+  61 0026 DA60     		str	r2, [r3, #12]
+  25:debug_uart.c  **** 
+  26:debug_uart.c  **** 	// enable auto RTS/CTS
+  27:debug_uart.c  **** 	if (flow_control)
+  62              		.loc 1 27 2 is_stmt 1 view .LVU14
+  63              		.loc 1 27 5 is_stmt 0 view .LVU15
+  64 0028 0028     		cmp	r0, #0
+  65 002a 32D0     		beq	.L2
+  28:debug_uart.c  **** 		U1MCR = 0b11000000;
+  66              		.loc 1 28 3 is_stmt 1 view .LVU16
+  67              		.loc 1 28 9 is_stmt 0 view .LVU17
+  68 002c C022     		movs	r2, #192
+  69 002e 1A61     		str	r2, [r3, #16]
+  70              	.L3:
+  29:debug_uart.c  **** 	else
+  30:debug_uart.c  **** 		U1MCR = 0;
+  31:debug_uart.c  **** 
+  32:debug_uart.c  **** 	// enable FIFO and DMA
+  33:debug_uart.c  **** 	U1FCR = 0b1001;
+  71              		.loc 1 33 2 is_stmt 1 view .LVU18
+  72              		.loc 1 33 8 is_stmt 0 view .LVU19
+  73 0030 0922     		movs	r2, #9
+  74 0032 9A60     		str	r2, [r3, #8]
+  34:debug_uart.c  **** 
+  35:debug_uart.c  **** 	// set P0.15 as TXD1, with pullup
+  36:debug_uart.c  **** 	PINSEL0  = (PINSEL0  & ~(0b11 << 30)) | (0b01 << 30);
+  75              		.loc 1 36 2 is_stmt 1 view .LVU20
+  76              		.loc 1 36 14 is_stmt 0 view .LVU21
+  77 0034 1A4B     		ldr	r3, .L8+8
+  78 0036 1A68     		ldr	r2, [r3]
+  79              		.loc 1 36 23 view .LVU22
+ARM GAS  /tmp/ccPrxDiN.s 			page 3
+
+
+  80 0038 22F04042 		bic	r2, r2, #-1073741824
+  81              		.loc 1 36 40 view .LVU23
+  82 003c 42F08042 		orr	r2, r2, #1073741824
+  83              		.loc 1 36 11 view .LVU24
+  84 0040 1A60     		str	r2, [r3]
+  37:debug_uart.c  **** 	PINMODE0 = (PINMODE0 & ~(0b11 << 30)) | (0b00 << 30);
+  85              		.loc 1 37 2 is_stmt 1 view .LVU25
+  86              		.loc 1 37 40 is_stmt 0 view .LVU26
+  87 0042 1A6C     		ldr	r2, [r3, #64]
+  88 0044 22F04042 		bic	r2, r2, #-1073741824
+  89              		.loc 1 37 11 view .LVU27
+  90 0048 1A64     		str	r2, [r3, #64]
+  38:debug_uart.c  **** 
+  39:debug_uart.c  **** 	// set P0.16 as RXD1, with pullup
+  40:debug_uart.c  **** 	PINSEL1  = (PINSEL1  & ~(0b11 <<  0)) | (0b01 <<  0);
+  91              		.loc 1 40 2 is_stmt 1 view .LVU28
+  92              		.loc 1 40 14 is_stmt 0 view .LVU29
+  93 004a 5A68     		ldr	r2, [r3, #4]
+  94              		.loc 1 40 23 view .LVU30
+  95 004c 22F00302 		bic	r2, r2, #3
+  96              		.loc 1 40 40 view .LVU31
+  97 0050 42F00102 		orr	r2, r2, #1
+  98              		.loc 1 40 11 view .LVU32
+  99 0054 5A60     		str	r2, [r3, #4]
+  41:debug_uart.c  **** 	PINMODE1 = (PINMODE1 & ~(0b11 <<  0)) | (0b00 <<  0);
+ 100              		.loc 1 41 2 is_stmt 1 view .LVU33
+ 101              		.loc 1 41 40 is_stmt 0 view .LVU34
+ 102 0056 5A6C     		ldr	r2, [r3, #68]
+ 103 0058 22F00302 		bic	r2, r2, #3
+ 104              		.loc 1 41 11 view .LVU35
+ 105 005c 5A64     		str	r2, [r3, #68]
+  42:debug_uart.c  **** 
+  43:debug_uart.c  **** 	if (flow_control) {
+ 106              		.loc 1 43 2 is_stmt 1 view .LVU36
+ 107              		.loc 1 43 5 is_stmt 0 view .LVU37
+ 108 005e B8B1     		cbz	r0, .L1
+  44:debug_uart.c  **** 		// set P0.17 as CTS1, no pullup/down
+  45:debug_uart.c  **** 		PINSEL1  = (PINSEL1  & ~(0b11 <<  2)) | (0b01 <<  2);
+ 109              		.loc 1 45 3 is_stmt 1 view .LVU38
+ 110              		.loc 1 45 15 is_stmt 0 view .LVU39
+ 111 0060 5A68     		ldr	r2, [r3, #4]
+ 112              		.loc 1 45 24 view .LVU40
+ 113 0062 22F00C02 		bic	r2, r2, #12
+ 114              		.loc 1 45 41 view .LVU41
+ 115 0066 42F00402 		orr	r2, r2, #4
+ 116              		.loc 1 45 12 view .LVU42
+ 117 006a 5A60     		str	r2, [r3, #4]
+  46:debug_uart.c  **** 		PINMODE1 = (PINMODE1 & ~(0b11 <<  2)) | (0b10 <<  2);
+ 118              		.loc 1 46 3 is_stmt 1 view .LVU43
+ 119              		.loc 1 46 15 is_stmt 0 view .LVU44
+ 120 006c 5A6C     		ldr	r2, [r3, #68]
+ 121              		.loc 1 46 24 view .LVU45
+ 122 006e 22F00C02 		bic	r2, r2, #12
+ 123              		.loc 1 46 41 view .LVU46
+ 124 0072 42F00802 		orr	r2, r2, #8
+ 125              		.loc 1 46 12 view .LVU47
+ 126 0076 5A64     		str	r2, [r3, #68]
+ARM GAS  /tmp/ccPrxDiN.s 			page 4
+
+
+  47:debug_uart.c  **** 
+  48:debug_uart.c  **** 		// set P0.22 as RTS1, no pullup/down
+  49:debug_uart.c  **** 		PINSEL1  = (PINSEL1  & ~(0b11 << 12)) | (0b01 << 12);
+ 127              		.loc 1 49 3 is_stmt 1 view .LVU48
+ 128              		.loc 1 49 15 is_stmt 0 view .LVU49
+ 129 0078 5A68     		ldr	r2, [r3, #4]
+ 130              		.loc 1 49 24 view .LVU50
+ 131 007a 22F44052 		bic	r2, r2, #12288
+ 132              		.loc 1 49 41 view .LVU51
+ 133 007e 42F48052 		orr	r2, r2, #4096
+ 134              		.loc 1 49 12 view .LVU52
+ 135 0082 5A60     		str	r2, [r3, #4]
+  50:debug_uart.c  **** 		PINMODE1 = (PINMODE1 & ~(0b11 << 12)) | (0b10 << 12);
+ 136              		.loc 1 50 3 is_stmt 1 view .LVU53
+ 137              		.loc 1 50 15 is_stmt 0 view .LVU54
+ 138 0084 5A6C     		ldr	r2, [r3, #68]
+ 139              		.loc 1 50 24 view .LVU55
+ 140 0086 22F44052 		bic	r2, r2, #12288
+ 141              		.loc 1 50 41 view .LVU56
+ 142 008a 42F40052 		orr	r2, r2, #8192
+ 143              		.loc 1 50 12 view .LVU57
+ 144 008e 5A64     		str	r2, [r3, #68]
+ 145              	.L1:
+  51:debug_uart.c  **** 	}
+  52:debug_uart.c  **** }
+ 146              		.loc 1 52 1 view .LVU58
+ 147 0090 7047     		bx	lr
+ 148              	.L2:
+  30:debug_uart.c  **** 
+ 149              		.loc 1 30 3 is_stmt 1 view .LVU59
+  30:debug_uart.c  **** 
+ 150              		.loc 1 30 9 is_stmt 0 view .LVU60
+ 151 0092 1861     		str	r0, [r3, #16]
+ 152 0094 CCE7     		b	.L3
+ 153              	.L9:
+ 154 0096 00BF     		.align	2
+ 155              	.L8:
+ 156 0098 00C00F40 		.word	1074774016
+ 157 009c 00000140 		.word	1073807360
+ 158 00a0 00C00240 		.word	1073922048
+ 159              		.cfi_endproc
+ 160              	.LFE1:
+ 162              		.section	.text.debug_write,"ax",%progbits
+ 163              		.align	1
+ 164              		.global	debug_write
+ 165              		.syntax unified
+ 166              		.thumb
+ 167              		.thumb_func
+ 169              	debug_write:
+ 170              	.LVL1:
+ 171              	.LFB2:
+  53:debug_uart.c  **** 
+  54:debug_uart.c  **** // synchronously write a string to debug UART
+  55:debug_uart.c  **** // does not start any DMA
+  56:debug_uart.c  **** void debug_write(const char *str) {
+ 172              		.loc 1 56 35 is_stmt 1 view -0
+ 173              		.cfi_startproc
+ARM GAS  /tmp/ccPrxDiN.s 			page 5
+
+
+ 174              		@ args = 0, pretend = 0, frame = 0
+ 175              		@ frame_needed = 0, uses_anonymous_args = 0
+ 176              		@ link register save eliminated.
+ 177              		.loc 1 56 35 is_stmt 0 view .LVU62
+  57:debug_uart.c  **** 	unsigned i;
+ 178              		.loc 1 57 2 is_stmt 1 view .LVU63
+  58:debug_uart.c  **** 
+  59:debug_uart.c  **** 	for (i = 0; str[i]; ++i) {
+ 179              		.loc 1 59 2 view .LVU64
+ 180              	.LVL2:
+  60:debug_uart.c  **** 		while ((U1LSR & U1LSR_THRE) == 0)
+ 181              		.loc 1 60 11 is_stmt 0 discriminator 1 view .LVU65
+ 182 0000 054A     		ldr	r2, .L16
+ 183 0002 0138     		subs	r0, r0, #1
+ 184              	.LVL3:
+ 185              	.L11:
+  59:debug_uart.c  **** 		while ((U1LSR & U1LSR_THRE) == 0)
+ 186              		.loc 1 59 14 is_stmt 1 discriminator 1 view .LVU66
+  59:debug_uart.c  **** 		while ((U1LSR & U1LSR_THRE) == 0)
+ 187              		.loc 1 59 17 is_stmt 0 discriminator 1 view .LVU67
+ 188 0004 10F8013F 		ldrb	r3, [r0, #1]!	@ zero_extendqisi2
+ 189              	.LVL4:
+  59:debug_uart.c  **** 		while ((U1LSR & U1LSR_THRE) == 0)
+ 190              		.loc 1 59 14 discriminator 1 view .LVU68
+ 191 0008 03B9     		cbnz	r3, .L12
+  61:debug_uart.c  **** 			;
+  62:debug_uart.c  **** 		U1THR = str[i];
+  63:debug_uart.c  **** 	}
+  64:debug_uart.c  **** }
+ 192              		.loc 1 64 1 view .LVU69
+ 193 000a 7047     		bx	lr
+ 194              	.L12:
+  60:debug_uart.c  **** 			;
+ 195              		.loc 1 60 31 is_stmt 1 discriminator 1 view .LVU70
+  60:debug_uart.c  **** 			;
+ 196              		.loc 1 60 11 is_stmt 0 discriminator 1 view .LVU71
+ 197 000c 5169     		ldr	r1, [r2, #20]
+  60:debug_uart.c  **** 			;
+ 198              		.loc 1 60 31 discriminator 1 view .LVU72
+ 199 000e 8906     		lsls	r1, r1, #26
+ 200 0010 FCD5     		bpl	.L12
+  62:debug_uart.c  **** 	}
+ 201              		.loc 1 62 3 is_stmt 1 view .LVU73
+  62:debug_uart.c  **** 	}
+ 202              		.loc 1 62 9 is_stmt 0 view .LVU74
+ 203 0012 1360     		str	r3, [r2]
+  59:debug_uart.c  **** 		while ((U1LSR & U1LSR_THRE) == 0)
+ 204              		.loc 1 59 22 is_stmt 1 discriminator 2 view .LVU75
+ 205 0014 F6E7     		b	.L11
+ 206              	.L17:
+ 207 0016 00BF     		.align	2
+ 208              	.L16:
+ 209 0018 00000140 		.word	1073807360
+ 210              		.cfi_endproc
+ 211              	.LFE2:
+ 213              		.section	.text.debug_printf,"ax",%progbits
+ 214              		.align	1
+ARM GAS  /tmp/ccPrxDiN.s 			page 6
+
+
+ 215              		.global	debug_printf
+ 216              		.syntax unified
+ 217              		.thumb
+ 218              		.thumb_func
+ 220              	debug_printf:
+ 221              	.LVL5:
+ 222              	.LFB4:
+  65:debug_uart.c  **** 
+  66:debug_uart.c  **** static void debug_send_dma(size_t size) {
+  67:debug_uart.c  **** 	DMACC7SrcAddr = (uint32_t)debug_buffer;
+  68:debug_uart.c  **** 	DMACC7DestAddr = (uint32_t)&U1THR;
+  69:debug_uart.c  **** 	DMACC7LLI = 0;
+  70:debug_uart.c  **** 	DMACC7Control =
+  71:debug_uart.c  **** 			(size & 0xfff)   | // transfer size
+  72:debug_uart.c  **** 			(0b000 << 12)    | // source burst: 1 byte
+  73:debug_uart.c  **** 			(0b000 << 15)    | // dest burst: 1 byte
+  74:debug_uart.c  **** 			DMACCxControl_SI | // source increment
+  75:debug_uart.c  **** 			DMACCxControl_I  ; // terminal count interrupt enable
+  76:debug_uart.c  **** 	DMACC7Config =
+  77:debug_uart.c  **** 			(10 << 6)         | // UART1 TX
+  78:debug_uart.c  **** 			(0b001 << 11)     | // memory to peripheral
+  79:debug_uart.c  **** 			DMACCxConfig_IE   | // allow error interrupts
+  80:debug_uart.c  **** 			DMACCxConfig_ITC  ; // allow terminal count interrupts
+  81:debug_uart.c  **** 
+  82:debug_uart.c  **** 	DMACC7Config |= 1;
+  83:debug_uart.c  **** }
+  84:debug_uart.c  **** 
+  85:debug_uart.c  **** void debug_printf(char *fmt, ...) {
+ 223              		.loc 1 85 35 view -0
+ 224              		.cfi_startproc
+ 225              		@ args = 4, pretend = 16, frame = 8
+ 226              		@ frame_needed = 0, uses_anonymous_args = 1
+ 227              		.loc 1 85 35 is_stmt 0 view .LVU77
+ 228 0000 0FB4     		push	{r0, r1, r2, r3}
+ 229              		.cfi_def_cfa_offset 16
+ 230              		.cfi_offset 0, -16
+ 231              		.cfi_offset 1, -12
+ 232              		.cfi_offset 2, -8
+ 233              		.cfi_offset 3, -4
+ 234 0002 73B5     		push	{r0, r1, r4, r5, r6, lr}
+ 235              		.cfi_def_cfa_offset 40
+ 236              		.cfi_offset 4, -32
+ 237              		.cfi_offset 5, -28
+ 238              		.cfi_offset 6, -24
+ 239              		.cfi_offset 14, -20
+  86:debug_uart.c  **** 	va_list ap;
+ 240              		.loc 1 86 2 is_stmt 1 view .LVU78
+  87:debug_uart.c  **** 	void *ret;
+ 241              		.loc 1 87 2 view .LVU79
+  88:debug_uart.c  **** 
+  89:debug_uart.c  **** 	// TODO warn user?
+  90:debug_uart.c  **** 	if (debug_dma_active)
+ 242              		.loc 1 90 2 view .LVU80
+ 243              		.loc 1 90 6 is_stmt 0 view .LVU81
+ 244 0004 174E     		ldr	r6, .L20
+ 245              		.loc 1 90 5 view .LVU82
+ 246 0006 3568     		ldr	r5, [r6]
+ARM GAS  /tmp/ccPrxDiN.s 			page 7
+
+
+ 247 0008 3DBB     		cbnz	r5, .L18
+  91:debug_uart.c  **** 		return;
+  92:debug_uart.c  **** 	debug_dma_active = 1;
+ 248              		.loc 1 92 2 is_stmt 1 view .LVU83
+ 249              		.loc 1 92 19 is_stmt 0 view .LVU84
+ 250 000a 3446     		mov	r4, r6
+ 251 000c 0123     		movs	r3, #1
+ 252 000e 44F8043B 		str	r3, [r4], #4
+  93:debug_uart.c  **** 
+  94:debug_uart.c  **** 	va_start(ap, fmt);
+ 253              		.loc 1 94 2 is_stmt 1 view .LVU85
+  95:debug_uart.c  **** 	tfp_vsnprintf(debug_buffer, sizeof(debug_buffer) - 1, fmt, ap);
+ 254              		.loc 1 95 2 is_stmt 0 view .LVU86
+ 255 0012 069A     		ldr	r2, [sp, #24]
+  94:debug_uart.c  **** 	tfp_vsnprintf(debug_buffer, sizeof(debug_buffer) - 1, fmt, ap);
+ 256              		.loc 1 94 2 view .LVU87
+ 257 0014 07AB     		add	r3, sp, #28
+ 258              		.loc 1 95 2 view .LVU88
+ 259 0016 FF21     		movs	r1, #255
+ 260 0018 2046     		mov	r0, r4
+  94:debug_uart.c  **** 	tfp_vsnprintf(debug_buffer, sizeof(debug_buffer) - 1, fmt, ap);
+ 261              		.loc 1 94 2 view .LVU89
+ 262 001a 0193     		str	r3, [sp, #4]
+ 263              		.loc 1 95 2 is_stmt 1 view .LVU90
+ 264 001c FFF7FEFF 		bl	tfp_vsnprintf
+ 265              	.LVL6:
+  96:debug_uart.c  **** 	va_end(ap);
+ 266              		.loc 1 96 2 view .LVU91
+  97:debug_uart.c  **** 	debug_buffer[sizeof(debug_buffer) - 1] = 0;
+ 267              		.loc 1 97 2 view .LVU92
+  98:debug_uart.c  **** 
+  99:debug_uart.c  **** 	size_t len = strlen(debug_buffer);
+ 268              		.loc 1 99 15 is_stmt 0 view .LVU93
+ 269 0020 2046     		mov	r0, r4
+  97:debug_uart.c  **** 	debug_buffer[sizeof(debug_buffer) - 1] = 0;
+ 270              		.loc 1 97 41 view .LVU94
+ 271 0022 86F80351 		strb	r5, [r6, #259]
+ 272              		.loc 1 99 2 is_stmt 1 view .LVU95
+ 273              		.loc 1 99 15 is_stmt 0 view .LVU96
+ 274 0026 FFF7FEFF 		bl	strlen
+ 275              	.LVL7:
+ 100:debug_uart.c  **** 	debug_send_dma(len);
+ 276              		.loc 1 100 2 is_stmt 1 view .LVU97
+ 277              	.LBB4:
+ 278              	.LBI4:
+  66:debug_uart.c  **** 	DMACC7SrcAddr = (uint32_t)debug_buffer;
+ 279              		.loc 1 66 13 view .LVU98
+ 280              	.LBB5:
+  67:debug_uart.c  **** 	DMACC7DestAddr = (uint32_t)&U1THR;
+ 281              		.loc 1 67 2 view .LVU99
+  67:debug_uart.c  **** 	DMACC7DestAddr = (uint32_t)&U1THR;
+ 282              		.loc 1 67 16 is_stmt 0 view .LVU100
+ 283 002a 0F4B     		ldr	r3, .L20+4
+  68:debug_uart.c  **** 	DMACC7LLI = 0;
+ 284              		.loc 1 68 17 view .LVU101
+ 285 002c 0F4A     		ldr	r2, .L20+8
+  67:debug_uart.c  **** 	DMACC7DestAddr = (uint32_t)&U1THR;
+ARM GAS  /tmp/ccPrxDiN.s 			page 8
+
+
+ 286              		.loc 1 67 16 view .LVU102
+ 287 002e C3F8E041 		str	r4, [r3, #480]
+  68:debug_uart.c  **** 	DMACC7LLI = 0;
+ 288              		.loc 1 68 2 is_stmt 1 view .LVU103
+  68:debug_uart.c  **** 	DMACC7LLI = 0;
+ 289              		.loc 1 68 17 is_stmt 0 view .LVU104
+ 290 0032 C3F8E421 		str	r2, [r3, #484]
+  69:debug_uart.c  **** 	DMACC7Control =
+ 291              		.loc 1 69 2 is_stmt 1 view .LVU105
+  76:debug_uart.c  **** 			(10 << 6)         | // UART1 TX
+ 292              		.loc 1 76 15 is_stmt 0 view .LVU106
+ 293 0036 4CF68022 		movw	r2, #51840
+  72:debug_uart.c  **** 			(0b000 << 15)    | // dest burst: 1 byte
+ 294              		.loc 1 72 21 view .LVU107
+ 295 003a C0F30B00 		ubfx	r0, r0, #0, #12
+ 296              	.LVL8:
+  74:debug_uart.c  **** 			DMACCxControl_I  ; // terminal count interrupt enable
+ 297              		.loc 1 74 21 view .LVU108
+ 298 003e 40F00440 		orr	r0, r0, #-2080374784
+  69:debug_uart.c  **** 	DMACC7Control =
+ 299              		.loc 1 69 12 view .LVU109
+ 300 0042 C3F8E851 		str	r5, [r3, #488]
+  70:debug_uart.c  **** 			(size & 0xfff)   | // transfer size
+ 301              		.loc 1 70 2 is_stmt 1 view .LVU110
+  70:debug_uart.c  **** 			(size & 0xfff)   | // transfer size
+ 302              		.loc 1 70 16 is_stmt 0 view .LVU111
+ 303 0046 C3F8EC01 		str	r0, [r3, #492]
+  76:debug_uart.c  **** 			(10 << 6)         | // UART1 TX
+ 304              		.loc 1 76 2 is_stmt 1 view .LVU112
+  76:debug_uart.c  **** 			(10 << 6)         | // UART1 TX
+ 305              		.loc 1 76 15 is_stmt 0 view .LVU113
+ 306 004a C3F8F021 		str	r2, [r3, #496]
+  82:debug_uart.c  **** }
+ 307              		.loc 1 82 2 is_stmt 1 view .LVU114
+ 308 004e D3F8F021 		ldr	r2, [r3, #496]
+  82:debug_uart.c  **** }
+ 309              		.loc 1 82 15 is_stmt 0 view .LVU115
+ 310 0052 42F00102 		orr	r2, r2, #1
+ 311 0056 C3F8F021 		str	r2, [r3, #496]
+ 312              	.LVL9:
+ 313              	.L18:
+  82:debug_uart.c  **** }
+ 314              		.loc 1 82 15 view .LVU116
+ 315              	.LBE5:
+ 316              	.LBE4:
+ 101:debug_uart.c  **** }
+ 317              		.loc 1 101 1 view .LVU117
+ 318 005a 02B0     		add	sp, sp, #8
+ 319              		.cfi_def_cfa_offset 32
+ 320              		@ sp needed
+ 321 005c BDE87040 		pop	{r4, r5, r6, lr}
+ 322              		.cfi_restore 14
+ 323              		.cfi_restore 6
+ 324              		.cfi_restore 5
+ 325              		.cfi_restore 4
+ 326              		.cfi_def_cfa_offset 16
+ 327 0060 04B0     		add	sp, sp, #16
+ARM GAS  /tmp/ccPrxDiN.s 			page 9
+
+
+ 328              		.cfi_restore 3
+ 329              		.cfi_restore 2
+ 330              		.cfi_restore 1
+ 331              		.cfi_restore 0
+ 332              		.cfi_def_cfa_offset 0
+ 333 0062 7047     		bx	lr
+ 334              	.L21:
+ 335              		.align	2
+ 336              	.L20:
+ 337 0064 00000000 		.word	.LANCHOR0
+ 338 0068 00400050 		.word	1342193664
+ 339 006c 00000140 		.word	1073807360
+ 340              		.cfi_endproc
+ 341              	.LFE4:
+ 343              		.global	debug_buffer
+ 344              		.global	debug_dma_active
+ 345              		.bss
+ 346              		.align	2
+ 347              		.set	.LANCHOR0,. + 0
+ 350              	debug_dma_active:
+ 351 0000 00000000 		.space	4
+ 354              	debug_buffer:
+ 355 0004 00000000 		.space	256
+ 355      00000000 
+ 355      00000000 
+ 355      00000000 
+ 355      00000000 
+ 356              		.text
+ 357              	.Letext0:
+ 358              		.file 2 "/usr/lib/gcc/arm-none-eabi/15/include/stdarg.h"
+ 359              		.file 3 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 360              		.file 4 "/usr/lib/gcc/arm-none-eabi/15/include/stddef.h"
+ 361              		.file 5 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 362              		.file 6 "/usr/arm-none-eabi/include/string.h"
+ 363              		.file 7 "tinyprintf.h"
+ 364              		.file 8 "<built-in>"
+ARM GAS  /tmp/ccPrxDiN.s 			page 10
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 debug_uart.c
+     /tmp/ccPrxDiN.s:19     .text.debug_uart_init:00000000 $t
+     /tmp/ccPrxDiN.s:25     .text.debug_uart_init:00000000 debug_uart_init
+     /tmp/ccPrxDiN.s:156    .text.debug_uart_init:00000098 $d
+     /tmp/ccPrxDiN.s:163    .text.debug_write:00000000 $t
+     /tmp/ccPrxDiN.s:169    .text.debug_write:00000000 debug_write
+     /tmp/ccPrxDiN.s:209    .text.debug_write:00000018 $d
+     /tmp/ccPrxDiN.s:214    .text.debug_printf:00000000 $t
+     /tmp/ccPrxDiN.s:220    .text.debug_printf:00000000 debug_printf
+     /tmp/ccPrxDiN.s:337    .text.debug_printf:00000064 $d
+     /tmp/ccPrxDiN.s:354    .bss:00000004 debug_buffer
+     /tmp/ccPrxDiN.s:350    .bss:00000000 debug_dma_active
+     /tmp/ccPrxDiN.s:346    .bss:00000000 $d
+
+UNDEFINED SYMBOLS
+tfp_vsnprintf
+strlen

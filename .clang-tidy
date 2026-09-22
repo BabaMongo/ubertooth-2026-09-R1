@@ -1,0 +1,26 @@
+---
+Checks: >
+  clang-diagnostic-*,
+  clang-analyzer-*,
+  -clang-analyzer-security.insecureAPI.strcpy,
+  cert-*,
+  -cert-env33-c,
+  cppcore-*,
+  hicpp-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -readability-magic-numbers,
+  -readability-function-cognitive-complexity,
+  bugprone-*,
+  google-*,
+  llvm-*
+WarningsAsErrors: '*'
+HeaderFilterRegex: 'ubertooth.*\.h'
+CheckOptions:
+  - key: cert-dcl21-cpp.VariadicFunctionArgs
+    value: 'printf,fprintf,sprintf,snprintf,vfprintf,vsprintf,vsnprintf'
+  - key: readability-function-size.LineThreshold
+    value: '200'
+  - key: readability-identifier-length.MinimumVariableNameLength
+    value: '2'

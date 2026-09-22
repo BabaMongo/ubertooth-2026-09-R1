@@ -1,0 +1,1408 @@
+ARM GAS  /tmp/ccZsqUOI.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"hop.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/btphy/hop.c"
+  18              		.section	.text.hop_init,"ax",%progbits
+  19              		.align	1
+  20              		.p2align 2,,3
+  21              		.global	hop_init
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	hop_init:
+  27              	.LVL0:
+  28              	.LFB14:
+   1:src/btphy/hop.c **** /* Hop functions
+   2:src/btphy/hop.c ****  *
+   3:src/btphy/hop.c ****  * Copyright 2012 Dominic Spill
+   4:src/btphy/hop.c ****  * Copyright 2020 Etienne Helluy-Lafont, Univ. Lille, CNRS.
+   5:src/btphy/hop.c ****  *
+   6:src/btphy/hop.c ****  * This file is part of Project Ubertooth.
+   7:src/btphy/hop.c ****  *
+   8:src/btphy/hop.c ****  * This program is free software; you can redistribute it and/or modify
+   9:src/btphy/hop.c ****  * it under the terms of the GNU General Public License as published by
+  10:src/btphy/hop.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  11:src/btphy/hop.c ****  * any later version.
+  12:src/btphy/hop.c ****  *
+  13:src/btphy/hop.c ****  * This program is distributed in the hope that it will be useful,
+  14:src/btphy/hop.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  15:src/btphy/hop.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  16:src/btphy/hop.c ****  * GNU General Public License for more details.
+  17:src/btphy/hop.c ****  *
+  18:src/btphy/hop.c ****  * You should have received a copy of the GNU General Public License
+  19:src/btphy/hop.c ****  * along with this program; see the file COPYING.  If not, write to
+  20:src/btphy/hop.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  21:src/btphy/hop.c ****  * Boston, MA 02110-1301, USA.
+  22:src/btphy/hop.c ****  */
+  23:src/btphy/hop.c **** #include <ubtbr/cfg.h>
+  24:src/btphy/hop.c **** #include <ubtbr/debug.h>
+  25:src/btphy/hop.c **** #include <ubtbr/hop.h>
+  26:src/btphy/hop.c **** #include <ubtbr/btphy.h>
+  27:src/btphy/hop.c **** 
+  28:src/btphy/hop.c **** hop_state_t hop_state;
+  29:src/btphy/hop.c **** 
+  30:src/btphy/hop.c **** /* do all of the one time precalculation */
+ARM GAS  /tmp/ccZsqUOI.s 			page 2
+
+
+  31:src/btphy/hop.c **** void hop_init(uint32_t address)
+  32:src/btphy/hop.c **** {
+  29              		.loc 1 32 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		.loc 1 32 1 is_stmt 0 view .LVU1
+  34 0000 2DE9F041 		push	{r4, r5, r6, r7, r8, lr}
+  35              		.cfi_def_cfa_offset 24
+  36              		.cfi_offset 4, -24
+  37              		.cfi_offset 5, -20
+  38              		.cfi_offset 6, -16
+  39              		.cfi_offset 7, -12
+  40              		.cfi_offset 8, -8
+  41              		.cfi_offset 14, -4
+  33:src/btphy/hop.c **** 	uint8_t i;
+  42              		.loc 1 33 2 is_stmt 1 view .LVU2
+  34:src/btphy/hop.c **** 
+  35:src/btphy/hop.c **** 	/* populate frequency register bank */
+  36:src/btphy/hop.c **** 	for (i = 0; i < NUM_BREDR_CHANNELS; i++)
+  43              		.loc 1 36 2 view .LVU3
+  44              	.LVL1:
+  45              		.loc 1 36 16 discriminator 1 view .LVU4
+  32:src/btphy/hop.c **** 	uint8_t i;
+  46              		.loc 1 32 1 is_stmt 0 view .LVU5
+  47 0004 0022     		movs	r2, #0
+  48 0006 3049     		ldr	r1, .L5
+  49 0008 0446     		mov	r4, r0
+  37:src/btphy/hop.c **** 	{
+  38:src/btphy/hop.c **** 		hop_state.basic_bank[i] = ((i * 2) % NUM_BREDR_CHANNELS);
+  50              		.loc 1 38 38 view .LVU6
+  51 000a 3048     		ldr	r0, .L5+4
+  52              	.LVL2:
+  53              		.loc 1 38 38 view .LVU7
+  54 000c 01F14F0E 		add	lr, r1, #79
+  55              	.LVL3:
+  56              	.L2:
+  57              		.loc 1 38 3 is_stmt 1 view .LVU8
+  58              		.loc 1 38 38 is_stmt 0 view .LVU9
+  59 0010 A0FB02C3 		umull	ip, r3, r0, r2
+  60 0014 9B09     		lsrs	r3, r3, #6
+  61 0016 03EB830C 		add	ip, r3, r3, lsl #2
+  62 001a C3EB0C13 		rsb	r3, r3, ip, lsl #4
+  63 001e D31A     		subs	r3, r2, r3
+  64              		.loc 1 38 27 view .LVU10
+  65 0020 01F8013F 		strb	r3, [r1, #1]!
+  66              	.LVL4:
+  36:src/btphy/hop.c **** 	{
+  67              		.loc 1 36 39 is_stmt 1 discriminator 3 view .LVU11
+  36:src/btphy/hop.c **** 	{
+  68              		.loc 1 36 16 discriminator 1 view .LVU12
+  69 0024 7145     		cmp	r1, lr
+  70 0026 02F10202 		add	r2, r2, #2
+  71 002a F1D1     		bne	.L2
+  39:src/btphy/hop.c **** 	}
+  40:src/btphy/hop.c **** 		/* actual frequency is 2402 + bank[i] MHz */
+  41:src/btphy/hop.c **** 
+ARM GAS  /tmp/ccZsqUOI.s 			page 3
+
+
+  42:src/btphy/hop.c **** 	/* precalculate some of next_hop()'s variables */
+  43:src/btphy/hop.c **** 	hop_state.a27_23 = (address >> 23) & 0x1f;
+  72              		.loc 1 43 2 view .LVU13
+  44:src/btphy/hop.c **** 	hop_state.a22_19 = (address >> 19) & 0x0f; 	// Addr22_19
+  73              		.loc 1 44 2 view .LVU14
+  45:src/btphy/hop.c **** 	hop_state.C = ((address >> 4) & 0x10) |
+  74              		.loc 1 45 2 view .LVU15
+  43:src/btphy/hop.c **** 	hop_state.a22_19 = (address >> 19) & 0x0f; 	// Addr22_19
+  75              		.loc 1 43 19 is_stmt 0 view .LVU16
+  76 002c 0021     		movs	r1, #0
+  77              	.LVL5:
+  46:src/btphy/hop.c **** 			((address >> 3) & 0x08) |
+  47:src/btphy/hop.c **** 			((address >> 2) & 0x04) |
+  48:src/btphy/hop.c **** 			((address >> 1) & 0x02) |
+  49:src/btphy/hop.c **** 			(address & 0x01);
+  50:src/btphy/hop.c **** 	hop_state.a18_10 = (address >> 10) & 0x1ff;
+  51:src/btphy/hop.c **** 	hop_state.E =	((address >> 7) & 0x40) +
+  52:src/btphy/hop.c **** 			((address >> 6) & 0x20) +
+  53:src/btphy/hop.c **** 			((address >> 5) & 0x10) +
+  54:src/btphy/hop.c **** 			((address >> 4) & 0x08) +
+  55:src/btphy/hop.c **** 			((address >> 3) & 0x04) +
+  56:src/btphy/hop.c **** 			((address >> 2) & 0x02) +
+  57:src/btphy/hop.c **** 			((address >> 1) & 0x01);
+  58:src/btphy/hop.c **** 	hop_state.x = 0;
+  59:src/btphy/hop.c **** 	hop_state.afh_enabled = 0;
+  60:src/btphy/hop.c **** 	hop_state.bank = hop_state.basic_bank;
+  61:src/btphy/hop.c **** 	hop_state.chan_count = NUM_BREDR_CHANNELS;
+  78              		.loc 1 61 23 view .LVU17
+  79 002e 4FF04F0E 		mov	lr, #79
+  58:src/btphy/hop.c **** 	hop_state.afh_enabled = 0;
+  80              		.loc 1 58 14 view .LVU18
+  81 0032 8C46     		mov	ip, r1
+  46:src/btphy/hop.c **** 			((address >> 3) & 0x08) |
+  82              		.loc 1 46 20 view .LVU19
+  83 0034 C4F3C700 		ubfx	r0, r4, #3, #8
+  45:src/btphy/hop.c **** 			((address >> 3) & 0x08) |
+  84              		.loc 1 45 32 view .LVU20
+  85 0038 C4F30715 		ubfx	r5, r4, #4, #8
+  46:src/btphy/hop.c **** 			((address >> 3) & 0x08) |
+  86              		.loc 1 46 20 view .LVU21
+  87 003c 00F00803 		and	r3, r0, #8
+  45:src/btphy/hop.c **** 			((address >> 3) & 0x08) |
+  88              		.loc 1 45 32 view .LVU22
+  89 0040 05F01007 		and	r7, r5, #16
+  45:src/btphy/hop.c **** 			((address >> 3) & 0x08) |
+  90              		.loc 1 45 40 view .LVU23
+  91 0044 1F43     		orrs	r7, r7, r3
+  49:src/btphy/hop.c **** 	hop_state.a18_10 = (address >> 10) & 0x1ff;
+  92              		.loc 1 49 13 view .LVU24
+  93 0046 04F00103 		and	r3, r4, #1
+  48:src/btphy/hop.c **** 			(address & 0x01);
+  94              		.loc 1 48 28 view .LVU25
+  95 004a 1F43     		orrs	r7, r7, r3
+  51:src/btphy/hop.c **** 			((address >> 6) & 0x20) +
+  96              		.loc 1 51 26 view .LVU26
+  97 004c E309     		lsrs	r3, r4, #7
+  55:src/btphy/hop.c **** 			((address >> 2) & 0x02) +
+ARM GAS  /tmp/ccZsqUOI.s 			page 4
+
+
+  98              		.loc 1 55 20 view .LVU27
+  99 004e 00F00408 		and	r8, r0, #4
+  51:src/btphy/hop.c **** 			((address >> 6) & 0x20) +
+ 100              		.loc 1 51 32 view .LVU28
+ 101 0052 03F04000 		and	r0, r3, #64
+  52:src/btphy/hop.c **** 			((address >> 5) & 0x10) +
+ 102              		.loc 1 52 14 view .LVU29
+ 103 0056 A309     		lsrs	r3, r4, #6
+  47:src/btphy/hop.c **** 			((address >> 1) & 0x02) |
+ 104              		.loc 1 47 20 view .LVU30
+ 105 0058 C4F38702 		ubfx	r2, r4, #2, #8
+  52:src/btphy/hop.c **** 			((address >> 5) & 0x10) +
+ 106              		.loc 1 52 20 view .LVU31
+ 107 005c 03F02003 		and	r3, r3, #32
+  51:src/btphy/hop.c **** 			((address >> 6) & 0x20) +
+ 108              		.loc 1 51 40 view .LVU32
+ 109 0060 0343     		orrs	r3, r3, r0
+  56:src/btphy/hop.c **** 			((address >> 1) & 0x01);
+ 110              		.loc 1 56 20 view .LVU33
+ 111 0062 02F00200 		and	r0, r2, #2
+  47:src/btphy/hop.c **** 			((address >> 1) & 0x02) |
+ 112              		.loc 1 47 20 view .LVU34
+ 113 0066 02F00402 		and	r2, r2, #4
+  48:src/btphy/hop.c **** 			(address & 0x01);
+ 114              		.loc 1 48 20 view .LVU35
+ 115 006a C4F34706 		ubfx	r6, r4, #1, #8
+  50:src/btphy/hop.c **** 	hop_state.E =	((address >> 7) & 0x40) +
+ 116              		.loc 1 50 2 is_stmt 1 view .LVU36
+  48:src/btphy/hop.c **** 			(address & 0x01);
+ 117              		.loc 1 48 28 is_stmt 0 view .LVU37
+ 118 006e 3A43     		orrs	r2, r2, r7
+  43:src/btphy/hop.c **** 	hop_state.a22_19 = (address >> 19) & 0x0f; 	// Addr22_19
+ 119              		.loc 1 43 37 view .LVU38
+ 120 0070 C4F3C457 		ubfx	r7, r4, #23, #5
+  43:src/btphy/hop.c **** 	hop_state.a22_19 = (address >> 19) & 0x0f; 	// Addr22_19
+ 121              		.loc 1 43 19 view .LVU39
+ 122 0074 67F30701 		bfi	r1, r7, #0, #8
+  56:src/btphy/hop.c **** 			((address >> 1) & 0x01);
+ 123              		.loc 1 56 28 view .LVU40
+ 124 0078 48EA0000 		orr	r0, r8, r0
+  57:src/btphy/hop.c **** 	hop_state.x = 0;
+ 125              		.loc 1 57 20 view .LVU41
+ 126 007c 06F00107 		and	r7, r6, #1
+  56:src/btphy/hop.c **** 			((address >> 1) & 0x01);
+ 127              		.loc 1 56 28 view .LVU42
+ 128 0080 3844     		add	r0, r0, r7
+ 129 0082 0344     		add	r3, r3, r0
+  53:src/btphy/hop.c **** 			((address >> 4) & 0x08) +
+ 130              		.loc 1 53 14 view .LVU43
+ 131 0084 6009     		lsrs	r0, r4, #5
+  54:src/btphy/hop.c **** 			((address >> 3) & 0x04) +
+ 132              		.loc 1 54 20 view .LVU44
+ 133 0086 05F00805 		and	r5, r5, #8
+  53:src/btphy/hop.c **** 			((address >> 4) & 0x08) +
+ 134              		.loc 1 53 20 view .LVU45
+ 135 008a 00F01000 		and	r0, r0, #16
+  56:src/btphy/hop.c **** 			((address >> 1) & 0x01);
+ARM GAS  /tmp/ccZsqUOI.s 			page 5
+
+
+ 136              		.loc 1 56 28 view .LVU46
+ 137 008e 2843     		orrs	r0, r0, r5
+ 138 0090 0344     		add	r3, r3, r0
+  48:src/btphy/hop.c **** 			(address & 0x01);
+ 139              		.loc 1 48 20 view .LVU47
+ 140 0092 06F00206 		and	r6, r6, #2
+  44:src/btphy/hop.c **** 	hop_state.C = ((address >> 4) & 0x10) |
+ 141              		.loc 1 44 37 view .LVU48
+ 142 0096 C4F3C340 		ubfx	r0, r4, #19, #4
+  48:src/btphy/hop.c **** 			(address & 0x01);
+ 143              		.loc 1 48 28 view .LVU49
+ 144 009a 3243     		orrs	r2, r2, r6
+  43:src/btphy/hop.c **** 	hop_state.a22_19 = (address >> 19) & 0x0f; 	// Addr22_19
+ 145              		.loc 1 43 19 view .LVU50
+ 146 009c 60F30F21 		bfi	r1, r0, #8, #8
+ 147 00a0 62F31741 		bfi	r1, r2, #16, #8
+ 148 00a4 63F31F61 		bfi	r1, r3, #24, #8
+  50:src/btphy/hop.c **** 	hop_state.E =	((address >> 7) & 0x40) +
+ 149              		.loc 1 50 19 view .LVU51
+ 150 00a8 094B     		ldr	r3, .L5+8
+  50:src/btphy/hop.c **** 	hop_state.E =	((address >> 7) & 0x40) +
+ 151              		.loc 1 50 37 view .LVU52
+ 152 00aa C4F38824 		ubfx	r4, r4, #10, #9
+ 153              	.LVL6:
+  60:src/btphy/hop.c **** 	hop_state.chan_count = NUM_BREDR_CHANNELS;
+ 154              		.loc 1 60 17 view .LVU53
+ 155 00ae DA1D     		adds	r2, r3, #7
+  43:src/btphy/hop.c **** 	hop_state.a22_19 = (address >> 19) & 0x0f; 	// Addr22_19
+ 156              		.loc 1 43 19 view .LVU54
+ 157 00b0 1960     		str	r1, [r3]
+  58:src/btphy/hop.c **** 	hop_state.afh_enabled = 0;
+ 158              		.loc 1 58 14 view .LVU55
+ 159 00b2 83F806C0 		strb	ip, [r3, #6]
+  59:src/btphy/hop.c **** 	hop_state.bank = hop_state.basic_bank;
+ 160              		.loc 1 59 24 view .LVU56
+ 161 00b6 83F8A6C0 		strb	ip, [r3, #166]
+ 162              		.loc 1 61 23 view .LVU57
+ 163 00ba 83F8ACE0 		strb	lr, [r3, #172]
+  60:src/btphy/hop.c **** 	hop_state.chan_count = NUM_BREDR_CHANNELS;
+ 164              		.loc 1 60 17 view .LVU58
+ 165 00be C3F8A820 		str	r2, [r3, #168]
+  50:src/btphy/hop.c **** 	hop_state.E =	((address >> 7) & 0x40) +
+ 166              		.loc 1 50 19 view .LVU59
+ 167 00c2 9C80     		strh	r4, [r3, #4]	@ movhi
+  51:src/btphy/hop.c **** 			((address >> 6) & 0x20) +
+ 168              		.loc 1 51 2 is_stmt 1 view .LVU60
+  58:src/btphy/hop.c **** 	hop_state.afh_enabled = 0;
+ 169              		.loc 1 58 2 view .LVU61
+  59:src/btphy/hop.c **** 	hop_state.bank = hop_state.basic_bank;
+ 170              		.loc 1 59 2 view .LVU62
+  60:src/btphy/hop.c **** 	hop_state.chan_count = NUM_BREDR_CHANNELS;
+ 171              		.loc 1 60 2 view .LVU63
+ 172              		.loc 1 61 2 view .LVU64
+  62:src/btphy/hop.c **** }
+ 173              		.loc 1 62 1 is_stmt 0 view .LVU65
+ 174 00c4 BDE8F081 		pop	{r4, r5, r6, r7, r8, pc}
+ 175              	.L6:
+ARM GAS  /tmp/ccZsqUOI.s 			page 6
+
+
+ 176              		.align	2
+ 177              	.L5:
+ 178 00c8 06000000 		.word	.LANCHOR0+6
+ 179 00cc A97464CF 		.word	-815500119
+ 180 00d0 00000000 		.word	.LANCHOR0
+ 181              		.cfi_endproc
+ 182              	.LFE14:
+ 184              		.section	.text.hop_inquiry,"ax",%progbits
+ 185              		.align	1
+ 186              		.p2align 2,,3
+ 187              		.global	hop_inquiry
+ 188              		.syntax unified
+ 189              		.thumb
+ 190              		.thumb_func
+ 192              	hop_inquiry:
+ 193              	.LVL7:
+ 194              	.LFB16:
+  63:src/btphy/hop.c **** 
+  64:src/btphy/hop.c **** /* BT Core v5.1 | Vol 2, Part B, Section 2.6*/
+  65:src/btphy/hop.c **** static uint8_t hop_selection_kernel(uint8_t x, uint8_t y1, uint8_t y2,
+  66:src/btphy/hop.c **** 			uint8_t a, uint8_t b, uint8_t c,
+  67:src/btphy/hop.c **** 			uint16_t d, uint8_t e, uint8_t f)
+  68:src/btphy/hop.c **** {
+  69:src/btphy/hop.c **** 	/* Extend y1 on 5 bits */
+  70:src/btphy/hop.c **** 	y1 = ~(y1-1);
+  71:src/btphy/hop.c **** 	return (perm5((a+x)^b, y1^c, d) + e + f + y2);
+  72:src/btphy/hop.c **** }
+  73:src/btphy/hop.c **** 
+  74:src/btphy/hop.c **** uint8_t hop_inquiry(uint32_t clk)
+  75:src/btphy/hop.c **** {
+ 195              		.loc 1 75 1 is_stmt 1 view -0
+ 196              		.cfi_startproc
+ 197              		@ args = 0, pretend = 0, frame = 0
+ 198              		@ frame_needed = 0, uses_anonymous_args = 0
+ 199              		.loc 1 75 1 is_stmt 0 view .LVU67
+ 200 0000 00B5     		push	{lr}
+ 201              		.cfi_def_cfa_offset 4
+ 202              		.cfi_offset 14, -4
+  76:src/btphy/hop.c **** 	uint8_t clk1, sel;
+ 203              		.loc 1 76 2 is_stmt 1 view .LVU68
+  77:src/btphy/hop.c **** 
+  78:src/btphy/hop.c **** 	clk1 = 1&(clk>>1);
+ 204              		.loc 1 78 2 view .LVU69
+  79:src/btphy/hop.c **** 
+  80:src/btphy/hop.c **** 	sel = hop_selection_kernel(
+ 205              		.loc 1 80 8 is_stmt 0 view .LVU70
+ 206 0002 1D4A     		ldr	r2, .L8
+ 207              	.LBB16:
+ 208              	.LBB17:
+  71:src/btphy/hop.c **** }
+ 209              		.loc 1 71 18 view .LVU71
+ 210 0004 92F800E0 		ldrb	lr, [r2]	@ zero_extendqisi2
+ 211 0008 9179     		ldrb	r1, [r2, #6]	@ zero_extendqisi2
+  71:src/btphy/hop.c **** }
+ 212              		.loc 1 71 10 view .LVU72
+ 213 000a 9378     		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+  71:src/btphy/hop.c **** }
+ARM GAS  /tmp/ccZsqUOI.s 			page 7
+
+
+ 214              		.loc 1 71 18 view .LVU73
+ 215 000c 7144     		add	r1, r1, lr
+ 216              	.LBB18:
+ 217              	.LBB19:
+ 218              		.file 2 "include/ubtbr/hop.h"
+   1:include/ubtbr/hop.h **** #ifndef __HOP_H
+   2:include/ubtbr/hop.h **** #define __HOP_H
+   3:include/ubtbr/hop.h **** #include <stdint.h>
+   4:include/ubtbr/hop.h **** #include <ubertooth_interface.h>
+   5:include/ubtbr/hop.h **** 
+   6:include/ubtbr/hop.h **** typedef struct hop_state_s {
+   7:include/ubtbr/hop.h **** 	uint8_t a27_23, a22_19, C, E;
+   8:include/ubtbr/hop.h **** 	uint16_t a18_10;
+   9:include/ubtbr/hop.h **** 	uint8_t x;
+  10:include/ubtbr/hop.h **** 	/* frequency register bank */
+  11:include/ubtbr/hop.h **** 	uint8_t basic_bank[NUM_BREDR_CHANNELS];
+  12:include/ubtbr/hop.h **** 	uint8_t afh_bank[NUM_BREDR_CHANNELS];
+  13:include/ubtbr/hop.h **** 	uint8_t afh_chan_count;
+  14:include/ubtbr/hop.h **** 	uint8_t afh_enabled;
+  15:include/ubtbr/hop.h **** 	uint8_t *bank;
+  16:include/ubtbr/hop.h **** 	uint8_t chan_count;
+  17:include/ubtbr/hop.h **** } hop_state_t;
+  18:include/ubtbr/hop.h **** 
+  19:include/ubtbr/hop.h **** void hop_init(uint32_t address);
+  20:include/ubtbr/hop.h **** uint8_t hop_basic(uint32_t clk);
+  21:include/ubtbr/hop.h **** uint8_t hop_inquiry(uint32_t clk);
+  22:include/ubtbr/hop.h **** uint8_t hop_channel(uint32_t clk);
+  23:include/ubtbr/hop.h **** void hop_cfg_afh(uint8_t* buf);
+  24:include/ubtbr/hop.h **** 
+  25:include/ubtbr/hop.h **** /* FIXME ?*/
+  26:include/ubtbr/hop.h **** extern hop_state_t hop_state;
+  27:include/ubtbr/hop.h **** 
+  28:include/ubtbr/hop.h **** static inline uint8_t perm5(uint8_t z, uint8_t p_high, uint16_t p_low)
+  29:include/ubtbr/hop.h **** {
+  30:include/ubtbr/hop.h **** 	extern uint8_t perm5_lut[2][4096];
+  31:include/ubtbr/hop.h **** 	uint16_t p = (p_low&0x1ff)|((p_high&0x1f)<<9);
+  32:include/ubtbr/hop.h **** 
+  33:include/ubtbr/hop.h **** 	z &= 0x1f;
+ 219              		.loc 2 33 4 view .LVU74
+ 220 000e 92F801E0 		ldrb	lr, [r2, #1]	@ zero_extendqisi2
+  31:include/ubtbr/hop.h **** 
+ 221              		.loc 2 31 11 view .LVU75
+ 222 0012 B2F804C0 		ldrh	ip, [r2, #4]
+ 223              		.loc 2 33 4 view .LVU76
+ 224 0016 81EA0E01 		eor	r1, r1, lr
+ 225              	.LBE19:
+ 226              	.LBE18:
+  70:src/btphy/hop.c **** 	return (perm5((a+x)^b, y1^c, d) + e + f + y2);
+ 227              		.loc 1 70 5 view .LVU77
+ 228 001a 40F3400E 		sbfx	lr, r0, #1, #1
+ 229              	.LBB23:
+ 230              	.LBB20:
+  31:include/ubtbr/hop.h **** 
+ 231              		.loc 2 31 43 view .LVU78
+ 232 001e 83EA0E03 		eor	r3, r3, lr
+ 233 0022 5B02     		lsls	r3, r3, #9
+  31:include/ubtbr/hop.h **** 
+ARM GAS  /tmp/ccZsqUOI.s 			page 8
+
+
+ 234              		.loc 2 31 11 view .LVU79
+ 235 0024 CCF3080C 		ubfx	ip, ip, #0, #9
+  31:include/ubtbr/hop.h **** 
+ 236              		.loc 2 31 43 view .LVU80
+ 237 0028 03F47853 		and	r3, r3, #15872
+  31:include/ubtbr/hop.h **** 
+ 238              		.loc 2 31 11 view .LVU81
+ 239 002c 43EA0C03 		orr	r3, r3, ip
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[0][(((p>>7))<<5)|z];
+ 240              		.loc 2 34 23 view .LVU82
+ 241 0030 4FEAD31E 		lsr	lr, r3, #7
+ 242              	.LBE20:
+ 243              	.LBE23:
+ 244              	.LBE17:
+ 245              	.LBE16:
+  78:src/btphy/hop.c **** 
+ 246              		.loc 1 78 7 view .LVU83
+ 247 0034 C0F3400C 		ubfx	ip, r0, #1, #1
+ 248              	.LVL8:
+ 249              		.loc 1 80 2 is_stmt 1 view .LVU84
+ 250              	.LBB28:
+ 251              	.LBI16:
+  65:src/btphy/hop.c **** 			uint8_t a, uint8_t b, uint8_t c,
+ 252              		.loc 1 65 16 view .LVU85
+ 253              	.LBB26:
+  70:src/btphy/hop.c **** 	return (perm5((a+x)^b, y1^c, d) + e + f + y2);
+ 254              		.loc 1 70 2 view .LVU86
+  71:src/btphy/hop.c **** }
+ 255              		.loc 1 71 2 view .LVU87
+ 256              	.LBB24:
+ 257              	.LBI18:
+  28:include/ubtbr/hop.h **** {
+ 258              		.loc 2 28 23 view .LVU88
+ 259              	.LBB21:
+  30:include/ubtbr/hop.h **** 	uint16_t p = (p_low&0x1ff)|((p_high&0x1f)<<9);
+ 260              		.loc 2 30 2 view .LVU89
+  31:include/ubtbr/hop.h **** 
+ 261              		.loc 2 31 2 view .LVU90
+  33:include/ubtbr/hop.h **** 	z = perm5_lut[0][(((p>>7))<<5)|z];
+ 262              		.loc 2 33 2 view .LVU91
+ 263              		.loc 2 34 2 view .LVU92
+ 264              		.loc 2 34 32 is_stmt 0 view .LVU93
+ 265 0038 01F01F01 		and	r1, r1, #31
+ 266              		.loc 2 34 4 view .LVU94
+ 267 003c 0F48     		ldr	r0, .L8+4
+ 268              	.LVL9:
+ 269              		.loc 2 34 32 view .LVU95
+ 270 003e 41EA4E11 		orr	r1, r1, lr, lsl #5
+ 271              	.LVL10:
+  35:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ 272              		.loc 2 35 2 is_stmt 1 view .LVU96
+ 273              		.loc 2 35 37 is_stmt 0 view .LVU97
+ 274 0042 415C     		ldrb	r1, [r0, r1]	@ zero_extendqisi2
+ 275              	.LVL11:
+ 276              		.loc 2 35 33 view .LVU98
+ 277 0044 5B01     		lsls	r3, r3, #5
+ 278              	.LVL12:
+ARM GAS  /tmp/ccZsqUOI.s 			page 9
+
+
+ 279              		.loc 2 35 33 view .LVU99
+ 280 0046 03F47E63 		and	r3, r3, #4064
+ 281              		.loc 2 35 37 view .LVU100
+ 282 004a 0B43     		orrs	r3, r3, r1
+  36:include/ubtbr/hop.h **** 
+  37:include/ubtbr/hop.h **** 	return z;
+ 283              		.loc 2 37 2 is_stmt 1 view .LVU101
+ 284              	.LVL13:
+ 285              		.loc 2 37 2 is_stmt 0 view .LVU102
+ 286              	.LBE21:
+ 287              	.LBE24:
+ 288              	.LBE26:
+ 289              	.LBE28:
+  81:src/btphy/hop.c **** 			hop_state.x,		// X = the x
+  82:src/btphy/hop.c **** 			clk1,			// Y1 = clk1
+  83:src/btphy/hop.c **** 			clk1<<5,		// Y2 = 32*clk1
+  84:src/btphy/hop.c **** 			hop_state.a27_23,	// A = A27_23
+  85:src/btphy/hop.c **** 			hop_state.a22_19,	// B = A22_19
+  86:src/btphy/hop.c **** 			hop_state.C,		// C = A8,6,4,2,0
+  87:src/btphy/hop.c **** 			hop_state.a18_10,	// D = A18_10
+  88:src/btphy/hop.c **** 			hop_state.E,		// E = A13,11,9,7,5,3,1
+  89:src/btphy/hop.c **** 			0) % NUM_BREDR_CHANNELS;
+  90:src/btphy/hop.c **** 
+  91:src/btphy/hop.c **** 	return hop_state.basic_bank[sel];
+ 290              		.loc 1 91 2 is_stmt 1 view .LVU103
+ 291              	.LBB29:
+ 292              	.LBB27:
+ 293              	.LBB25:
+ 294              	.LBB22:
+  35:include/ubtbr/hop.h **** 
+ 295              		.loc 2 35 4 is_stmt 0 view .LVU104
+ 296 004c 1844     		add	r0, r0, r3
+ 297 004e 00F58050 		add	r0, r0, #4096
+ 298              	.LBE22:
+ 299              	.LBE25:
+  71:src/btphy/hop.c **** }
+ 300              		.loc 1 71 42 discriminator 1 view .LVU105
+ 301 0052 D378     		ldrb	r3, [r2, #3]	@ zero_extendqisi2
+ 302              	.LVL14:
+  71:src/btphy/hop.c **** }
+ 303              		.loc 1 71 42 discriminator 1 view .LVU106
+ 304 0054 0078     		ldrb	r0, [r0]	@ zero_extendqisi2
+ 305 0056 03EB4C13 		add	r3, r3, ip, lsl #5
+ 306 005a 0344     		add	r3, r3, r0
+ 307              	.LBE27:
+ 308              	.LBE29:
+  80:src/btphy/hop.c **** 			hop_state.x,		// X = the x
+ 309              		.loc 1 80 6 discriminator 1 view .LVU107
+ 310 005c 0849     		ldr	r1, .L8+8
+ 311              	.LVL15:
+  80:src/btphy/hop.c **** 			hop_state.x,		// X = the x
+ 312              		.loc 1 80 6 discriminator 1 view .LVU108
+ 313 005e DBB2     		uxtb	r3, r3
+ 314 0060 A1FB0301 		umull	r0, r1, r1, r3
+ 315 0064 8909     		lsrs	r1, r1, #6
+ 316 0066 01EB8100 		add	r0, r1, r1, lsl #2
+ 317 006a C1EB0011 		rsb	r1, r1, r0, lsl #4
+ARM GAS  /tmp/ccZsqUOI.s 			page 10
+
+
+ 318 006e 5B1A     		subs	r3, r3, r1
+ 319              		.loc 1 91 29 view .LVU109
+ 320 0070 DBB2     		uxtb	r3, r3
+ 321 0072 1A44     		add	r2, r2, r3
+  92:src/btphy/hop.c **** }
+ 322              		.loc 1 92 1 view .LVU110
+ 323 0074 D079     		ldrb	r0, [r2, #7]	@ zero_extendqisi2
+ 324 0076 00BD     		pop	{pc}
+ 325              	.L9:
+ 326              		.align	2
+ 327              	.L8:
+ 328 0078 00000000 		.word	.LANCHOR0
+ 329 007c 00000000 		.word	perm5_lut
+ 330 0080 A97464CF 		.word	-815500119
+ 331              		.cfi_endproc
+ 332              	.LFE16:
+ 334              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 335              		.align	2
+ 336              	.LC0:
+ 337 0000 282B6166 		.ascii	"(+afh)\000"
+ 337      682900
+ 338 0007 00       		.align	2
+ 339              	.LC1:
+ 340 0008 282D6166 		.ascii	"(-afh)\000"
+ 340      682900
+ 341              		.section	.text.hop_cfg_afh,"ax",%progbits
+ 342              		.align	1
+ 343              		.p2align 2,,3
+ 344              		.global	hop_cfg_afh
+ 345              		.syntax unified
+ 346              		.thumb
+ 347              		.thumb_func
+ 349              	hop_cfg_afh:
+ 350              	.LVL16:
+ 351              	.LFB18:
+  93:src/btphy/hop.c **** 
+  94:src/btphy/hop.c **** static void hop_set_afh_map(uint8_t *afh_map)
+  95:src/btphy/hop.c **** {
+  96:src/btphy/hop.c **** 	uint8_t chan;
+  97:src/btphy/hop.c **** 	unsigned i,count;
+  98:src/btphy/hop.c **** 
+  99:src/btphy/hop.c **** 	for (i = 0, count=0; i < NUM_BREDR_CHANNELS; i++) {
+ 100:src/btphy/hop.c **** 		//chan = (i * 2) % NUM_BREDR_CHANNELS;
+ 101:src/btphy/hop.c **** 		chan = hop_state.basic_bank[i];
+ 102:src/btphy/hop.c **** 		if(afh_map[chan/8] & (0x1 << (chan%8)))
+ 103:src/btphy/hop.c **** 			hop_state.afh_bank[count++] = chan;
+ 104:src/btphy/hop.c **** 	}
+ 105:src/btphy/hop.c **** 	hop_state.afh_chan_count = count;
+ 106:src/btphy/hop.c **** }
+ 107:src/btphy/hop.c **** 
+ 108:src/btphy/hop.c **** void hop_cfg_afh(uint8_t* buf)
+ 109:src/btphy/hop.c **** {
+ 352              		.loc 1 109 1 is_stmt 1 view -0
+ 353              		.cfi_startproc
+ 354              		@ args = 0, pretend = 0, frame = 0
+ 355              		@ frame_needed = 0, uses_anonymous_args = 0
+ 356              		.loc 1 109 1 is_stmt 0 view .LVU112
+ARM GAS  /tmp/ccZsqUOI.s 			page 11
+
+
+ 357 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 358              		.cfi_def_cfa_offset 24
+ 359              		.cfi_offset 3, -24
+ 360              		.cfi_offset 4, -20
+ 361              		.cfi_offset 5, -16
+ 362              		.cfi_offset 6, -12
+ 363              		.cfi_offset 7, -8
+ 364              		.cfi_offset 14, -4
+ 110:src/btphy/hop.c **** 	uint8_t enabled = buf[0] & 1;
+ 365              		.loc 1 110 2 is_stmt 1 view .LVU113
+ 366              		.loc 1 110 10 is_stmt 0 view .LVU114
+ 367 0002 0578     		ldrb	r5, [r0]	@ zero_extendqisi2
+ 368              	.LVL17:
+ 111:src/btphy/hop.c **** 	uint8_t *map = buf+1;
+ 369              		.loc 1 111 2 is_stmt 1 view .LVU115
+ 109:src/btphy/hop.c **** 	uint8_t enabled = buf[0] & 1;
+ 370              		.loc 1 109 1 is_stmt 0 view .LVU116
+ 371 0004 0646     		mov	r6, r0
+ 372              	.LVL18:
+ 112:src/btphy/hop.c **** 
+ 113:src/btphy/hop.c **** 	if (enabled)
+ 373              		.loc 1 113 2 is_stmt 1 view .LVU117
+ 374              		.loc 1 113 5 is_stmt 0 view .LVU118
+ 375 0006 15F00105 		ands	r5, r5, #1
+ 376              	.LVL19:
+ 377              		.loc 1 113 5 view .LVU119
+ 378 000a 23D0     		beq	.L11
+ 114:src/btphy/hop.c **** 	{
+ 115:src/btphy/hop.c **** 		cprintf("(+afh)");
+ 379              		.loc 1 115 3 is_stmt 1 view .LVU120
+ 380 000c 1848     		ldr	r0, .L19
+ 381              	.LVL20:
+ 382              		.loc 1 115 3 is_stmt 0 view .LVU121
+ 383 000e FFF7FEFF 		bl	cprintf
+ 384              	.LVL21:
+ 116:src/btphy/hop.c **** 		hop_set_afh_map(map);
+ 385              		.loc 1 116 3 is_stmt 1 view .LVU122
+ 386              	.LBB32:
+ 387              	.LBI32:
+  94:src/btphy/hop.c **** {
+ 388              		.loc 1 94 13 view .LVU123
+ 389              	.LBB33:
+  96:src/btphy/hop.c **** 	unsigned i,count;
+ 390              		.loc 1 96 2 view .LVU124
+  97:src/btphy/hop.c **** 
+ 391              		.loc 1 97 2 view .LVU125
+  99:src/btphy/hop.c **** 		//chan = (i * 2) % NUM_BREDR_CHANNELS;
+ 392              		.loc 1 99 2 view .LVU126
+  99:src/btphy/hop.c **** 		//chan = (i * 2) % NUM_BREDR_CHANNELS;
+ 393              		.loc 1 99 25 discriminator 1 view .LVU127
+  99:src/btphy/hop.c **** 		//chan = (i * 2) % NUM_BREDR_CHANNELS;
+ 394              		.loc 1 99 19 is_stmt 0 view .LVU128
+ 395 0012 0020     		movs	r0, #0
+ 396 0014 1749     		ldr	r1, .L19+4
+ 397 0016 01F14F07 		add	r7, r1, #79
+ 398 001a 8C1F     		subs	r4, r1, #6
+ 399              	.LVL22:
+ARM GAS  /tmp/ccZsqUOI.s 			page 12
+
+
+ 400              	.L13:
+ 101:src/btphy/hop.c **** 		if(afh_map[chan/8] & (0x1 << (chan%8)))
+ 401              		.loc 1 101 3 is_stmt 1 view .LVU129
+ 103:src/btphy/hop.c **** 	}
+ 402              		.loc 1 103 4 view .LVU130
+  99:src/btphy/hop.c **** 		//chan = (i * 2) % NUM_BREDR_CHANNELS;
+ 403              		.loc 1 99 48 discriminator 2 view .LVU131
+ 101:src/btphy/hop.c **** 		if(afh_map[chan/8] & (0x1 << (chan%8)))
+ 404              		.loc 1 101 8 is_stmt 0 view .LVU132
+ 405 001c 11F8012F 		ldrb	r2, [r1, #1]!	@ zero_extendqisi2
+ 406              	.LVL23:
+ 102:src/btphy/hop.c **** 			hop_state.afh_bank[count++] = chan;
+ 407              		.loc 1 102 3 is_stmt 1 view .LVU133
+ 103:src/btphy/hop.c **** 	}
+ 408              		.loc 1 103 32 is_stmt 0 view .LVU134
+ 409 0020 04EB000E 		add	lr, r4, r0
+ 102:src/btphy/hop.c **** 			hop_state.afh_bank[count++] = chan;
+ 410              		.loc 1 102 13 view .LVU135
+ 411 0024 06EBD203 		add	r3, r6, r2, lsr #3
+ 412 0028 5B78     		ldrb	r3, [r3, #1]	@ zero_extendqisi2
+ 102:src/btphy/hop.c **** 			hop_state.afh_bank[count++] = chan;
+ 413              		.loc 1 102 37 view .LVU136
+ 414 002a 02F0070C 		and	ip, r2, #7
+ 102:src/btphy/hop.c **** 			hop_state.afh_bank[count++] = chan;
+ 415              		.loc 1 102 6 view .LVU137
+ 416 002e 43FA0CF3 		asr	r3, r3, ip
+ 102:src/btphy/hop.c **** 			hop_state.afh_bank[count++] = chan;
+ 417              		.loc 1 102 5 view .LVU138
+ 418 0032 DB07     		lsls	r3, r3, #31
+ 103:src/btphy/hop.c **** 	}
+ 419              		.loc 1 103 32 view .LVU139
+ 420 0034 44BF     		itt	mi
+ 421 0036 8EF85620 		strbmi	r2, [lr, #86]
+ 103:src/btphy/hop.c **** 	}
+ 422              		.loc 1 103 28 view .LVU140
+ 423 003a 0130     		addmi	r0, r0, #1
+ 424              	.LVL24:
+  99:src/btphy/hop.c **** 		//chan = (i * 2) % NUM_BREDR_CHANNELS;
+ 425              		.loc 1 99 25 is_stmt 1 discriminator 1 view .LVU141
+ 426 003c 8F42     		cmp	r7, r1
+ 427 003e EDD1     		bne	.L13
+ 105:src/btphy/hop.c **** }
+ 428              		.loc 1 105 2 view .LVU142
+ 429              	.LBE33:
+ 430              	.LBE32:
+ 431 0040 0D4B     		ldr	r3, .L19+8
+ 432              	.LBB35:
+ 433              	.LBB34:
+ 105:src/btphy/hop.c **** }
+ 434              		.loc 1 105 27 is_stmt 0 view .LVU143
+ 435 0042 84F8A500 		strb	r0, [r4, #165]
+ 436              	.LVL25:
+ 105:src/btphy/hop.c **** }
+ 437              		.loc 1 105 27 view .LVU144
+ 438              	.LBE34:
+ 439              	.LBE35:
+ 117:src/btphy/hop.c **** 		hop_state.bank = hop_state.afh_bank;
+ARM GAS  /tmp/ccZsqUOI.s 			page 13
+
+
+ 440              		.loc 1 117 3 is_stmt 1 view .LVU145
+ 118:src/btphy/hop.c **** 		hop_state.chan_count = hop_state.afh_chan_count;
+ 441              		.loc 1 118 3 view .LVU146
+ 442              		.loc 1 118 24 is_stmt 0 view .LVU147
+ 443 0046 84F8AC00 		strb	r0, [r4, #172]
+ 119:src/btphy/hop.c **** 	}
+ 120:src/btphy/hop.c **** 	else
+ 121:src/btphy/hop.c **** 	{
+ 122:src/btphy/hop.c **** 		cprintf("(-afh)");
+ 123:src/btphy/hop.c **** 		hop_state.bank = hop_state.basic_bank;
+ 124:src/btphy/hop.c **** 		hop_state.chan_count = NUM_BREDR_CHANNELS;
+ 125:src/btphy/hop.c **** 	}
+ 126:src/btphy/hop.c **** 	hop_state.afh_enabled = enabled;
+ 444              		.loc 1 126 2 is_stmt 1 view .LVU148
+ 445              		.loc 1 126 24 is_stmt 0 view .LVU149
+ 446 004a 84F8A650 		strb	r5, [r4, #166]
+ 117:src/btphy/hop.c **** 		hop_state.chan_count = hop_state.afh_chan_count;
+ 447              		.loc 1 117 18 view .LVU150
+ 448 004e C4F8A830 		str	r3, [r4, #168]
+ 127:src/btphy/hop.c **** }
+ 449              		.loc 1 127 1 view .LVU151
+ 450 0052 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 451              	.LVL26:
+ 452              	.L11:
+ 122:src/btphy/hop.c **** 		hop_state.bank = hop_state.basic_bank;
+ 453              		.loc 1 122 3 is_stmt 1 view .LVU152
+ 454 0054 0948     		ldr	r0, .L19+12
+ 455              	.LVL27:
+ 122:src/btphy/hop.c **** 		hop_state.bank = hop_state.basic_bank;
+ 456              		.loc 1 122 3 is_stmt 0 view .LVU153
+ 457 0056 FFF7FEFF 		bl	cprintf
+ 458              	.LVL28:
+ 123:src/btphy/hop.c **** 		hop_state.chan_count = NUM_BREDR_CHANNELS;
+ 459              		.loc 1 123 3 is_stmt 1 view .LVU154
+ 124:src/btphy/hop.c **** 	}
+ 460              		.loc 1 124 3 view .LVU155
+ 122:src/btphy/hop.c **** 		hop_state.bank = hop_state.basic_bank;
+ 461              		.loc 1 122 3 is_stmt 0 view .LVU156
+ 462 005a 4F20     		movs	r0, #79
+ 463 005c 084B     		ldr	r3, .L19+16
+ 118:src/btphy/hop.c **** 	}
+ 464              		.loc 1 118 24 view .LVU157
+ 465 005e 83F8A500 		strb	r0, [r3, #165]
+ 126:src/btphy/hop.c **** }
+ 466              		.loc 1 126 2 is_stmt 1 view .LVU158
+ 126:src/btphy/hop.c **** }
+ 467              		.loc 1 126 24 is_stmt 0 view .LVU159
+ 468 0062 83F89F50 		strb	r5, [r3, #159]
+ 469 0066 DC1F     		subs	r4, r3, #7
+ 117:src/btphy/hop.c **** 		hop_state.chan_count = hop_state.afh_chan_count;
+ 470              		.loc 1 117 18 view .LVU160
+ 471 0068 C4F8A830 		str	r3, [r4, #168]
+ 472              		.loc 1 127 1 view .LVU161
+ 473 006c F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 474              	.LVL29:
+ 475              	.L20:
+ 476              		.loc 1 127 1 view .LVU162
+ARM GAS  /tmp/ccZsqUOI.s 			page 14
+
+
+ 477 006e 00BF     		.align	2
+ 478              	.L19:
+ 479 0070 00000000 		.word	.LC0
+ 480 0074 06000000 		.word	.LANCHOR0+6
+ 481 0078 56000000 		.word	.LANCHOR0+86
+ 482 007c 08000000 		.word	.LC1
+ 483 0080 07000000 		.word	.LANCHOR0+7
+ 484              		.cfi_endproc
+ 485              	.LFE18:
+ 487              		.section	.text.hop_basic,"ax",%progbits
+ 488              		.align	1
+ 489              		.p2align 2,,3
+ 490              		.global	hop_basic
+ 491              		.syntax unified
+ 492              		.thumb
+ 493              		.thumb_func
+ 495              	hop_basic:
+ 496              	.LVL30:
+ 497              	.LFB19:
+ 128:src/btphy/hop.c **** 
+ 129:src/btphy/hop.c **** uint8_t hop_basic(uint32_t clk)
+ 130:src/btphy/hop.c **** {
+ 498              		.loc 1 130 1 is_stmt 1 view -0
+ 499              		.cfi_startproc
+ 500              		@ args = 0, pretend = 0, frame = 0
+ 501              		@ frame_needed = 0, uses_anonymous_args = 0
+ 502              		.loc 1 130 1 is_stmt 0 view .LVU164
+ 503 0000 70B5     		push	{r4, r5, r6, lr}
+ 504              		.cfi_def_cfa_offset 16
+ 505              		.cfi_offset 4, -16
+ 506              		.cfi_offset 5, -12
+ 507              		.cfi_offset 6, -8
+ 508              		.cfi_offset 14, -4
+ 131:src/btphy/hop.c **** 	uint8_t clk1, sel;
+ 509              		.loc 1 131 2 is_stmt 1 view .LVU165
+ 132:src/btphy/hop.c **** 
+ 133:src/btphy/hop.c **** 	// Same-channel mechanism for AFH (FIXME: is this correct ?)
+ 134:src/btphy/hop.c **** 	if (hop_state.afh_enabled)
+ 510              		.loc 1 134 2 view .LVU166
+ 511              		.loc 1 134 15 is_stmt 0 view .LVU167
+ 512 0002 2749     		ldr	r1, .L24
+ 130:src/btphy/hop.c **** 	uint8_t clk1, sel;
+ 513              		.loc 1 130 1 view .LVU168
+ 514 0004 0446     		mov	r4, r0
+ 515              		.loc 1 134 5 view .LVU169
+ 516 0006 91F8A630 		ldrb	r3, [r1, #166]	@ zero_extendqisi2
+ 517 000a 002B     		cmp	r3, #0
+ 518 000c 44D1     		bne	.L23
+ 135:src/btphy/hop.c **** 		clk1 = 0;
+ 136:src/btphy/hop.c **** 	else
+ 137:src/btphy/hop.c **** 		clk1 = 1&(clk>>1);
+ 519              		.loc 1 137 3 is_stmt 1 view .LVU170
+ 520              		.loc 1 137 8 is_stmt 0 view .LVU171
+ 521 000e C0F3400E 		ubfx	lr, r0, #1, #1
+ 522              	.LBB36:
+ 523              	.LBB37:
+  70:src/btphy/hop.c **** 	return (perm5((a+x)^b, y1^c, d) + e + f + y2);
+ARM GAS  /tmp/ccZsqUOI.s 			page 15
+
+
+ 524              		.loc 1 70 5 view .LVU172
+ 525 0012 40F34003 		sbfx	r3, r0, #1, #1
+ 526              	.LBE37:
+ 527              	.LBE36:
+ 138:src/btphy/hop.c **** 
+ 139:src/btphy/hop.c **** 	sel = hop_selection_kernel(
+ 528              		.loc 1 139 8 view .LVU173
+ 529 0016 4FEA4E1E 		lsl	lr, lr, #5
+ 530              	.L22:
+ 531              		.loc 1 139 2 is_stmt 1 view .LVU174
+ 140:src/btphy/hop.c **** 		0x1f & (clk>>2),			// X = clk6_2
+ 141:src/btphy/hop.c **** 		clk1,					// Y1 = clk1
+ 142:src/btphy/hop.c **** 		clk1<<5,				// Y2 = 32*clk1
+ 143:src/btphy/hop.c **** 		hop_state.a27_23^(0x1f&(clk>>21)),	// A = A27_23 ^ clk25_21
+ 144:src/btphy/hop.c **** 		hop_state.a22_19,			// B = A22_19
+ 145:src/btphy/hop.c **** 		hop_state.C^(0x1f&(clk>>16)),		// C = A8,6,4,2,0 ^ clk20_16
+ 146:src/btphy/hop.c **** 		hop_state.a18_10^(0x1ff&(clk>>7)),	// D = a18_10 ^ clk15_7
+ 147:src/btphy/hop.c **** 		hop_state.E,				// E = A13,11,9,7,5,3,1
+ 148:src/btphy/hop.c **** 		((clk>>(7-4))&(0x1fffff<<4))%hop_state.chan_count	// F = 16*clk27_7 % 79
+ 532              		.loc 1 148 16 is_stmt 0 view .LVU175
+ 533 001a 2248     		ldr	r0, .L24+4
+ 534              	.LVL31:
+ 535              		.loc 1 148 41 view .LVU176
+ 536 001c 91F8ACC0 		ldrb	ip, [r1, #172]	@ zero_extendqisi2
+ 537              	.LVL32:
+ 538              	.LBB56:
+ 539              	.LBI36:
+  65:src/btphy/hop.c **** 			uint8_t a, uint8_t b, uint8_t c,
+ 540              		.loc 1 65 16 is_stmt 1 view .LVU177
+ 541              	.LBB50:
+  70:src/btphy/hop.c **** 	return (perm5((a+x)^b, y1^c, d) + e + f + y2);
+ 542              		.loc 1 70 2 view .LVU178
+  71:src/btphy/hop.c **** }
+ 543              		.loc 1 71 2 view .LVU179
+ 544              	.LBB38:
+ 545              	.LBI38:
+  28:include/ubtbr/hop.h **** {
+ 546              		.loc 2 28 23 view .LVU180
+ 547              	.LBB39:
+  30:include/ubtbr/hop.h **** 	uint16_t p = (p_low&0x1ff)|((p_high&0x1f)<<9);
+ 548              		.loc 2 30 2 view .LVU181
+  31:include/ubtbr/hop.h **** 
+ 549              		.loc 2 31 2 view .LVU182
+ 550              	.LBE39:
+ 551              	.LBE38:
+ 552              	.LBE50:
+ 553              	.LBE56:
+ 554              		.loc 1 148 16 is_stmt 0 view .LVU183
+ 555 0020 00EAD400 		and	r0, r0, r4, lsr #3
+ 556              		.loc 1 148 31 view .LVU184
+ 557 0024 B0FBFCF2 		udiv	r2, r0, ip
+ 139:src/btphy/hop.c **** 		0x1f & (clk>>2),			// X = clk6_2
+ 558              		.loc 1 139 8 view .LVU185
+ 559 0028 8D78     		ldrb	r5, [r1, #2]	@ zero_extendqisi2
+ 560              		.loc 1 148 31 view .LVU186
+ 561 002a 0CFB1200 		mls	r0, ip, r2, r0
+ 145:src/btphy/hop.c **** 		hop_state.a18_10^(0x1ff&(clk>>7)),	// D = a18_10 ^ clk15_7
+ARM GAS  /tmp/ccZsqUOI.s 			page 16
+
+
+ 562              		.loc 1 145 20 view .LVU187
+ 563 002e C4F30442 		ubfx	r2, r4, #16, #5
+ 139:src/btphy/hop.c **** 		0x1f & (clk>>2),			// X = clk6_2
+ 564              		.loc 1 139 8 view .LVU188
+ 565 0032 6A40     		eors	r2, r2, r5
+ 566 0034 8E88     		ldrh	r6, [r1, #4]
+ 567              	.LBB57:
+ 568              	.LBB51:
+ 569              	.LBB45:
+ 570              	.LBB40:
+  31:include/ubtbr/hop.h **** 
+ 571              		.loc 2 31 43 view .LVU189
+ 572 0036 5340     		eors	r3, r3, r2
+ 573              	.LVL33:
+  31:include/ubtbr/hop.h **** 
+ 574              		.loc 2 31 43 view .LVU190
+ 575              	.LBE40:
+ 576              	.LBE45:
+ 577              	.LBE51:
+ 578              	.LBE57:
+ 146:src/btphy/hop.c **** 		hop_state.E,				// E = A13,11,9,7,5,3,1
+ 579              		.loc 1 146 26 view .LVU191
+ 580 0038 C4F3C812 		ubfx	r2, r4, #7, #9
+ 139:src/btphy/hop.c **** 		0x1f & (clk>>2),			// X = clk6_2
+ 581              		.loc 1 139 8 view .LVU192
+ 582 003c 7240     		eors	r2, r2, r6
+ 583              	.LBB58:
+ 584              	.LBB52:
+ 585              	.LBB46:
+ 586              	.LBB41:
+  31:include/ubtbr/hop.h **** 
+ 587              		.loc 2 31 43 view .LVU193
+ 588 003e 5B02     		lsls	r3, r3, #9
+ 589              	.LBE41:
+ 590              	.LBE46:
+ 591              	.LBE52:
+ 592              	.LBE58:
+ 139:src/btphy/hop.c **** 		0x1f & (clk>>2),			// X = clk6_2
+ 593              		.loc 1 139 8 view .LVU194
+ 594 0040 0D78     		ldrb	r5, [r1]	@ zero_extendqisi2
+ 595              	.LBB59:
+ 596              	.LBB53:
+ 597              	.LBB47:
+ 598              	.LBB42:
+  31:include/ubtbr/hop.h **** 
+ 599              		.loc 2 31 11 view .LVU195
+ 600 0042 C2F30802 		ubfx	r2, r2, #0, #9
+  31:include/ubtbr/hop.h **** 
+ 601              		.loc 2 31 43 view .LVU196
+ 602 0046 03F47853 		and	r3, r3, #15872
+  31:include/ubtbr/hop.h **** 
+ 603              		.loc 2 31 11 view .LVU197
+ 604 004a 1343     		orrs	r3, r3, r2
+ 605              	.LVL34:
+  33:include/ubtbr/hop.h **** 	z = perm5_lut[0][(((p>>7))<<5)|z];
+ 606              		.loc 2 33 2 is_stmt 1 view .LVU198
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ARM GAS  /tmp/ccZsqUOI.s 			page 17
+
+
+ 607              		.loc 2 34 2 view .LVU199
+ 608              	.LBE42:
+ 609              	.LBE47:
+ 610              	.LBE53:
+ 611              	.LBE59:
+ 143:src/btphy/hop.c **** 		hop_state.a22_19,			// B = A22_19
+ 612              		.loc 1 143 25 is_stmt 0 view .LVU200
+ 613 004c C4F34452 		ubfx	r2, r4, #21, #5
+ 139:src/btphy/hop.c **** 		0x1f & (clk>>2),			// X = clk6_2
+ 614              		.loc 1 139 8 view .LVU201
+ 615 0050 6A40     		eors	r2, r2, r5
+ 616 0052 C4F38404 		ubfx	r4, r4, #2, #5
+ 617              	.LVL35:
+ 618              	.LBB60:
+ 619              	.LBB54:
+  71:src/btphy/hop.c **** }
+ 620              		.loc 1 71 18 view .LVU202
+ 621 0056 2244     		add	r2, r2, r4
+ 622              	.LBB48:
+ 623              	.LBB43:
+  33:include/ubtbr/hop.h **** 	z = perm5_lut[0][(((p>>7))<<5)|z];
+ 624              		.loc 2 33 4 view .LVU203
+ 625 0058 4C78     		ldrb	r4, [r1, #1]	@ zero_extendqisi2
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ 626              		.loc 2 34 23 view .LVU204
+ 627 005a DD09     		lsrs	r5, r3, #7
+  33:include/ubtbr/hop.h **** 	z = perm5_lut[0][(((p>>7))<<5)|z];
+ 628              		.loc 2 33 4 view .LVU205
+ 629 005c 6240     		eors	r2, r2, r4
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ 630              		.loc 2 34 32 view .LVU206
+ 631 005e 02F01F02 		and	r2, r2, #31
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ 632              		.loc 2 34 4 view .LVU207
+ 633 0062 114C     		ldr	r4, .L24+8
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ 634              		.loc 2 34 32 view .LVU208
+ 635 0064 42EA4512 		orr	r2, r2, r5, lsl #5
+ 636              	.LVL36:
+  35:include/ubtbr/hop.h **** 
+ 637              		.loc 2 35 2 is_stmt 1 view .LVU209
+  35:include/ubtbr/hop.h **** 
+ 638              		.loc 2 35 37 is_stmt 0 view .LVU210
+ 639 0068 A55C     		ldrb	r5, [r4, r2]	@ zero_extendqisi2
+  35:include/ubtbr/hop.h **** 
+ 640              		.loc 2 35 33 view .LVU211
+ 641 006a 5A01     		lsls	r2, r3, #5
+ 642              	.LVL37:
+  35:include/ubtbr/hop.h **** 
+ 643              		.loc 2 35 33 view .LVU212
+ 644 006c 02F47E62 		and	r2, r2, #4064
+  35:include/ubtbr/hop.h **** 
+ 645              		.loc 2 35 37 view .LVU213
+ 646 0070 2A43     		orrs	r2, r2, r5
+ 647              		.loc 2 37 2 is_stmt 1 view .LVU214
+ 648              	.LVL38:
+ 649              		.loc 2 37 2 is_stmt 0 view .LVU215
+ARM GAS  /tmp/ccZsqUOI.s 			page 18
+
+
+ 650              	.LBE43:
+ 651              	.LBE48:
+ 652              	.LBE54:
+ 653              	.LBE60:
+ 149:src/btphy/hop.c **** 		);
+ 150:src/btphy/hop.c **** 	return hop_state.bank[sel%hop_state.chan_count];
+ 654              		.loc 1 150 2 is_stmt 1 view .LVU216
+ 655              	.LBB61:
+ 656              	.LBB55:
+  71:src/btphy/hop.c **** }
+ 657              		.loc 1 71 42 is_stmt 0 discriminator 1 view .LVU217
+ 658 0072 CB78     		ldrb	r3, [r1, #3]	@ zero_extendqisi2
+ 659              	.LBB49:
+ 660              	.LBB44:
+  35:include/ubtbr/hop.h **** 
+ 661              		.loc 2 35 4 view .LVU218
+ 662 0074 1444     		add	r4, r4, r2
+ 663 0076 04F58054 		add	r4, r4, #4096
+ 664              	.LBE44:
+ 665              	.LBE49:
+  71:src/btphy/hop.c **** }
+ 666              		.loc 1 71 42 discriminator 1 view .LVU219
+ 667 007a 2278     		ldrb	r2, [r4]	@ zero_extendqisi2
+ 668              	.LVL39:
+  71:src/btphy/hop.c **** }
+ 669              		.loc 1 71 42 discriminator 1 view .LVU220
+ 670 007c 1844     		add	r0, r0, r3
+ 671 007e 0EEB0003 		add	r3, lr, r0
+ 672 0082 1344     		add	r3, r3, r2
+ 673              	.LBE55:
+ 674              	.LBE61:
+ 675              		.loc 1 150 27 view .LVU221
+ 676 0084 DBB2     		uxtb	r3, r3
+ 677 0086 B3FBFCF0 		udiv	r0, r3, ip
+ 678 008a 0CFB1033 		mls	r3, ip, r0, r3
+ 679              		.loc 1 150 23 view .LVU222
+ 680 008e D1F8A820 		ldr	r2, [r1, #168]
+ 681              		.loc 1 150 27 view .LVU223
+ 682 0092 DBB2     		uxtb	r3, r3
+ 151:src/btphy/hop.c **** }
+ 683              		.loc 1 151 1 view .LVU224
+ 684 0094 D05C     		ldrb	r0, [r2, r3]	@ zero_extendqisi2
+ 685 0096 70BD     		pop	{r4, r5, r6, pc}
+ 686              	.LVL40:
+ 687              	.L23:
+ 688              		.loc 1 151 1 view .LVU225
+ 689 0098 4FF0000E 		mov	lr, #0
+ 690 009c 7346     		mov	r3, lr
+ 691 009e BCE7     		b	.L22
+ 692              	.L25:
+ 693              		.align	2
+ 694              	.L24:
+ 695 00a0 00000000 		.word	.LANCHOR0
+ 696 00a4 F0FFFF01 		.word	33554416
+ 697 00a8 00000000 		.word	perm5_lut
+ 698              		.cfi_endproc
+ 699              	.LFE19:
+ARM GAS  /tmp/ccZsqUOI.s 			page 19
+
+
+ 701              		.section	.rodata.str1.4
+ 702 000f 00       		.align	2
+ 703              	.LC2:
+ 704 0010 4449457C 		.ascii	"DIE|Invalid hop mode %d\012\012\000"
+ 704      496E7661 
+ 704      6C696420 
+ 704      686F7020 
+ 704      6D6F6465 
+ 705              		.section	.text.hop_channel,"ax",%progbits
+ 706              		.align	1
+ 707              		.p2align 2,,3
+ 708              		.global	hop_channel
+ 709              		.syntax unified
+ 710              		.thumb
+ 711              		.thumb_func
+ 713              	hop_channel:
+ 714              	.LVL41:
+ 715              	.LFB20:
+ 152:src/btphy/hop.c **** 
+ 153:src/btphy/hop.c **** uint8_t hop_channel(uint32_t clk)
+ 154:src/btphy/hop.c **** {
+ 716              		.loc 1 154 1 is_stmt 1 view -0
+ 717              		.cfi_startproc
+ 718              		@ args = 0, pretend = 0, frame = 0
+ 719              		@ frame_needed = 0, uses_anonymous_args = 0
+ 720              		.loc 1 154 1 is_stmt 0 view .LVU227
+ 721 0000 08B5     		push	{r3, lr}
+ 722              		.cfi_def_cfa_offset 8
+ 723              		.cfi_offset 3, -8
+ 724              		.cfi_offset 14, -4
+ 155:src/btphy/hop.c **** 	switch(btphy.mode)
+ 725              		.loc 1 155 2 is_stmt 1 view .LVU228
+ 726              		.loc 1 155 14 is_stmt 0 view .LVU229
+ 727 0002 224B     		ldr	r3, .L33
+ 728 0004 1978     		ldrb	r1, [r3]	@ zero_extendqisi2
+ 729              		.loc 1 155 2 view .LVU230
+ 730 0006 0329     		cmp	r1, #3
+ 731 0008 06D9     		bls	.L27
+ 732 000a 0B1F     		subs	r3, r1, #4
+ 733 000c 012B     		cmp	r3, #1
+ 734 000e 39D8     		bhi	.L28
+ 156:src/btphy/hop.c **** 	{
+ 157:src/btphy/hop.c **** 	case BT_MODE_INQUIRY:
+ 158:src/btphy/hop.c **** 	case BT_MODE_PAGING:
+ 159:src/btphy/hop.c **** 	case BT_MODE_INQUIRY_SCAN:
+ 160:src/btphy/hop.c **** 	case BT_MODE_PAGE_SCAN:
+ 161:src/btphy/hop.c **** 		return hop_inquiry(clk);
+ 162:src/btphy/hop.c **** 	case BT_MODE_MASTER:
+ 163:src/btphy/hop.c **** 	case BT_MODE_SLAVE:
+ 164:src/btphy/hop.c **** 		return hop_basic(clk);
+ 735              		.loc 1 164 3 is_stmt 1 view .LVU231
+ 165:src/btphy/hop.c **** 	default:
+ 166:src/btphy/hop.c **** 		DIE("Invalid hop mode %d\n", btphy.mode);
+ 167:src/btphy/hop.c **** 	}
+ 168:src/btphy/hop.c **** }
+ 736              		.loc 1 168 1 is_stmt 0 view .LVU232
+ 737 0010 BDE80840 		pop	{r3, lr}
+ARM GAS  /tmp/ccZsqUOI.s 			page 20
+
+
+ 738              		.cfi_remember_state
+ 739              		.cfi_restore 14
+ 740              		.cfi_restore 3
+ 741              		.cfi_def_cfa_offset 0
+ 164:src/btphy/hop.c **** 	default:
+ 742              		.loc 1 164 10 view .LVU233
+ 743 0014 FFF7FEBF 		b	hop_basic
+ 744              	.LVL42:
+ 745              	.L27:
+ 746              		.cfi_restore_state
+ 161:src/btphy/hop.c **** 	case BT_MODE_MASTER:
+ 747              		.loc 1 161 3 is_stmt 1 view .LVU234
+ 748              	.LBB68:
+ 749              	.LBI68:
+  74:src/btphy/hop.c **** {
+ 750              		.loc 1 74 9 view .LVU235
+ 751              	.LBB69:
+  76:src/btphy/hop.c **** 
+ 752              		.loc 1 76 2 view .LVU236
+  78:src/btphy/hop.c **** 
+ 753              		.loc 1 78 2 view .LVU237
+  80:src/btphy/hop.c **** 			hop_state.x,		// X = the x
+ 754              		.loc 1 80 8 is_stmt 0 view .LVU238
+ 755 0018 1D4A     		ldr	r2, .L33+4
+ 756              	.LBB70:
+ 757              	.LBB71:
+  70:src/btphy/hop.c **** 	return (perm5((a+x)^b, y1^c, d) + e + f + y2);
+ 758              		.loc 1 70 5 view .LVU239
+ 759 001a 40F3400C 		sbfx	ip, r0, #1, #1
+  71:src/btphy/hop.c **** }
+ 760              		.loc 1 71 10 view .LVU240
+ 761 001e 9378     		ldrb	r3, [r2, #2]	@ zero_extendqisi2
+ 762              	.LBB72:
+ 763              	.LBB73:
+  31:include/ubtbr/hop.h **** 
+ 764              		.loc 2 31 11 view .LVU241
+ 765 0020 9188     		ldrh	r1, [r2, #4]
+  31:include/ubtbr/hop.h **** 
+ 766              		.loc 2 31 43 view .LVU242
+ 767 0022 83EA0C03 		eor	r3, r3, ip
+ 768 0026 5B02     		lsls	r3, r3, #9
+  31:include/ubtbr/hop.h **** 
+ 769              		.loc 2 31 11 view .LVU243
+ 770 0028 C1F30801 		ubfx	r1, r1, #0, #9
+  31:include/ubtbr/hop.h **** 
+ 771              		.loc 2 31 43 view .LVU244
+ 772 002c 03F47853 		and	r3, r3, #15872
+ 773              	.LBE73:
+ 774              	.LBE72:
+  71:src/btphy/hop.c **** }
+ 775              		.loc 1 71 18 view .LVU245
+ 776 0030 92F800E0 		ldrb	lr, [r2]	@ zero_extendqisi2
+ 777              	.LBB78:
+ 778              	.LBB74:
+  31:include/ubtbr/hop.h **** 
+ 779              		.loc 2 31 11 view .LVU246
+ 780 0034 0B43     		orrs	r3, r3, r1
+ARM GAS  /tmp/ccZsqUOI.s 			page 21
+
+
+ 781              	.LBE74:
+ 782              	.LBE78:
+  71:src/btphy/hop.c **** }
+ 783              		.loc 1 71 18 view .LVU247
+ 784 0036 9179     		ldrb	r1, [r2, #6]	@ zero_extendqisi2
+ 785              	.LBE71:
+ 786              	.LBE70:
+  78:src/btphy/hop.c **** 
+ 787              		.loc 1 78 7 view .LVU248
+ 788 0038 C0F3400C 		ubfx	ip, r0, #1, #1
+ 789              	.LVL43:
+  80:src/btphy/hop.c **** 			hop_state.x,		// X = the x
+ 790              		.loc 1 80 2 is_stmt 1 view .LVU249
+ 791              	.LBB84:
+ 792              	.LBI70:
+  65:src/btphy/hop.c **** 			uint8_t a, uint8_t b, uint8_t c,
+ 793              		.loc 1 65 16 view .LVU250
+ 794              	.LBB82:
+  70:src/btphy/hop.c **** 	return (perm5((a+x)^b, y1^c, d) + e + f + y2);
+ 795              		.loc 1 70 2 view .LVU251
+  71:src/btphy/hop.c **** }
+ 796              		.loc 1 71 2 view .LVU252
+ 797              	.LBB79:
+ 798              	.LBI72:
+  28:include/ubtbr/hop.h **** {
+ 799              		.loc 2 28 23 view .LVU253
+ 800              	.LBB75:
+  30:include/ubtbr/hop.h **** 	uint16_t p = (p_low&0x1ff)|((p_high&0x1f)<<9);
+ 801              		.loc 2 30 2 view .LVU254
+  31:include/ubtbr/hop.h **** 
+ 802              		.loc 2 31 2 view .LVU255
+  33:include/ubtbr/hop.h **** 	z = perm5_lut[0][(((p>>7))<<5)|z];
+ 803              		.loc 2 33 2 view .LVU256
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ 804              		.loc 2 34 2 view .LVU257
+  33:include/ubtbr/hop.h **** 	z = perm5_lut[0][(((p>>7))<<5)|z];
+ 805              		.loc 2 33 4 is_stmt 0 view .LVU258
+ 806 003c 5078     		ldrb	r0, [r2, #1]	@ zero_extendqisi2
+ 807              	.LVL44:
+  33:include/ubtbr/hop.h **** 	z = perm5_lut[0][(((p>>7))<<5)|z];
+ 808              		.loc 2 33 4 view .LVU259
+ 809              	.LBE75:
+ 810              	.LBE79:
+  71:src/btphy/hop.c **** }
+ 811              		.loc 1 71 18 view .LVU260
+ 812 003e 7144     		add	r1, r1, lr
+ 813              	.LBB80:
+ 814              	.LBB76:
+  33:include/ubtbr/hop.h **** 	z = perm5_lut[0][(((p>>7))<<5)|z];
+ 815              		.loc 2 33 4 view .LVU261
+ 816 0040 4140     		eors	r1, r1, r0
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ 817              		.loc 2 34 32 view .LVU262
+ 818 0042 01F01F01 		and	r1, r1, #31
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ 819              		.loc 2 34 23 view .LVU263
+ 820 0046 D809     		lsrs	r0, r3, #7
+ARM GAS  /tmp/ccZsqUOI.s 			page 22
+
+
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ 821              		.loc 2 34 32 view .LVU264
+ 822 0048 41EA4011 		orr	r1, r1, r0, lsl #5
+ 823              	.LVL45:
+  35:include/ubtbr/hop.h **** 
+ 824              		.loc 2 35 2 is_stmt 1 view .LVU265
+  34:include/ubtbr/hop.h **** 	z = perm5_lut[1][((0x7f&(p>>0))<<5)|z];
+ 825              		.loc 2 34 4 is_stmt 0 view .LVU266
+ 826 004c 1148     		ldr	r0, .L33+8
+  35:include/ubtbr/hop.h **** 
+ 827              		.loc 2 35 33 view .LVU267
+ 828 004e 5B01     		lsls	r3, r3, #5
+ 829              	.LVL46:
+  35:include/ubtbr/hop.h **** 
+ 830              		.loc 2 35 37 view .LVU268
+ 831 0050 415C     		ldrb	r1, [r0, r1]	@ zero_extendqisi2
+ 832              	.LVL47:
+  35:include/ubtbr/hop.h **** 
+ 833              		.loc 2 35 33 view .LVU269
+ 834 0052 03F47E63 		and	r3, r3, #4064
+  35:include/ubtbr/hop.h **** 
+ 835              		.loc 2 35 37 view .LVU270
+ 836 0056 0B43     		orrs	r3, r3, r1
+ 837              		.loc 2 37 2 is_stmt 1 view .LVU271
+ 838              	.LVL48:
+ 839              		.loc 2 37 2 is_stmt 0 view .LVU272
+ 840              	.LBE76:
+ 841              	.LBE80:
+ 842              	.LBE82:
+ 843              	.LBE84:
+  91:src/btphy/hop.c **** }
+ 844              		.loc 1 91 2 is_stmt 1 view .LVU273
+ 845              	.LBB85:
+ 846              	.LBB83:
+ 847              	.LBB81:
+ 848              	.LBB77:
+  35:include/ubtbr/hop.h **** 
+ 849              		.loc 2 35 4 is_stmt 0 view .LVU274
+ 850 0058 1844     		add	r0, r0, r3
+ 851 005a 00F58050 		add	r0, r0, #4096
+ 852              	.LBE77:
+ 853              	.LBE81:
+  71:src/btphy/hop.c **** }
+ 854              		.loc 1 71 42 discriminator 1 view .LVU275
+ 855 005e D378     		ldrb	r3, [r2, #3]	@ zero_extendqisi2
+ 856              	.LVL49:
+  71:src/btphy/hop.c **** }
+ 857              		.loc 1 71 42 discriminator 1 view .LVU276
+ 858 0060 0078     		ldrb	r0, [r0]	@ zero_extendqisi2
+ 859 0062 03EB4C13 		add	r3, r3, ip, lsl #5
+ 860 0066 0344     		add	r3, r3, r0
+ 861              	.LBE83:
+ 862              	.LBE85:
+  80:src/btphy/hop.c **** 			hop_state.x,		// X = the x
+ 863              		.loc 1 80 6 discriminator 1 view .LVU277
+ 864 0068 0B49     		ldr	r1, .L33+12
+ 865              	.LVL50:
+ARM GAS  /tmp/ccZsqUOI.s 			page 23
+
+
+  80:src/btphy/hop.c **** 			hop_state.x,		// X = the x
+ 866              		.loc 1 80 6 discriminator 1 view .LVU278
+ 867 006a DBB2     		uxtb	r3, r3
+ 868 006c A1FB0301 		umull	r0, r1, r1, r3
+ 869 0070 8909     		lsrs	r1, r1, #6
+ 870 0072 01EB8100 		add	r0, r1, r1, lsl #2
+ 871 0076 C1EB0011 		rsb	r1, r1, r0, lsl #4
+ 872 007a 5B1A     		subs	r3, r3, r1
+  91:src/btphy/hop.c **** }
+ 873              		.loc 1 91 29 view .LVU279
+ 874 007c DBB2     		uxtb	r3, r3
+ 875 007e 1A44     		add	r2, r2, r3
+ 876 0080 D079     		ldrb	r0, [r2, #7]	@ zero_extendqisi2
+ 877              	.LVL51:
+  91:src/btphy/hop.c **** }
+ 878              		.loc 1 91 29 view .LVU280
+ 879              	.LBE69:
+ 880              	.LBE68:
+ 881              		.loc 1 168 1 view .LVU281
+ 882 0082 08BD     		pop	{r3, pc}
+ 883              	.LVL52:
+ 884              	.L28:
+ 166:src/btphy/hop.c **** 	}
+ 885              		.loc 1 166 3 is_stmt 1 view .LVU282
+ 886 0084 0548     		ldr	r0, .L33+16
+ 887              	.LVL53:
+ 166:src/btphy/hop.c **** 	}
+ 888              		.loc 1 166 3 is_stmt 0 view .LVU283
+ 889 0086 FFF7FEFF 		bl	die
+ 890              	.LVL54:
+ 891              	.L34:
+ 892 008a 00BF     		.align	2
+ 893              	.L33:
+ 894 008c 00000000 		.word	btphy
+ 895 0090 00000000 		.word	.LANCHOR0
+ 896 0094 00000000 		.word	perm5_lut
+ 897 0098 A97464CF 		.word	-815500119
+ 898 009c 10000000 		.word	.LC2
+ 899              		.cfi_endproc
+ 900              	.LFE20:
+ 902              		.global	hop_state
+ 903              		.bss
+ 904              		.align	2
+ 905              		.set	.LANCHOR0,. + 0
+ 908              	hop_state:
+ 909 0000 00000000 		.space	176
+ 909      00000000 
+ 909      00000000 
+ 909      00000000 
+ 909      00000000 
+ 910              		.text
+ 911              	.Letext0:
+ 912              		.file 3 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 913              		.file 4 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 914              		.file 5 "include/ubtbr/btphy.h"
+ 915              		.file 6 "include/ubtbr/debug.h"
+ARM GAS  /tmp/ccZsqUOI.s 			page 24
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 hop.c
+     /tmp/ccZsqUOI.s:19     .text.hop_init:00000000 $t
+     /tmp/ccZsqUOI.s:26     .text.hop_init:00000000 hop_init
+     /tmp/ccZsqUOI.s:178    .text.hop_init:000000c8 $d
+     /tmp/ccZsqUOI.s:185    .text.hop_inquiry:00000000 $t
+     /tmp/ccZsqUOI.s:192    .text.hop_inquiry:00000000 hop_inquiry
+     /tmp/ccZsqUOI.s:328    .text.hop_inquiry:00000078 $d
+     /tmp/ccZsqUOI.s:335    .rodata.str1.4:00000000 $d
+     /tmp/ccZsqUOI.s:342    .text.hop_cfg_afh:00000000 $t
+     /tmp/ccZsqUOI.s:349    .text.hop_cfg_afh:00000000 hop_cfg_afh
+     /tmp/ccZsqUOI.s:479    .text.hop_cfg_afh:00000070 $d
+     /tmp/ccZsqUOI.s:488    .text.hop_basic:00000000 $t
+     /tmp/ccZsqUOI.s:495    .text.hop_basic:00000000 hop_basic
+     /tmp/ccZsqUOI.s:695    .text.hop_basic:000000a0 $d
+     /tmp/ccZsqUOI.s:706    .text.hop_channel:00000000 $t
+     /tmp/ccZsqUOI.s:713    .text.hop_channel:00000000 hop_channel
+     /tmp/ccZsqUOI.s:894    .text.hop_channel:0000008c $d
+     /tmp/ccZsqUOI.s:908    .bss:00000000 hop_state
+     /tmp/ccZsqUOI.s:904    .bss:00000000 $d
+
+UNDEFINED SYMBOLS
+perm5_lut
+cprintf
+die
+btphy

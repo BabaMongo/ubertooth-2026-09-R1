@@ -1,0 +1,198 @@
+ARM GAS  /tmp/cc1T4hGy.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"main.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/btctl/main.c"
+  18              		.section	.text.startup.main,"ax",%progbits
+  19              		.align	1
+  20              		.p2align 2,,3
+  21              		.global	main
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	main:
+  27              	.LFB25:
+   1:src/btctl/main.c **** /* Ubtbr main
+   2:src/btctl/main.c ****  *
+   3:src/btctl/main.c ****  * Copyright 2020 Etienne Helluy-Lafont, Univ. Lille, CNRS.
+   4:src/btctl/main.c ****  *
+   5:src/btctl/main.c ****  * This file is part of Project Ubertooth.
+   6:src/btctl/main.c ****  *
+   7:src/btctl/main.c ****  * This program is free software; you can redistribute it and/or modify
+   8:src/btctl/main.c ****  * it under the terms of the GNU General Public License as published by
+   9:src/btctl/main.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  10:src/btctl/main.c ****  * any later version.
+  11:src/btctl/main.c ****  *
+  12:src/btctl/main.c ****  * This program is distributed in the hope that it will be useful,
+  13:src/btctl/main.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  14:src/btctl/main.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  15:src/btctl/main.c ****  * GNU General Public License for more details.
+  16:src/btctl/main.c ****  *
+  17:src/btctl/main.c ****  * You should have received a copy of the GNU General Public License
+  18:src/btctl/main.c ****  * along with this program; see the file COPYING.  If not, write to
+  19:src/btctl/main.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  20:src/btctl/main.c ****  * Boston, MA 02110-1301, USA.
+  21:src/btctl/main.c ****  */
+  22:src/btctl/main.c **** #include <ubertooth.h>
+  23:src/btctl/main.c **** #include <ubtbr/cfg.h>
+  24:src/btctl/main.c **** #include <ubtbr/btctl_intf.h>
+  25:src/btctl/main.c **** #include <ubtbr/vendor_request_handler.h>
+  26:src/btctl/main.c **** #include <ubtbr/btphy.h>
+  27:src/btctl/main.c **** 
+  28:src/btctl/main.c **** int main()
+  29:src/btctl/main.c **** {
+  28              		.loc 1 29 1 view -0
+  29              		.cfi_startproc
+ARM GAS  /tmp/cc1T4hGy.s 			page 2
+
+
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32 0000 70B5     		push	{r4, r5, r6, lr}
+  33              		.cfi_def_cfa_offset 16
+  34              		.cfi_offset 4, -16
+  35              		.cfi_offset 5, -12
+  36              		.cfi_offset 6, -8
+  37              		.cfi_offset 14, -4
+  30:src/btctl/main.c **** 	unsigned clk, clk_prev = 0;
+  38              		.loc 1 30 2 view .LVU1
+  39              	.LVL0:
+  31:src/btctl/main.c **** 
+  32:src/btctl/main.c **** 	// enable all fault handlers (see fault.c)
+  33:src/btctl/main.c **** 	SCB_SHCSR = (1 << 18) | (1 << 17) | (1 << 16);
+  40              		.loc 1 33 2 view .LVU2
+  41              		.loc 1 33 12 is_stmt 0 view .LVU3
+  42 0002 4FF0E023 		mov	r3, #-536813568
+  43 0006 4FF4E022 		mov	r2, #458752
+  44 000a C3F8242D 		str	r2, [r3, #3364]
+  34:src/btctl/main.c **** 
+  35:src/btctl/main.c **** 	ubertooth_init();
+  45              		.loc 1 35 2 is_stmt 1 view .LVU4
+  46 000e FFF7FEFF 		bl	ubertooth_init
+  47              	.LVL1:
+  36:src/btctl/main.c **** 	ubertooth_usb_init(vendor_request_handler);
+  48              		.loc 1 36 2 view .LVU5
+  49 0012 0C48     		ldr	r0, .L5
+  50 0014 FFF7FEFF 		bl	ubertooth_usb_init
+  51              	.LVL2:
+  37:src/btctl/main.c **** 
+  38:src/btctl/main.c **** 	/* Initialize memory */
+  39:src/btctl/main.c **** 	mem_pool_init();
+  52              		.loc 1 39 2 view .LVU6
+  53 0018 4FF44865 		mov	r5, #3200
+  54 001c FFF7FEFF 		bl	mem_pool_init
+  55              	.LVL3:
+  40:src/btctl/main.c **** 
+  41:src/btctl/main.c **** 	/* Initialize control interface */
+  42:src/btctl/main.c **** 	btctl_init();
+  56              		.loc 1 42 2 view .LVU7
+  57 0020 FFF7FEFF 		bl	btctl_init
+  58              	.LVL4:
+  43:src/btctl/main.c **** 
+  44:src/btctl/main.c **** 	/* Initialize sync & phy */
+  45:src/btctl/main.c **** 	btphy_init();
+  59              		.loc 1 45 2 view .LVU8
+  60 0024 FFF7FEFF 		bl	btphy_init
+  61              	.LVL5:
+  46:src/btctl/main.c **** 
+  47:src/btctl/main.c **** 	while (1) {
+  48:src/btctl/main.c **** 		/* Flush console once per second */
+  49:src/btctl/main.c **** 		if ((clk = MASTER_CLKN) >= clk_prev+3200)
+  62              		.loc 1 49 12 is_stmt 0 view .LVU9
+  63 0028 074E     		ldr	r6, .L5+4
+  64              	.LVL6:
+  65              	.L3:
+  47:src/btctl/main.c **** 		/* Flush console once per second */
+ARM GAS  /tmp/cc1T4hGy.s 			page 3
+
+
+  66              		.loc 1 47 2 is_stmt 1 view .LVU10
+  67              		.loc 1 49 3 view .LVU11
+  50:src/btctl/main.c **** 		{
+  51:src/btctl/main.c **** 			console_flush();
+  68              		.loc 1 51 4 view .LVU12
+  49:src/btctl/main.c **** 		{
+  69              		.loc 1 49 12 is_stmt 0 view .LVU13
+  70 002a B468     		ldr	r4, [r6, #8]
+  71              	.LVL7:
+  49:src/btctl/main.c **** 		{
+  72              		.loc 1 49 6 view .LVU14
+  73 002c A542     		cmp	r5, r4
+  74 002e 03D8     		bhi	.L2
+  75              		.loc 1 51 4 view .LVU15
+  76 0030 FFF7FEFF 		bl	console_flush
+  77              	.LVL8:
+  52:src/btctl/main.c **** 			clk_prev = clk;
+  78              		.loc 1 52 4 is_stmt 1 view .LVU16
+  79              		.loc 1 52 4 is_stmt 0 view .LVU17
+  80 0034 04F54865 		add	r5, r4, #3200
+  81              	.LVL9:
+  82              	.L2:
+  53:src/btctl/main.c **** 		}
+  54:src/btctl/main.c **** 		/* Handle usb async work */
+  55:src/btctl/main.c **** 		usb_work();
+  83              		.loc 1 55 3 is_stmt 1 view .LVU18
+  84 0038 FFF7FEFF 		bl	usb_work
+  85              	.LVL10:
+  56:src/btctl/main.c **** 		/* Handle host messages */
+  57:src/btctl/main.c **** 		btctl_work();
+  86              		.loc 1 57 3 view .LVU19
+  87 003c FFF7FEFF 		bl	btctl_work
+  88              	.LVL11:
+  47:src/btctl/main.c **** 		/* Flush console once per second */
+  89              		.loc 1 47 8 view .LVU20
+  49:src/btctl/main.c **** 		{
+  90              		.loc 1 49 6 is_stmt 0 view .LVU21
+  91 0040 F3E7     		b	.L3
+  92              	.L6:
+  93 0042 00BF     		.align	2
+  94              	.L5:
+  95 0044 00000000 		.word	vendor_request_handler
+  96 0048 00800040 		.word	1073774592
+  97              		.cfi_endproc
+  98              	.LFE25:
+ 100              		.text
+ 101              	.Letext0:
+ 102              		.file 2 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 103              		.file 3 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 104              		.file 4 "include/ubtbr/ubertooth_usb.h"
+ 105              		.file 5 "include/ubtbr/btctl_intf.h"
+ 106              		.file 6 "include/ubtbr/console.h"
+ 107              		.file 7 "include/ubtbr/btphy.h"
+ 108              		.file 8 "include/ubtbr/mem_pool.h"
+ 109              		.file 9 "include/ubtbr/vendor_request_handler.h"
+ 110              		.file 10 "../common/ubertooth.h"
+ARM GAS  /tmp/cc1T4hGy.s 			page 4
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 main.c
+     /tmp/cc1T4hGy.s:19     .text.startup.main:00000000 $t
+     /tmp/cc1T4hGy.s:26     .text.startup.main:00000000 main
+     /tmp/cc1T4hGy.s:95     .text.startup.main:00000044 $d
+
+UNDEFINED SYMBOLS
+ubertooth_init
+ubertooth_usb_init
+mem_pool_init
+btctl_init
+btphy_init
+console_flush
+usb_work
+btctl_work
+vendor_request_handler

@@ -1,0 +1,418 @@
+ARM GAS  /tmp/ccRjjgSy.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 4
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"ubertooth_cs.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "ubertooth_cs.c"
+  18              		.section	.text.cs_threshold_calc_and_set,"ax",%progbits
+  19              		.align	1
+  20              		.global	cs_threshold_calc_and_set
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	cs_threshold_calc_and_set:
+  26              	.LVL0:
+  27              	.LFB1:
+   1:ubertooth_cs.c **** /*
+   2:ubertooth_cs.c ****  * Copyright 2015 Hannes Ellinger
+   3:ubertooth_cs.c ****  *
+   4:ubertooth_cs.c ****  * This file is part of Project Ubertooth.
+   5:ubertooth_cs.c ****  *
+   6:ubertooth_cs.c ****  * This program is free software; you can redistribute it and/or modify
+   7:ubertooth_cs.c ****  * it under the terms of the GNU General Public License as published by
+   8:ubertooth_cs.c ****  * the Free Software Foundation; either version 2, or (at your option)
+   9:ubertooth_cs.c ****  * any later version.
+  10:ubertooth_cs.c ****  *
+  11:ubertooth_cs.c ****  * This program is distributed in the hope that it will be useful,
+  12:ubertooth_cs.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  13:ubertooth_cs.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  14:ubertooth_cs.c ****  * GNU General Public License for more details.
+  15:ubertooth_cs.c ****  *
+  16:ubertooth_cs.c ****  * You should have received a copy of the GNU General Public License
+  17:ubertooth_cs.c ****  * along with this program; see the file COPYING.  If not, write to
+  18:ubertooth_cs.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  19:ubertooth_cs.c ****  * Boston, MA 02110-1301, USA.
+  20:ubertooth_cs.c ****  */
+  21:ubertooth_cs.c **** 
+  22:ubertooth_cs.c **** #include "ubertooth_cs.h"
+  23:ubertooth_cs.c **** #include "ubertooth.h"
+  24:ubertooth_cs.c **** #include "ubertooth_rssi.h"
+  25:ubertooth_cs.c **** 
+  26:ubertooth_cs.c **** uint8_t cs_no_squelch;
+  27:ubertooth_cs.c **** int8_t cs_threshold_req;
+  28:ubertooth_cs.c **** int8_t cs_threshold_cur;
+  29:ubertooth_cs.c **** volatile uint8_t cs_trigger;
+  30:ubertooth_cs.c **** 
+  31:ubertooth_cs.c **** typedef enum {
+ARM GAS  /tmp/ccRjjgSy.s 			page 2
+
+
+  32:ubertooth_cs.c **** 	CS_SAMPLES_1 = 1,
+  33:ubertooth_cs.c **** 	CS_SAMPLES_2 = 2,
+  34:ubertooth_cs.c **** 	CS_SAMPLES_4 = 3,
+  35:ubertooth_cs.c **** 	CS_SAMPLES_8 = 4,
+  36:ubertooth_cs.c **** } cs_samples_t;
+  37:ubertooth_cs.c **** 
+  38:ubertooth_cs.c **** #define CS_THRESHOLD_DEFAULT (int8_t)(-120)
+  39:ubertooth_cs.c **** 
+  40:ubertooth_cs.c **** 
+  41:ubertooth_cs.c **** /* Set CC2400 carrier sense threshold and store value to
+  42:ubertooth_cs.c ****  * global. CC2400 RSSI is determined by 54dBm + level. CS threshold is
+  43:ubertooth_cs.c ****  * in 4dBm steps, so the provided level is rounded to the nearest
+  44:ubertooth_cs.c ****  * multiple of 4 by adding 56. Useful range is -100 to -20. */
+  45:ubertooth_cs.c **** static void cs_threshold_set(int8_t level, cs_samples_t samples)
+  46:ubertooth_cs.c **** {
+  47:ubertooth_cs.c **** 	level = level < -120 ? -120 : level;
+  48:ubertooth_cs.c **** 	level = level > -20 ? -20 : level;
+  49:ubertooth_cs.c **** 	cc2400_set(RSSI, (uint8_t)((level + 56) & (0x3f << 2)) | ((uint8_t)samples&3));
+  50:ubertooth_cs.c **** 	cs_threshold_cur = level;
+  51:ubertooth_cs.c **** 	cs_no_squelch = (level <= -120);
+  52:ubertooth_cs.c **** }
+  53:ubertooth_cs.c **** 
+  54:ubertooth_cs.c **** void cs_threshold_calc_and_set(uint16_t channel)
+  55:ubertooth_cs.c **** {
+  28              		.loc 1 55 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		.loc 1 55 1 is_stmt 0 view .LVU1
+  33 0000 70B5     		push	{r4, r5, r6, lr}
+  34              		.cfi_def_cfa_offset 16
+  35              		.cfi_offset 4, -16
+  36              		.cfi_offset 5, -12
+  37              		.cfi_offset 6, -8
+  38              		.cfi_offset 14, -4
+  56:ubertooth_cs.c **** 	int8_t level;
+  39              		.loc 1 56 2 is_stmt 1 view .LVU2
+  57:ubertooth_cs.c **** 
+  58:ubertooth_cs.c **** 	/* If threshold is max/avg based (>0), reset here while rx is
+  59:ubertooth_cs.c **** 	 * off.  TODO - max-to-iir only works in SWEEP mode, where the
+  60:ubertooth_cs.c **** 	 * channel is known to be in the BT band, i.e., rssi_iir has a
+  61:ubertooth_cs.c **** 	 * value for it. */
+  62:ubertooth_cs.c **** 	if (cs_threshold_req > 0) {
+  40              		.loc 1 62 2 view .LVU3
+  41              		.loc 1 62 23 is_stmt 0 view .LVU4
+  42 0002 124E     		ldr	r6, .L3
+  43 0004 96F90040 		ldrsb	r4, [r6]
+  44              		.loc 1 62 5 view .LVU5
+  45 0008 002C     		cmp	r4, #0
+  46 000a 05DD     		ble	.L2
+  47              	.LBB5:
+  63:ubertooth_cs.c **** 		int8_t rssi = rssi_get_avg(channel);
+  48              		.loc 1 63 3 is_stmt 1 view .LVU6
+  49              		.loc 1 63 17 is_stmt 0 view .LVU7
+  50 000c FFF7FEFF 		bl	rssi_get_avg
+  51              	.LVL1:
+  64:ubertooth_cs.c **** 		level = rssi - 54 + cs_threshold_req;
+ARM GAS  /tmp/ccRjjgSy.s 			page 3
+
+
+  52              		.loc 1 64 3 is_stmt 1 view .LVU8
+  53              		.loc 1 64 21 is_stmt 0 view .LVU9
+  54 0010 3478     		ldrb	r4, [r6]	@ zero_extendqisi2
+  55 0012 363C     		subs	r4, r4, #54
+  56 0014 0444     		add	r4, r4, r0
+  57              		.loc 1 64 9 view .LVU10
+  58 0016 64B2     		sxtb	r4, r4
+  59              	.LVL2:
+  60              	.L2:
+  61              		.loc 1 64 9 view .LVU11
+  62              	.LBE5:
+  65:ubertooth_cs.c **** 	} else {
+  66:ubertooth_cs.c **** 		level = cs_threshold_req;
+  67:ubertooth_cs.c **** 	}
+  68:ubertooth_cs.c **** 	cs_threshold_set(level, CS_SAMPLES_4);
+  63              		.loc 1 68 2 is_stmt 1 view .LVU12
+  64              	.LBB6:
+  65              	.LBI6:
+  45:ubertooth_cs.c **** {
+  66              		.loc 1 45 13 view .LVU13
+  67              	.LBB7:
+  47:ubertooth_cs.c **** 	level = level > -20 ? -20 : level;
+  68              		.loc 1 47 2 view .LVU14
+  47:ubertooth_cs.c **** 	level = level > -20 ? -20 : level;
+  69              		.loc 1 47 8 is_stmt 0 view .LVU15
+  70 0018 6FF07705 		mvn	r5, #119
+  71 001c A542     		cmp	r5, r4
+  72 001e B8BF     		it	lt
+  73 0020 2546     		movlt	r5, r4
+  74              	.LVL3:
+  48:ubertooth_cs.c **** 	cc2400_set(RSSI, (uint8_t)((level + 56) & (0x3f << 2)) | ((uint8_t)samples&3));
+  75              		.loc 1 48 2 is_stmt 1 view .LVU16
+  48:ubertooth_cs.c **** 	cc2400_set(RSSI, (uint8_t)((level + 56) & (0x3f << 2)) | ((uint8_t)samples&3));
+  76              		.loc 1 48 8 is_stmt 0 view .LVU17
+  77 0022 6FF01303 		mvn	r3, #19
+  78 0026 9D42     		cmp	r5, r3
+  79 0028 A8BF     		it	ge
+  80 002a 1D46     		movge	r5, r3
+  81              	.LVL4:
+  49:ubertooth_cs.c **** 	cs_threshold_cur = level;
+  82              		.loc 1 49 2 is_stmt 1 view .LVU18
+  49:ubertooth_cs.c **** 	cs_threshold_cur = level;
+  83              		.loc 1 49 36 is_stmt 0 view .LVU19
+  84 002c 05F13801 		add	r1, r5, #56
+  49:ubertooth_cs.c **** 	cs_threshold_cur = level;
+  85              		.loc 1 49 2 view .LVU20
+  86 0030 41F00301 		orr	r1, r1, #3
+  87 0034 0620     		movs	r0, #6
+  88 0036 C9B2     		uxtb	r1, r1
+  89 0038 FFF7FEFF 		bl	cc2400_set
+  90              	.LVL5:
+  50:ubertooth_cs.c **** 	cs_no_squelch = (level <= -120);
+  91              		.loc 1 50 2 is_stmt 1 view .LVU21
+  51:ubertooth_cs.c **** }
+  92              		.loc 1 51 25 is_stmt 0 view .LVU22
+  93 003c 14F1770F 		cmn	r4, #119
+  94 0040 ACBF     		ite	ge
+ARM GAS  /tmp/ccRjjgSy.s 			page 4
+
+
+  95 0042 0024     		movge	r4, #0
+  96              	.LVL6:
+  51:ubertooth_cs.c **** }
+  97              		.loc 1 51 25 view .LVU23
+  98 0044 0124     		movlt	r4, #1
+  50:ubertooth_cs.c **** 	cs_no_squelch = (level <= -120);
+  99              		.loc 1 50 19 view .LVU24
+ 100 0046 7570     		strb	r5, [r6, #1]
+  51:ubertooth_cs.c **** }
+ 101              		.loc 1 51 2 is_stmt 1 view .LVU25
+  51:ubertooth_cs.c **** }
+ 102              		.loc 1 51 25 is_stmt 0 view .LVU26
+ 103 0048 B470     		strb	r4, [r6, #2]
+ 104              	.LVL7:
+  51:ubertooth_cs.c **** }
+ 105              		.loc 1 51 25 view .LVU27
+ 106              	.LBE7:
+ 107              	.LBE6:
+  69:ubertooth_cs.c **** }
+ 108              		.loc 1 69 1 view .LVU28
+ 109 004a 70BD     		pop	{r4, r5, r6, pc}
+ 110              	.L4:
+ 111              		.align	2
+ 112              	.L3:
+ 113 004c 00000000 		.word	.LANCHOR0
+ 114              		.cfi_endproc
+ 115              	.LFE1:
+ 117              		.section	.text.cs_trigger_enable,"ax",%progbits
+ 118              		.align	1
+ 119              		.global	cs_trigger_enable
+ 120              		.syntax unified
+ 121              		.thumb
+ 122              		.thumb_func
+ 124              	cs_trigger_enable:
+ 125              	.LFB2:
+  70:ubertooth_cs.c **** 
+  71:ubertooth_cs.c **** /* CS comes from CC2400 GIO6, which is LPC P2.2, active low. GPIO
+  72:ubertooth_cs.c ****  * triggers EINT3, which could be used for other things (but is not
+  73:ubertooth_cs.c ****  * currently). TODO - EINT3 should be managed globally, not turned on
+  74:ubertooth_cs.c ****  * and off here. */
+  75:ubertooth_cs.c **** void cs_trigger_enable(void)
+  76:ubertooth_cs.c **** {
+ 126              		.loc 1 76 1 is_stmt 1 view -0
+ 127              		.cfi_startproc
+ 128              		@ args = 0, pretend = 0, frame = 0
+ 129              		@ frame_needed = 0, uses_anonymous_args = 0
+ 130              		@ link register save eliminated.
+  77:ubertooth_cs.c **** 	cs_trigger = 0;
+ 131              		.loc 1 77 2 view .LVU30
+ 132              		.loc 1 77 13 is_stmt 0 view .LVU31
+ 133 0000 0022     		movs	r2, #0
+ 134 0002 094B     		ldr	r3, .L6
+ 135 0004 DA70     		strb	r2, [r3, #3]
+  78:ubertooth_cs.c **** 	ISER0 = ISER0_ISE_EINT3;
+ 136              		.loc 1 78 2 is_stmt 1 view .LVU32
+ 137              		.loc 1 78 8 is_stmt 0 view .LVU33
+ 138 0006 4FF0E023 		mov	r3, #-536813568
+ARM GAS  /tmp/ccRjjgSy.s 			page 5
+
+
+ 139 000a 4FF40012 		mov	r2, #2097152
+ 140 000e C3F80021 		str	r2, [r3, #256]
+  79:ubertooth_cs.c **** 	IO2IntClr = PIN_GIO6;      // Clear pending
+ 141              		.loc 1 79 2 is_stmt 1 view .LVU34
+ 142              		.loc 1 79 12 is_stmt 0 view .LVU35
+ 143 0012 0422     		movs	r2, #4
+ 144 0014 054B     		ldr	r3, .L6+4
+ 145 0016 C3F8AC20 		str	r2, [r3, #172]
+  80:ubertooth_cs.c **** 	IO2IntEnF |= PIN_GIO6;     // Enable port 2.2 falling (CS active low)
+ 146              		.loc 1 80 2 is_stmt 1 view .LVU36
+ 147 001a D3F8B420 		ldr	r2, [r3, #180]
+ 148              		.loc 1 80 12 is_stmt 0 view .LVU37
+ 149 001e 42F00402 		orr	r2, r2, #4
+ 150 0022 C3F8B420 		str	r2, [r3, #180]
+  81:ubertooth_cs.c **** }
+ 151              		.loc 1 81 1 view .LVU38
+ 152 0026 7047     		bx	lr
+ 153              	.L7:
+ 154              		.align	2
+ 155              	.L6:
+ 156 0028 00000000 		.word	.LANCHOR0
+ 157 002c 00800240 		.word	1073905664
+ 158              		.cfi_endproc
+ 159              	.LFE2:
+ 161              		.section	.text.cs_trigger_disable,"ax",%progbits
+ 162              		.align	1
+ 163              		.global	cs_trigger_disable
+ 164              		.syntax unified
+ 165              		.thumb
+ 166              		.thumb_func
+ 168              	cs_trigger_disable:
+ 169              	.LFB3:
+  82:ubertooth_cs.c **** 
+  83:ubertooth_cs.c **** void cs_trigger_disable(void)
+  84:ubertooth_cs.c **** {
+ 170              		.loc 1 84 1 is_stmt 1 view -0
+ 171              		.cfi_startproc
+ 172              		@ args = 0, pretend = 0, frame = 0
+ 173              		@ frame_needed = 0, uses_anonymous_args = 0
+ 174              		@ link register save eliminated.
+  85:ubertooth_cs.c **** 	IO2IntEnF &= ~PIN_GIO6;    // Disable port 2.2 falling (CS active low)
+ 175              		.loc 1 85 2 view .LVU40
+ 176              		.loc 1 85 12 is_stmt 0 view .LVU41
+ 177 0000 094B     		ldr	r3, .L9
+ 178 0002 D3F8B420 		ldr	r2, [r3, #180]
+ 179 0006 22F00402 		bic	r2, r2, #4
+ 180 000a C3F8B420 		str	r2, [r3, #180]
+  86:ubertooth_cs.c **** 	IO2IntClr = PIN_GIO6;      // Clear pending
+ 181              		.loc 1 86 2 is_stmt 1 view .LVU42
+ 182              		.loc 1 86 12 is_stmt 0 view .LVU43
+ 183 000e 0422     		movs	r2, #4
+ 184 0010 C3F8AC20 		str	r2, [r3, #172]
+  87:ubertooth_cs.c **** 	ICER0 = ICER0_ICE_EINT3;
+ 185              		.loc 1 87 2 is_stmt 1 view .LVU44
+ 186              		.loc 1 87 8 is_stmt 0 view .LVU45
+ 187 0014 4FF0E023 		mov	r3, #-536813568
+ 188 0018 4FF40012 		mov	r2, #2097152
+ARM GAS  /tmp/ccRjjgSy.s 			page 6
+
+
+ 189 001c C3F88021 		str	r2, [r3, #384]
+  88:ubertooth_cs.c **** 	cs_trigger = 0;
+ 190              		.loc 1 88 2 is_stmt 1 view .LVU46
+ 191              		.loc 1 88 13 is_stmt 0 view .LVU47
+ 192 0020 0022     		movs	r2, #0
+ 193 0022 024B     		ldr	r3, .L9+4
+ 194 0024 DA70     		strb	r2, [r3, #3]
+  89:ubertooth_cs.c **** }
+ 195              		.loc 1 89 1 view .LVU48
+ 196 0026 7047     		bx	lr
+ 197              	.L10:
+ 198              		.align	2
+ 199              	.L9:
+ 200 0028 00800240 		.word	1073905664
+ 201 002c 00000000 		.word	.LANCHOR0
+ 202              		.cfi_endproc
+ 203              	.LFE3:
+ 205              		.section	.text.cs_reset,"ax",%progbits
+ 206              		.align	1
+ 207              		.global	cs_reset
+ 208              		.syntax unified
+ 209              		.thumb
+ 210              		.thumb_func
+ 212              	cs_reset:
+ 213              	.LFB4:
+  90:ubertooth_cs.c **** 
+  91:ubertooth_cs.c **** void cs_reset(void)
+  92:ubertooth_cs.c **** {
+ 214              		.loc 1 92 1 is_stmt 1 view -0
+ 215              		.cfi_startproc
+ 216              		@ args = 0, pretend = 0, frame = 0
+ 217              		@ frame_needed = 0, uses_anonymous_args = 0
+ 218 0000 08B5     		push	{r3, lr}
+ 219              		.cfi_def_cfa_offset 8
+ 220              		.cfi_offset 3, -8
+ 221              		.cfi_offset 14, -4
+  93:ubertooth_cs.c **** 	cs_trigger_disable();
+ 222              		.loc 1 93 2 view .LVU50
+ 223 0002 FFF7FEFF 		bl	cs_trigger_disable
+ 224              	.LVL8:
+  94:ubertooth_cs.c **** 
+  95:ubertooth_cs.c **** 	cs_no_squelch = 0;
+ 225              		.loc 1 95 2 view .LVU51
+ 226              		.loc 1 95 16 is_stmt 0 view .LVU52
+ 227 0006 0022     		movs	r2, #0
+ 228 0008 024B     		ldr	r3, .L12
+ 229 000a 9A70     		strb	r2, [r3, #2]
+  96:ubertooth_cs.c **** 	cs_threshold_req=CS_THRESHOLD_DEFAULT;
+ 230              		.loc 1 96 2 is_stmt 1 view .LVU53
+ 231              		.loc 1 96 18 is_stmt 0 view .LVU54
+ 232 000c 8822     		movs	r2, #136
+ 233 000e 1A70     		strb	r2, [r3]
+  97:ubertooth_cs.c **** 	cs_threshold_cur=CS_THRESHOLD_DEFAULT;
+ 234              		.loc 1 97 2 is_stmt 1 view .LVU55
+ 235              		.loc 1 97 18 is_stmt 0 view .LVU56
+ 236 0010 5A70     		strb	r2, [r3, #1]
+  98:ubertooth_cs.c **** }
+ARM GAS  /tmp/ccRjjgSy.s 			page 7
+
+
+ 237              		.loc 1 98 1 view .LVU57
+ 238 0012 08BD     		pop	{r3, pc}
+ 239              	.L13:
+ 240              		.align	2
+ 241              	.L12:
+ 242 0014 00000000 		.word	.LANCHOR0
+ 243              		.cfi_endproc
+ 244              	.LFE4:
+ 246              		.global	cs_trigger
+ 247              		.global	cs_threshold_cur
+ 248              		.global	cs_threshold_req
+ 249              		.global	cs_no_squelch
+ 250              		.bss
+ 251              		.set	.LANCHOR0,. + 0
+ 254              	cs_threshold_req:
+ 255 0000 00       		.space	1
+ 258              	cs_threshold_cur:
+ 259 0001 00       		.space	1
+ 262              	cs_no_squelch:
+ 263 0002 00       		.space	1
+ 266              	cs_trigger:
+ 267 0003 00       		.space	1
+ 268              		.text
+ 269              	.Letext0:
+ 270              		.file 2 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 271              		.file 3 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 272              		.file 4 "ubertooth_cs.h"
+ 273              		.file 5 "../common/ubertooth.h"
+ 274              		.file 6 "ubertooth_rssi.h"
+ARM GAS  /tmp/ccRjjgSy.s 			page 8
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 ubertooth_cs.c
+     /tmp/ccRjjgSy.s:19     .text.cs_threshold_calc_and_set:00000000 $t
+     /tmp/ccRjjgSy.s:25     .text.cs_threshold_calc_and_set:00000000 cs_threshold_calc_and_set
+     /tmp/ccRjjgSy.s:113    .text.cs_threshold_calc_and_set:0000004c $d
+     /tmp/ccRjjgSy.s:118    .text.cs_trigger_enable:00000000 $t
+     /tmp/ccRjjgSy.s:124    .text.cs_trigger_enable:00000000 cs_trigger_enable
+     /tmp/ccRjjgSy.s:156    .text.cs_trigger_enable:00000028 $d
+     /tmp/ccRjjgSy.s:162    .text.cs_trigger_disable:00000000 $t
+     /tmp/ccRjjgSy.s:168    .text.cs_trigger_disable:00000000 cs_trigger_disable
+     /tmp/ccRjjgSy.s:200    .text.cs_trigger_disable:00000028 $d
+     /tmp/ccRjjgSy.s:206    .text.cs_reset:00000000 $t
+     /tmp/ccRjjgSy.s:212    .text.cs_reset:00000000 cs_reset
+     /tmp/ccRjjgSy.s:242    .text.cs_reset:00000014 $d
+     /tmp/ccRjjgSy.s:266    .bss:00000003 cs_trigger
+     /tmp/ccRjjgSy.s:258    .bss:00000001 cs_threshold_cur
+     /tmp/ccRjjgSy.s:254    .bss:00000000 cs_threshold_req
+     /tmp/ccRjjgSy.s:262    .bss:00000002 cs_no_squelch
+     /tmp/ccRjjgSy.s:255    .bss:00000000 $d
+
+UNDEFINED SYMBOLS
+rssi_get_avg
+cc2400_set

@@ -1,0 +1,2631 @@
+ARM GAS  /tmp/cciSqR9x.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"debug.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/util/debug.c"
+  18              		.section	.text.a_putc,"ax",%progbits
+  19              		.align	1
+  20              		.p2align 2,,3
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	a_putc:
+  26              	.LVL0:
+  27              	.LFB2:
+   1:src/util/debug.c **** /* Debug
+   2:src/util/debug.c ****  *
+   3:src/util/debug.c ****  * Copyright 2020 Etienne Helluy-Lafont, Univ. Lille, CNRS.
+   4:src/util/debug.c ****  *
+   5:src/util/debug.c ****  * This file is part of Project Ubertooth.
+   6:src/util/debug.c ****  *
+   7:src/util/debug.c ****  * This program is free software; you can redistribute it and/or modify
+   8:src/util/debug.c ****  * it under the terms of the GNU General Public License as published by
+   9:src/util/debug.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  10:src/util/debug.c ****  * any later version.
+  11:src/util/debug.c ****  *
+  12:src/util/debug.c ****  * This program is distributed in the hope that it will be useful,
+  13:src/util/debug.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  14:src/util/debug.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  15:src/util/debug.c ****  * GNU General Public License for more details.
+  16:src/util/debug.c ****  *
+  17:src/util/debug.c ****  * You should have received a copy of the GNU General Public License
+  18:src/util/debug.c ****  * along with this program; see the file COPYING.  If not, write to
+  19:src/util/debug.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  20:src/util/debug.c ****  * Boston, MA 02110-1301, USA.
+  21:src/util/debug.c ****  */
+  22:src/util/debug.c **** #include <stdarg.h>
+  23:src/util/debug.c **** #include <string.h>
+  24:src/util/debug.c **** #include <ubertooth.h>
+  25:src/util/debug.c **** #include "tinyprintf.h"
+  26:src/util/debug.c **** #include <ubtbr/ubertooth_usb.h>
+  27:src/util/debug.c **** #include <ubtbr/console.h>
+  28:src/util/debug.c **** #include <ubtbr/system.h>
+  29:src/util/debug.c **** 
+  30:src/util/debug.c **** static void a_putc(void *arg, char c)
+  31:src/util/debug.c **** {
+ARM GAS  /tmp/cciSqR9x.s 			page 2
+
+
+  28              		.loc 1 31 1 view -0
+  29              		.cfi_startproc
+  30              		@ args = 0, pretend = 0, frame = 0
+  31              		@ frame_needed = 0, uses_anonymous_args = 0
+  32              		@ link register save eliminated.
+  33              		.loc 1 31 1 is_stmt 0 view .LVU1
+  32:src/util/debug.c **** 	console_putc(c);
+  34              		.loc 1 32 2 is_stmt 1 view .LVU2
+  35 0000 0846     		mov	r0, r1
+  36              	.LVL1:
+  37              		.loc 1 32 2 is_stmt 0 view .LVU3
+  38 0002 FFF7FEBF 		b	console_putc
+  39              	.LVL2:
+  40              		.loc 1 32 2 view .LVU4
+  41              		.cfi_endproc
+  42              	.LFE2:
+  44 0006 00BF     		.section	.rodata.str1.4,"aMS",%progbits,1
+  45              		.align	2
+  46              	.LC0:
+  47 0000 25303278 		.ascii	"%02x \000"
+  47      2000
+  48              		.section	.text.cprintf.constprop.0,"ax",%progbits
+  49              		.align	1
+  50              		.p2align 2,,3
+  51              		.syntax unified
+  52              		.thumb
+  53              		.thumb_func
+  55              	cprintf.constprop.0:
+  56              	.LVL3:
+  57              	.LFB13:
+  33:src/util/debug.c **** }
+  34:src/util/debug.c **** 
+  35:src/util/debug.c **** void cprintf(char *fmt, ...)
+  58              		.loc 1 35 6 is_stmt 1 view -0
+  59              		.cfi_startproc
+  60              		@ args = 4, pretend = 16, frame = 8
+  61              		@ frame_needed = 0, uses_anonymous_args = 1
+  62              		.loc 1 35 6 is_stmt 0 view .LVU6
+  63 0000 0FB4     		push	{r0, r1, r2, r3}
+  64              		.cfi_def_cfa_offset 16
+  65              		.cfi_offset 0, -16
+  66              		.cfi_offset 1, -12
+  67              		.cfi_offset 2, -8
+  68              		.cfi_offset 3, -4
+  69 0002 00B5     		push	{lr}
+  70              		.cfi_def_cfa_offset 20
+  71              		.cfi_offset 14, -20
+  72 0004 83B0     		sub	sp, sp, #12
+  73              		.cfi_def_cfa_offset 32
+  74              	.LVL4:
+  36:src/util/debug.c **** {
+  37:src/util/debug.c **** 	va_list ap;
+  75              		.loc 1 37 2 is_stmt 1 view .LVU7
+  38:src/util/debug.c **** 	void *ret;
+  76              		.loc 1 38 2 view .LVU8
+  39:src/util/debug.c **** 
+  40:src/util/debug.c **** 	va_start(ap, fmt);
+ARM GAS  /tmp/cciSqR9x.s 			page 3
+
+
+  77              		.loc 1 40 2 view .LVU9
+  41:src/util/debug.c **** 	tfp_format(NULL, a_putc, fmt, ap);
+  78              		.loc 1 41 2 is_stmt 0 view .LVU10
+  79 0006 0020     		movs	r0, #0
+  40:src/util/debug.c **** 	tfp_format(NULL, a_putc, fmt, ap);
+  80              		.loc 1 40 2 view .LVU11
+  81 0008 05AB     		add	r3, sp, #20
+  82              		.loc 1 41 2 view .LVU12
+  83 000a 054A     		ldr	r2, .L4
+  84 000c 0549     		ldr	r1, .L4+4
+  40:src/util/debug.c **** 	tfp_format(NULL, a_putc, fmt, ap);
+  85              		.loc 1 40 2 view .LVU13
+  86 000e 0193     		str	r3, [sp, #4]
+  87              		.loc 1 41 2 is_stmt 1 view .LVU14
+  88 0010 FFF7FEFF 		bl	tfp_format
+  89              	.LVL5:
+  42:src/util/debug.c **** 	va_end(ap);
+  90              		.loc 1 42 2 view .LVU15
+  43:src/util/debug.c **** }
+  91              		.loc 1 43 1 is_stmt 0 view .LVU16
+  92 0014 03B0     		add	sp, sp, #12
+  93              		.cfi_def_cfa_offset 20
+  94              		@ sp needed
+  95 0016 5DF804EB 		ldr	lr, [sp], #4
+  96              		.cfi_restore 14
+  97              		.cfi_def_cfa_offset 16
+  98 001a 04B0     		add	sp, sp, #16
+  99              		.cfi_restore 3
+ 100              		.cfi_restore 2
+ 101              		.cfi_restore 1
+ 102              		.cfi_restore 0
+ 103              		.cfi_def_cfa_offset 0
+ 104 001c 7047     		bx	lr
+ 105              	.L5:
+ 106 001e 00BF     		.align	2
+ 107              	.L4:
+ 108 0020 00000000 		.word	.LC0
+ 109 0024 00000000 		.word	a_putc
+ 110              		.cfi_endproc
+ 111              	.LFE13:
+ 113              		.section	.text.cprintf,"ax",%progbits
+ 114              		.align	1
+ 115              		.p2align 2,,3
+ 116              		.global	cprintf
+ 117              		.syntax unified
+ 118              		.thumb
+ 119              		.thumb_func
+ 121              	cprintf:
+ 122              	.LVL6:
+ 123              	.LFB3:
+  36:src/util/debug.c **** 	va_list ap;
+ 124              		.loc 1 36 1 is_stmt 1 view -0
+ 125              		.cfi_startproc
+ 126              		@ args = 4, pretend = 16, frame = 8
+ 127              		@ frame_needed = 0, uses_anonymous_args = 1
+  36:src/util/debug.c **** 	va_list ap;
+ 128              		.loc 1 36 1 is_stmt 0 view .LVU18
+ARM GAS  /tmp/cciSqR9x.s 			page 4
+
+
+ 129 0000 0FB4     		push	{r0, r1, r2, r3}
+ 130              		.cfi_def_cfa_offset 16
+ 131              		.cfi_offset 0, -16
+ 132              		.cfi_offset 1, -12
+ 133              		.cfi_offset 2, -8
+ 134              		.cfi_offset 3, -4
+ 135 0002 00B5     		push	{lr}
+ 136              		.cfi_def_cfa_offset 20
+ 137              		.cfi_offset 14, -20
+ 138 0004 83B0     		sub	sp, sp, #12
+ 139              		.cfi_def_cfa_offset 32
+  37:src/util/debug.c **** 	void *ret;
+ 140              		.loc 1 37 2 is_stmt 1 view .LVU19
+  38:src/util/debug.c **** 
+ 141              		.loc 1 38 2 view .LVU20
+  40:src/util/debug.c **** 	tfp_format(NULL, a_putc, fmt, ap);
+ 142              		.loc 1 40 2 view .LVU21
+  36:src/util/debug.c **** 	va_list ap;
+ 143              		.loc 1 36 1 is_stmt 0 view .LVU22
+ 144 0006 04AB     		add	r3, sp, #16
+ 145 0008 53F8042B 		ldr	r2, [r3], #4
+  41:src/util/debug.c **** 	va_end(ap);
+ 146              		.loc 1 41 2 view .LVU23
+ 147 000c 0020     		movs	r0, #0
+ 148 000e 0449     		ldr	r1, .L7
+  40:src/util/debug.c **** 	tfp_format(NULL, a_putc, fmt, ap);
+ 149              		.loc 1 40 2 view .LVU24
+ 150 0010 0193     		str	r3, [sp, #4]
+  41:src/util/debug.c **** 	va_end(ap);
+ 151              		.loc 1 41 2 is_stmt 1 view .LVU25
+ 152 0012 FFF7FEFF 		bl	tfp_format
+ 153              	.LVL7:
+  42:src/util/debug.c **** }
+ 154              		.loc 1 42 2 view .LVU26
+ 155              		.loc 1 43 1 is_stmt 0 view .LVU27
+ 156 0016 03B0     		add	sp, sp, #12
+ 157              		.cfi_def_cfa_offset 20
+ 158              		@ sp needed
+ 159 0018 5DF804EB 		ldr	lr, [sp], #4
+ 160              		.cfi_restore 14
+ 161              		.cfi_def_cfa_offset 16
+ 162 001c 04B0     		add	sp, sp, #16
+ 163              		.cfi_restore 3
+ 164              		.cfi_restore 2
+ 165              		.cfi_restore 1
+ 166              		.cfi_restore 0
+ 167              		.cfi_def_cfa_offset 0
+ 168 001e 7047     		bx	lr
+ 169              	.L8:
+ 170              		.align	2
+ 171              	.L7:
+ 172 0020 00000000 		.word	a_putc
+ 173              		.cfi_endproc
+ 174              	.LFE3:
+ 176              		.section	.text.early_printf,"ax",%progbits
+ 177              		.align	1
+ 178              		.p2align 2,,3
+ARM GAS  /tmp/cciSqR9x.s 			page 5
+
+
+ 179              		.global	early_printf
+ 180              		.syntax unified
+ 181              		.thumb
+ 182              		.thumb_func
+ 184              	early_printf:
+ 185              	.LVL8:
+ 186              	.LFB4:
+  44:src/util/debug.c **** 
+  45:src/util/debug.c **** void early_printf(char *fmt, ...)
+  46:src/util/debug.c **** {
+ 187              		.loc 1 46 1 is_stmt 1 view -0
+ 188              		.cfi_startproc
+ 189              		@ args = 4, pretend = 16, frame = 80
+ 190              		@ frame_needed = 0, uses_anonymous_args = 1
+ 191              		.loc 1 46 1 is_stmt 0 view .LVU29
+ 192 0000 0FB4     		push	{r0, r1, r2, r3}
+ 193              		.cfi_def_cfa_offset 16
+ 194              		.cfi_offset 0, -16
+ 195              		.cfi_offset 1, -12
+ 196              		.cfi_offset 2, -8
+ 197              		.cfi_offset 3, -4
+ 198 0002 30B5     		push	{r4, r5, lr}
+ 199              		.cfi_def_cfa_offset 28
+ 200              		.cfi_offset 4, -28
+ 201              		.cfi_offset 5, -24
+ 202              		.cfi_offset 14, -20
+ 203 0004 95B0     		sub	sp, sp, #84
+ 204              		.cfi_def_cfa_offset 112
+  47:src/util/debug.c **** 	uint32_t flags = irq_save_disable();
+ 205              		.loc 1 47 2 is_stmt 1 view .LVU30
+ 206              	.LBB28:
+ 207              	.LBI28:
+ 208              		.file 2 "include/ubtbr/system.h"
+   1:include/ubtbr/system.h **** #ifndef __SYSTEM_H
+   2:include/ubtbr/system.h **** #define __SYSTEM_H
+   3:include/ubtbr/system.h **** #include <stdint.h>
+   4:include/ubtbr/system.h **** 
+   5:include/ubtbr/system.h **** static inline uint32_t irq_save_disable(void)
+ 209              		.loc 2 5 24 view .LVU31
+ 210              	.LBB29:
+   6:include/ubtbr/system.h **** {
+   7:include/ubtbr/system.h **** 	uint32_t primask;
+ 211              		.loc 2 7 2 view .LVU32
+   8:include/ubtbr/system.h **** 
+   9:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 212              		.loc 2 9 2 view .LVU33
+ 213              	.LBE29:
+ 214              	.LBE28:
+  46:src/util/debug.c **** 	uint32_t flags = irq_save_disable();
+ 215              		.loc 1 46 1 is_stmt 0 view .LVU34
+ 216 0006 18AB     		add	r3, sp, #96
+ 217 0008 53F8042B 		ldr	r2, [r3], #4
+ 218 000c 1546     		mov	r5, r2
+ 219 000e 0193     		str	r3, [sp, #4]
+ 220              	.LBB31:
+ 221              	.LBB30:
+ 222              		.loc 2 9 2 view .LVU35
+ARM GAS  /tmp/cciSqR9x.s 			page 6
+
+
+ 223              		.syntax unified
+ 224              	@ 9 "include/ubtbr/system.h" 1
+ 225 0010 EFF31084 			mrs    r4, primask
+ 226 0014 72B6     		cpsid  i
+ 227              	
+ 228              	@ 0 "" 2
+  10:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+  11:include/ubtbr/system.h **** 	"\tcpsid  i\n"
+  12:include/ubtbr/system.h **** 	: "=r" (primask)
+  13:include/ubtbr/system.h **** 	:
+  14:include/ubtbr/system.h **** 	: "memory");
+  15:include/ubtbr/system.h **** 
+  16:include/ubtbr/system.h **** 	return primask;
+ 229              		.loc 2 16 2 is_stmt 1 view .LVU36
+ 230              	.LVL9:
+ 231              		.loc 2 16 2 is_stmt 0 view .LVU37
+ 232              		.thumb
+ 233              		.syntax unified
+ 234              	.LBE30:
+ 235              	.LBE31:
+  48:src/util/debug.c **** 	char buf[64] = {0};
+ 236              		.loc 1 48 2 is_stmt 1 view .LVU38
+ 237              		.loc 1 48 7 is_stmt 0 view .LVU39
+ 238 0016 4022     		movs	r2, #64
+ 239 0018 0021     		movs	r1, #0
+ 240 001a 04A8     		add	r0, sp, #16
+ 241 001c FFF7FEFF 		bl	memset
+ 242              	.LVL10:
+  49:src/util/debug.c **** 	int len;
+ 243              		.loc 1 49 2 is_stmt 1 view .LVU40
+  50:src/util/debug.c **** 	va_list ap;
+ 244              		.loc 1 50 2 view .LVU41
+  51:src/util/debug.c **** 	void *ret;
+ 245              		.loc 1 51 2 view .LVU42
+  52:src/util/debug.c **** 	
+  53:src/util/debug.c **** 	buf[0] = BTUSB_EARLY_PRINT;
+ 246              		.loc 1 53 2 view .LVU43
+ 247              		.loc 1 53 9 is_stmt 0 view .LVU44
+ 248 0020 5020     		movs	r0, #80
+  54:src/util/debug.c **** 	va_start(ap, fmt);
+ 249              		.loc 1 54 2 view .LVU45
+ 250 0022 019B     		ldr	r3, [sp, #4]
+  55:src/util/debug.c **** 	len = tfp_vsnprintf(buf+1, sizeof(buf)-1, fmt, ap);
+ 251              		.loc 1 55 8 view .LVU46
+ 252 0024 2A46     		mov	r2, r5
+  53:src/util/debug.c **** 	va_start(ap, fmt);
+ 253              		.loc 1 53 9 view .LVU47
+ 254 0026 8DF81000 		strb	r0, [sp, #16]
+  54:src/util/debug.c **** 	va_start(ap, fmt);
+ 255              		.loc 1 54 2 is_stmt 1 view .LVU48
+ 256              		.loc 1 55 8 is_stmt 0 view .LVU49
+ 257 002a 3F21     		movs	r1, #63
+ 258 002c 0DF11100 		add	r0, sp, #17
+  54:src/util/debug.c **** 	va_start(ap, fmt);
+ 259              		.loc 1 54 2 view .LVU50
+ 260 0030 0393     		str	r3, [sp, #12]
+ 261              		.loc 1 55 2 is_stmt 1 view .LVU51
+ARM GAS  /tmp/cciSqR9x.s 			page 7
+
+
+ 262              		.loc 1 55 8 is_stmt 0 view .LVU52
+ 263 0032 FFF7FEFF 		bl	tfp_vsnprintf
+ 264              	.LVL11:
+  56:src/util/debug.c **** 	va_end(ap);
+  57:src/util/debug.c **** 	usb_send_sync((void*)buf, 1+len);
+ 265              		.loc 1 57 2 view .LVU53
+ 266 0036 411C     		adds	r1, r0, #1
+  56:src/util/debug.c **** 	va_end(ap);
+ 267              		.loc 1 56 2 is_stmt 1 view .LVU54
+ 268              		.loc 1 57 2 view .LVU55
+ 269 0038 04A8     		add	r0, sp, #16
+ 270 003a FFF7FEFF 		bl	usb_send_sync
+ 271              	.LVL12:
+  58:src/util/debug.c **** 
+  59:src/util/debug.c **** 	irq_restore(flags);
+ 272              		.loc 1 59 2 view .LVU56
+ 273              	.LBB32:
+ 274              	.LBI32:
+  17:include/ubtbr/system.h **** }
+  18:include/ubtbr/system.h **** 
+  19:include/ubtbr/system.h **** static inline void irq_restore(uint32_t primask)
+ 275              		.loc 2 19 20 view .LVU57
+ 276              	.LBB33:
+  20:include/ubtbr/system.h **** {
+  21:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 277              		.loc 2 21 2 view .LVU58
+ 278              		.syntax unified
+ 279              	@ 21 "include/ubtbr/system.h" 1
+ 280 003e 84F31088 		msr primask, r4
+ 281              	@ 0 "" 2
+ 282              	.LVL13:
+ 283              		.loc 2 21 2 is_stmt 0 view .LVU59
+ 284              		.thumb
+ 285              		.syntax unified
+ 286              	.LBE33:
+ 287              	.LBE32:
+  60:src/util/debug.c **** }
+ 288              		.loc 1 60 1 view .LVU60
+ 289 0042 15B0     		add	sp, sp, #84
+ 290              		.cfi_def_cfa_offset 28
+ 291              		@ sp needed
+ 292 0044 BDE83040 		pop	{r4, r5, lr}
+ 293              		.cfi_restore 14
+ 294              		.cfi_restore 5
+ 295              		.cfi_restore 4
+ 296              		.cfi_def_cfa_offset 16
+ 297              	.LVL14:
+ 298              		.loc 1 60 1 view .LVU61
+ 299 0048 04B0     		add	sp, sp, #16
+ 300              		.cfi_restore 3
+ 301              		.cfi_restore 2
+ 302              		.cfi_restore 1
+ 303              		.cfi_restore 0
+ 304              		.cfi_def_cfa_offset 0
+ 305 004a 7047     		bx	lr
+ 306              		.cfi_endproc
+ 307              	.LFE4:
+ARM GAS  /tmp/cciSqR9x.s 			page 8
+
+
+ 309              		.section	.text.print_hex,"ax",%progbits
+ 310              		.align	1
+ 311              		.p2align 2,,3
+ 312              		.global	print_hex
+ 313              		.syntax unified
+ 314              		.thumb
+ 315              		.thumb_func
+ 317              	print_hex:
+ 318              	.LVL15:
+ 319              	.LFB5:
+  61:src/util/debug.c **** 
+  62:src/util/debug.c **** void print_hex(uint8_t *pkt, unsigned size)
+  63:src/util/debug.c **** {
+ 320              		.loc 1 63 1 is_stmt 1 view -0
+ 321              		.cfi_startproc
+ 322              		@ args = 0, pretend = 0, frame = 0
+ 323              		@ frame_needed = 0, uses_anonymous_args = 0
+ 324              		.loc 1 63 1 is_stmt 0 view .LVU63
+ 325 0000 38B5     		push	{r3, r4, r5, lr}
+ 326              		.cfi_def_cfa_offset 16
+ 327              		.cfi_offset 3, -16
+ 328              		.cfi_offset 4, -12
+ 329              		.cfi_offset 5, -8
+ 330              		.cfi_offset 14, -4
+  64:src/util/debug.c **** 	unsigned i;
+ 331              		.loc 1 64 2 is_stmt 1 view .LVU64
+  65:src/util/debug.c **** 	for (i=0;i<size;i++)
+ 332              		.loc 1 65 2 view .LVU65
+ 333              	.LVL16:
+ 334              		.loc 1 65 12 discriminator 1 view .LVU66
+ 335 0002 49B1     		cbz	r1, .L10
+ 336 0004 0144     		add	r1, r1, r0
+ 337              	.LVL17:
+ 338              		.loc 1 65 12 is_stmt 0 discriminator 1 view .LVU67
+ 339 0006 441E     		subs	r4, r0, #1
+ 340 0008 4D1E     		subs	r5, r1, #1
+ 341              	.LVL18:
+ 342              	.L12:
+  66:src/util/debug.c **** 		cprintf("%02x ", pkt[i]);
+ 343              		.loc 1 66 3 is_stmt 1 view .LVU68
+ 344 000a 14F8011F 		ldrb	r1, [r4, #1]!	@ zero_extendqisi2
+ 345              	.LVL19:
+ 346              		.loc 1 66 3 is_stmt 0 view .LVU69
+ 347 000e 0348     		ldr	r0, .L17
+ 348 0010 FFF7FEFF 		bl	cprintf.constprop.0
+ 349              	.LVL20:
+  65:src/util/debug.c **** 	for (i=0;i<size;i++)
+ 350              		.loc 1 65 19 is_stmt 1 discriminator 3 view .LVU70
+  65:src/util/debug.c **** 	for (i=0;i<size;i++)
+ 351              		.loc 1 65 12 discriminator 1 view .LVU71
+ 352 0014 AC42     		cmp	r4, r5
+ 353 0016 F8D1     		bne	.L12
+ 354              	.LVL21:
+ 355              	.L10:
+  67:src/util/debug.c **** }
+ 356              		.loc 1 67 1 is_stmt 0 view .LVU72
+ 357 0018 38BD     		pop	{r3, r4, r5, pc}
+ARM GAS  /tmp/cciSqR9x.s 			page 9
+
+
+ 358              	.L18:
+ 359 001a 00BF     		.align	2
+ 360              	.L17:
+ 361 001c 00000000 		.word	.LC0
+ 362              		.cfi_endproc
+ 363              	.LFE5:
+ 365              		.section	.text.active_msleep,"ax",%progbits
+ 366              		.align	1
+ 367              		.p2align 2,,3
+ 368              		.global	active_msleep
+ 369              		.syntax unified
+ 370              		.thumb
+ 371              		.thumb_func
+ 373              	active_msleep:
+ 374              	.LVL22:
+ 375              	.LFB6:
+  68:src/util/debug.c **** 
+  69:src/util/debug.c **** void active_msleep(unsigned msec)
+  70:src/util/debug.c **** {
+ 376              		.loc 1 70 1 is_stmt 1 view -0
+ 377              		.cfi_startproc
+ 378              		@ args = 0, pretend = 0, frame = 0
+ 379              		@ frame_needed = 0, uses_anonymous_args = 0
+ 380              		@ link register save eliminated.
+ 381              		.loc 1 70 1 is_stmt 0 view .LVU74
+  71:src/util/debug.c **** 	int i;
+ 382              		.loc 1 71 2 is_stmt 1 view .LVU75
+  72:src/util/debug.c **** 	for (i=msec/2;i;i--);
+ 383              		.loc 1 72 2 view .LVU76
+ 384              		.loc 1 72 16 discriminator 1 view .LVU77
+  73:src/util/debug.c **** }
+ 385              		.loc 1 73 1 is_stmt 0 view .LVU78
+ 386 0000 7047     		bx	lr
+ 387              		.cfi_endproc
+ 388              	.LFE6:
+ 390 0002 00BF     		.section	.text.flash_leds,"ax",%progbits
+ 391              		.align	1
+ 392              		.p2align 2,,3
+ 393              		.global	flash_leds
+ 394              		.syntax unified
+ 395              		.thumb
+ 396              		.thumb_func
+ 398              	flash_leds:
+ 399              	.LVL23:
+ 400              	.LFB7:
+  74:src/util/debug.c **** 
+  75:src/util/debug.c **** // flash LEDs a certain number of times
+  76:src/util/debug.c **** void flash_leds(int count, int delay) {
+ 401              		.loc 1 76 39 is_stmt 1 view -0
+ 402              		.cfi_startproc
+ 403              		@ args = 0, pretend = 0, frame = 0
+ 404              		@ frame_needed = 0, uses_anonymous_args = 0
+ 405              		@ link register save eliminated.
+ 406              		.loc 1 76 39 is_stmt 0 view .LVU80
+ 407 0000 10B4     		push	{r4}
+ 408              		.cfi_def_cfa_offset 4
+ 409              		.cfi_offset 4, -4
+ARM GAS  /tmp/cciSqR9x.s 			page 10
+
+
+  77:src/util/debug.c **** 	int i;
+ 410              		.loc 1 77 2 is_stmt 1 view .LVU81
+  78:src/util/debug.c **** 
+  79:src/util/debug.c **** 	for (i = 0; i < count; ++i) {
+ 411              		.loc 1 79 2 view .LVU82
+ 412              	.LVL24:
+ 413              		.loc 1 79 16 discriminator 1 view .LVU83
+ 414 0002 B0F1000C 		subs	ip, r0, #0
+ 415 0006 0EDD     		ble	.L20
+ 416              		.loc 1 79 9 is_stmt 0 view .LVU84
+ 417 0008 0022     		movs	r2, #0
+  80:src/util/debug.c **** 		USRLED_SET;
+ 418              		.loc 1 80 3 view .LVU85
+ 419 000a 0224     		movs	r4, #2
+  81:src/util/debug.c **** 		RXLED_SET;
+ 420              		.loc 1 81 3 view .LVU86
+ 421 000c 1020     		movs	r0, #16
+ 422              	.LVL25:
+  82:src/util/debug.c **** 		TXLED_SET;
+ 423              		.loc 1 82 3 view .LVU87
+ 424 000e 4FF48071 		mov	r1, #256
+ 425              	.LVL26:
+  80:src/util/debug.c **** 		USRLED_SET;
+ 426              		.loc 1 80 3 view .LVU88
+ 427 0012 064B     		ldr	r3, .L24
+ 428              	.LVL27:
+ 429              	.L22:
+  80:src/util/debug.c **** 		USRLED_SET;
+ 430              		.loc 1 80 3 is_stmt 1 view .LVU89
+  79:src/util/debug.c **** 		USRLED_SET;
+ 431              		.loc 1 79 25 is_stmt 0 discriminator 3 view .LVU90
+ 432 0014 0132     		adds	r2, r2, #1
+ 433              	.LVL28:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 434              		.loc 1 79 16 discriminator 1 view .LVU91
+ 435 0016 9445     		cmp	ip, r2
+  80:src/util/debug.c **** 		RXLED_SET;
+ 436              		.loc 1 80 3 view .LVU92
+ 437 0018 9C63     		str	r4, [r3, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 438              		.loc 1 81 3 is_stmt 1 view .LVU93
+ 439 001a 9863     		str	r0, [r3, #56]
+ 440              		.loc 1 82 3 view .LVU94
+ 441 001c 9963     		str	r1, [r3, #56]
+  83:src/util/debug.c **** 		active_msleep(delay);
+ 442              		.loc 1 83 3 view .LVU95
+  84:src/util/debug.c **** 		USRLED_CLR;
+ 443              		.loc 1 84 3 view .LVU96
+ 444 001e DC63     		str	r4, [r3, #60]
+  85:src/util/debug.c **** 		RXLED_CLR;
+ 445              		.loc 1 85 3 view .LVU97
+ 446 0020 D863     		str	r0, [r3, #60]
+  86:src/util/debug.c **** 		TXLED_CLR;
+ 447              		.loc 1 86 3 view .LVU98
+ 448 0022 D963     		str	r1, [r3, #60]
+  87:src/util/debug.c **** 		active_msleep(delay);
+ 449              		.loc 1 87 3 view .LVU99
+ARM GAS  /tmp/cciSqR9x.s 			page 11
+
+
+  79:src/util/debug.c **** 		USRLED_SET;
+ 450              		.loc 1 79 25 discriminator 3 view .LVU100
+ 451              	.LVL29:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 452              		.loc 1 79 16 discriminator 1 view .LVU101
+ 453 0024 F6D1     		bne	.L22
+ 454              	.LVL30:
+ 455              	.L20:
+  88:src/util/debug.c **** 	}
+  89:src/util/debug.c **** }
+ 456              		.loc 1 89 1 is_stmt 0 view .LVU102
+ 457 0026 10BC     		pop	{r4}
+ 458              		.cfi_restore 4
+ 459              		.cfi_def_cfa_offset 0
+ 460 0028 7047     		bx	lr
+ 461              	.L25:
+ 462 002a 00BF     		.align	2
+ 463              	.L24:
+ 464 002c 00C00920 		.word	537509888
+ 465              		.cfi_endproc
+ 466              	.LFE7:
+ 468              		.section	.text.xUSB_ERROR,"ax",%progbits
+ 469              		.align	1
+ 470              		.p2align 2,,3
+ 471              		.global	xUSB_ERROR
+ 472              		.syntax unified
+ 473              		.thumb
+ 474              		.thumb_func
+ 476              	xUSB_ERROR:
+ 477              	.LFB8:
+  90:src/util/debug.c **** 
+  91:src/util/debug.c **** void xUSB_ERROR(void)
+  92:src/util/debug.c **** {
+ 478              		.loc 1 92 1 is_stmt 1 view -0
+ 479              		.cfi_startproc
+ 480              		@ Volatile: function does not return.
+ 481              		@ args = 0, pretend = 0, frame = 0
+ 482              		@ frame_needed = 0, uses_anonymous_args = 0
+ 483 0000 08B5     		push	{r3, lr}
+ 484              		.cfi_def_cfa_offset 8
+ 485              		.cfi_offset 3, -8
+ 486              		.cfi_offset 14, -4
+ 487              	.LBB34:
+ 488              	.LBB35:
+  80:src/util/debug.c **** 		RXLED_SET;
+ 489              		.loc 1 80 3 is_stmt 0 view .LVU104
+ 490 0002 0225     		movs	r5, #2
+ 491 0004 374C     		ldr	r4, .L30
+ 492              	.L28:
+ 493              	.LBE35:
+ 494              	.LBE34:
+  93:src/util/debug.c **** 	while (1)
+ 495              		.loc 1 93 2 is_stmt 1 view .LVU105
+  94:src/util/debug.c **** 	{
+  95:src/util/debug.c **** 		flash_leds(32, 300);
+ 496              		.loc 1 95 3 view .LVU106
+ 497              	.LVL31:
+ARM GAS  /tmp/cciSqR9x.s 			page 12
+
+
+ 498              	.LBB38:
+ 499              	.LBI34:
+  76:src/util/debug.c **** 	int i;
+ 500              		.loc 1 76 6 view .LVU107
+ 501              	.LBB36:
+  77:src/util/debug.c **** 
+ 502              		.loc 1 77 2 view .LVU108
+  79:src/util/debug.c **** 		USRLED_SET;
+ 503              		.loc 1 79 2 view .LVU109
+  79:src/util/debug.c **** 		USRLED_SET;
+ 504              		.loc 1 79 16 discriminator 1 view .LVU110
+ 505              	.LBE36:
+ 506              	.LBE38:
+  92:src/util/debug.c **** 	while (1)
+ 507              		.loc 1 92 1 is_stmt 0 view .LVU111
+ 508 0006 2021     		movs	r1, #32
+ 509              	.LBB39:
+ 510              	.LBB37:
+  81:src/util/debug.c **** 		TXLED_SET;
+ 511              		.loc 1 81 3 view .LVU112
+ 512 0008 1022     		movs	r2, #16
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 513              		.loc 1 82 3 view .LVU113
+ 514 000a 4FF48073 		mov	r3, #256
+ 515              	.LVL32:
+ 516              	.L27:
+  80:src/util/debug.c **** 		RXLED_SET;
+ 517              		.loc 1 80 3 is_stmt 1 view .LVU114
+  79:src/util/debug.c **** 		USRLED_SET;
+ 518              		.loc 1 79 16 is_stmt 0 discriminator 1 view .LVU115
+ 519 000e 0139     		subs	r1, r1, #1
+  80:src/util/debug.c **** 		RXLED_SET;
+ 520              		.loc 1 80 3 view .LVU116
+ 521 0010 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 522              		.loc 1 81 3 is_stmt 1 view .LVU117
+ 523 0012 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 524              		.loc 1 82 3 view .LVU118
+ 525 0014 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 526              		.loc 1 83 3 view .LVU119
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 527              		.loc 1 84 3 view .LVU120
+ 528 0016 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 529              		.loc 1 85 3 view .LVU121
+ 530 0018 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 531              		.loc 1 86 3 view .LVU122
+ 532 001a E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 533              		.loc 1 87 3 view .LVU123
+  79:src/util/debug.c **** 		USRLED_SET;
+ 534              		.loc 1 79 25 discriminator 3 view .LVU124
+  79:src/util/debug.c **** 		USRLED_SET;
+ 535              		.loc 1 79 16 discriminator 1 view .LVU125
+ARM GAS  /tmp/cciSqR9x.s 			page 13
+
+
+ 536 001c F7D1     		bne	.L27
+ 537              	.LVL33:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 538              		.loc 1 79 16 is_stmt 0 discriminator 1 view .LVU126
+ 539              	.LBE37:
+ 540              	.LBE39:
+ 541              	.LBB40:
+ 542              	.LBB41:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 543              		.loc 1 79 16 is_stmt 1 discriminator 1 view .LVU127
+  80:src/util/debug.c **** 		RXLED_SET;
+ 544              		.loc 1 80 3 view .LVU128
+ 545 001e A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 546              		.loc 1 81 3 view .LVU129
+ 547 0020 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 548              		.loc 1 82 3 view .LVU130
+ 549 0022 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 550              		.loc 1 83 3 view .LVU131
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 551              		.loc 1 84 3 view .LVU132
+ 552 0024 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 553              		.loc 1 85 3 view .LVU133
+ 554 0026 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 555              		.loc 1 86 3 view .LVU134
+ 556 0028 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 557              		.loc 1 87 3 view .LVU135
+  79:src/util/debug.c **** 		USRLED_SET;
+ 558              		.loc 1 79 25 discriminator 3 view .LVU136
+ 559              	.LVL34:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 560              		.loc 1 79 16 discriminator 1 view .LVU137
+  80:src/util/debug.c **** 		RXLED_SET;
+ 561              		.loc 1 80 3 view .LVU138
+ 562 002a A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 563              		.loc 1 81 3 view .LVU139
+ 564 002c A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 565              		.loc 1 82 3 view .LVU140
+ 566 002e A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 567              		.loc 1 83 3 view .LVU141
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 568              		.loc 1 84 3 view .LVU142
+ 569 0030 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 570              		.loc 1 85 3 view .LVU143
+ 571 0032 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 572              		.loc 1 86 3 view .LVU144
+ 573 0034 E363     		str	r3, [r4, #60]
+ARM GAS  /tmp/cciSqR9x.s 			page 14
+
+
+  87:src/util/debug.c **** 	}
+ 574              		.loc 1 87 3 view .LVU145
+  79:src/util/debug.c **** 		USRLED_SET;
+ 575              		.loc 1 79 25 discriminator 3 view .LVU146
+ 576              	.LVL35:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 577              		.loc 1 79 16 discriminator 1 view .LVU147
+  80:src/util/debug.c **** 		RXLED_SET;
+ 578              		.loc 1 80 3 view .LVU148
+ 579 0036 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 580              		.loc 1 81 3 view .LVU149
+ 581 0038 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 582              		.loc 1 82 3 view .LVU150
+ 583 003a A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 584              		.loc 1 83 3 view .LVU151
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 585              		.loc 1 84 3 view .LVU152
+ 586 003c E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 587              		.loc 1 85 3 view .LVU153
+ 588 003e E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 589              		.loc 1 86 3 view .LVU154
+ 590 0040 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 591              		.loc 1 87 3 view .LVU155
+  79:src/util/debug.c **** 		USRLED_SET;
+ 592              		.loc 1 79 25 discriminator 3 view .LVU156
+ 593              	.LVL36:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 594              		.loc 1 79 16 discriminator 1 view .LVU157
+  80:src/util/debug.c **** 		RXLED_SET;
+ 595              		.loc 1 80 3 view .LVU158
+ 596 0042 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 597              		.loc 1 81 3 view .LVU159
+ 598 0044 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 599              		.loc 1 82 3 view .LVU160
+ 600 0046 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 601              		.loc 1 83 3 view .LVU161
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 602              		.loc 1 84 3 view .LVU162
+ 603 0048 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 604              		.loc 1 85 3 view .LVU163
+ 605 004a E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 606              		.loc 1 86 3 view .LVU164
+ 607 004c E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 608              		.loc 1 87 3 view .LVU165
+  79:src/util/debug.c **** 		USRLED_SET;
+ARM GAS  /tmp/cciSqR9x.s 			page 15
+
+
+ 609              		.loc 1 79 25 discriminator 3 view .LVU166
+ 610              	.LVL37:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 611              		.loc 1 79 16 discriminator 1 view .LVU167
+  80:src/util/debug.c **** 		RXLED_SET;
+ 612              		.loc 1 80 3 view .LVU168
+ 613 004e A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 614              		.loc 1 81 3 view .LVU169
+ 615 0050 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 616              		.loc 1 82 3 view .LVU170
+ 617 0052 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 618              		.loc 1 83 3 view .LVU171
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 619              		.loc 1 84 3 view .LVU172
+ 620 0054 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 621              		.loc 1 85 3 view .LVU173
+ 622 0056 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 623              		.loc 1 86 3 view .LVU174
+ 624 0058 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 625              		.loc 1 87 3 view .LVU175
+  79:src/util/debug.c **** 		USRLED_SET;
+ 626              		.loc 1 79 25 discriminator 3 view .LVU176
+ 627              	.LVL38:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 628              		.loc 1 79 16 discriminator 1 view .LVU177
+  80:src/util/debug.c **** 		RXLED_SET;
+ 629              		.loc 1 80 3 view .LVU178
+ 630 005a A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 631              		.loc 1 81 3 view .LVU179
+ 632 005c A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 633              		.loc 1 82 3 view .LVU180
+ 634 005e A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 635              		.loc 1 83 3 view .LVU181
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 636              		.loc 1 84 3 view .LVU182
+ 637 0060 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 638              		.loc 1 85 3 view .LVU183
+ 639 0062 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 640              		.loc 1 86 3 view .LVU184
+ 641 0064 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 642              		.loc 1 87 3 view .LVU185
+  79:src/util/debug.c **** 		USRLED_SET;
+ 643              		.loc 1 79 25 discriminator 3 view .LVU186
+ 644              	.LVL39:
+  79:src/util/debug.c **** 		USRLED_SET;
+ARM GAS  /tmp/cciSqR9x.s 			page 16
+
+
+ 645              		.loc 1 79 16 discriminator 1 view .LVU187
+  80:src/util/debug.c **** 		RXLED_SET;
+ 646              		.loc 1 80 3 view .LVU188
+ 647 0066 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 648              		.loc 1 81 3 view .LVU189
+ 649 0068 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 650              		.loc 1 82 3 view .LVU190
+ 651 006a A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 652              		.loc 1 83 3 view .LVU191
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 653              		.loc 1 84 3 view .LVU192
+ 654 006c E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 655              		.loc 1 85 3 view .LVU193
+ 656 006e E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 657              		.loc 1 86 3 view .LVU194
+ 658 0070 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 659              		.loc 1 87 3 view .LVU195
+  79:src/util/debug.c **** 		USRLED_SET;
+ 660              		.loc 1 79 25 discriminator 3 view .LVU196
+ 661              	.LVL40:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 662              		.loc 1 79 16 discriminator 1 view .LVU197
+  80:src/util/debug.c **** 		RXLED_SET;
+ 663              		.loc 1 80 3 view .LVU198
+ 664 0072 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 665              		.loc 1 81 3 view .LVU199
+ 666 0074 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 667              		.loc 1 82 3 view .LVU200
+ 668 0076 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 669              		.loc 1 83 3 view .LVU201
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 670              		.loc 1 84 3 view .LVU202
+ 671 0078 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 672              		.loc 1 85 3 view .LVU203
+ 673 007a E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 674              		.loc 1 86 3 view .LVU204
+ 675 007c E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 676              		.loc 1 87 3 view .LVU205
+  79:src/util/debug.c **** 		USRLED_SET;
+ 677              		.loc 1 79 25 discriminator 3 view .LVU206
+ 678              	.LVL41:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 679              		.loc 1 79 16 discriminator 1 view .LVU207
+  80:src/util/debug.c **** 		RXLED_SET;
+ 680              		.loc 1 80 3 view .LVU208
+ARM GAS  /tmp/cciSqR9x.s 			page 17
+
+
+ 681 007e A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 682              		.loc 1 81 3 view .LVU209
+ 683 0080 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 684              		.loc 1 82 3 view .LVU210
+ 685 0082 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 686              		.loc 1 83 3 view .LVU211
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 687              		.loc 1 84 3 view .LVU212
+ 688 0084 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 689              		.loc 1 85 3 view .LVU213
+ 690 0086 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 691              		.loc 1 86 3 view .LVU214
+ 692 0088 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 693              		.loc 1 87 3 view .LVU215
+  79:src/util/debug.c **** 		USRLED_SET;
+ 694              		.loc 1 79 25 discriminator 3 view .LVU216
+ 695              	.LVL42:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 696              		.loc 1 79 16 discriminator 1 view .LVU217
+  80:src/util/debug.c **** 		RXLED_SET;
+ 697              		.loc 1 80 3 view .LVU218
+ 698 008a A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 699              		.loc 1 81 3 view .LVU219
+ 700 008c A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 701              		.loc 1 82 3 view .LVU220
+ 702 008e A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 703              		.loc 1 83 3 view .LVU221
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 704              		.loc 1 84 3 view .LVU222
+ 705 0090 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 706              		.loc 1 85 3 view .LVU223
+ 707 0092 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 708              		.loc 1 86 3 view .LVU224
+ 709 0094 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 710              		.loc 1 87 3 view .LVU225
+  79:src/util/debug.c **** 		USRLED_SET;
+ 711              		.loc 1 79 25 discriminator 3 view .LVU226
+ 712              	.LVL43:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 713              		.loc 1 79 16 discriminator 1 view .LVU227
+  80:src/util/debug.c **** 		RXLED_SET;
+ 714              		.loc 1 80 3 view .LVU228
+ 715 0096 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 716              		.loc 1 81 3 view .LVU229
+ARM GAS  /tmp/cciSqR9x.s 			page 18
+
+
+ 717 0098 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 718              		.loc 1 82 3 view .LVU230
+ 719 009a A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 720              		.loc 1 83 3 view .LVU231
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 721              		.loc 1 84 3 view .LVU232
+ 722 009c E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 723              		.loc 1 85 3 view .LVU233
+ 724 009e E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 725              		.loc 1 86 3 view .LVU234
+ 726 00a0 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 727              		.loc 1 87 3 view .LVU235
+  79:src/util/debug.c **** 		USRLED_SET;
+ 728              		.loc 1 79 25 discriminator 3 view .LVU236
+ 729              	.LVL44:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 730              		.loc 1 79 16 discriminator 1 view .LVU237
+  80:src/util/debug.c **** 		RXLED_SET;
+ 731              		.loc 1 80 3 view .LVU238
+ 732 00a2 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 733              		.loc 1 81 3 view .LVU239
+ 734 00a4 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 735              		.loc 1 82 3 view .LVU240
+ 736 00a6 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 737              		.loc 1 83 3 view .LVU241
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 738              		.loc 1 84 3 view .LVU242
+ 739 00a8 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 740              		.loc 1 85 3 view .LVU243
+ 741 00aa E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 742              		.loc 1 86 3 view .LVU244
+ 743 00ac E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 744              		.loc 1 87 3 view .LVU245
+  79:src/util/debug.c **** 		USRLED_SET;
+ 745              		.loc 1 79 25 discriminator 3 view .LVU246
+ 746              	.LVL45:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 747              		.loc 1 79 16 discriminator 1 view .LVU247
+  80:src/util/debug.c **** 		RXLED_SET;
+ 748              		.loc 1 80 3 view .LVU248
+ 749 00ae A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 750              		.loc 1 81 3 view .LVU249
+ 751 00b0 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 752              		.loc 1 82 3 view .LVU250
+ARM GAS  /tmp/cciSqR9x.s 			page 19
+
+
+ 753 00b2 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 754              		.loc 1 83 3 view .LVU251
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 755              		.loc 1 84 3 view .LVU252
+ 756 00b4 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 757              		.loc 1 85 3 view .LVU253
+ 758 00b6 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 759              		.loc 1 86 3 view .LVU254
+ 760 00b8 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 761              		.loc 1 87 3 view .LVU255
+  79:src/util/debug.c **** 		USRLED_SET;
+ 762              		.loc 1 79 25 discriminator 3 view .LVU256
+ 763              	.LVL46:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 764              		.loc 1 79 16 discriminator 1 view .LVU257
+  80:src/util/debug.c **** 		RXLED_SET;
+ 765              		.loc 1 80 3 view .LVU258
+ 766 00ba A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 767              		.loc 1 81 3 view .LVU259
+ 768 00bc A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 769              		.loc 1 82 3 view .LVU260
+ 770 00be A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 771              		.loc 1 83 3 view .LVU261
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 772              		.loc 1 84 3 view .LVU262
+ 773 00c0 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 774              		.loc 1 85 3 view .LVU263
+ 775 00c2 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 776              		.loc 1 86 3 view .LVU264
+ 777 00c4 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 778              		.loc 1 87 3 view .LVU265
+  79:src/util/debug.c **** 		USRLED_SET;
+ 779              		.loc 1 79 25 discriminator 3 view .LVU266
+ 780              	.LVL47:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 781              		.loc 1 79 16 discriminator 1 view .LVU267
+  80:src/util/debug.c **** 		RXLED_SET;
+ 782              		.loc 1 80 3 view .LVU268
+ 783 00c6 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 784              		.loc 1 81 3 view .LVU269
+ 785 00c8 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 786              		.loc 1 82 3 view .LVU270
+ 787 00ca A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 788              		.loc 1 83 3 view .LVU271
+ARM GAS  /tmp/cciSqR9x.s 			page 20
+
+
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 789              		.loc 1 84 3 view .LVU272
+ 790 00cc E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 791              		.loc 1 85 3 view .LVU273
+ 792 00ce E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 793              		.loc 1 86 3 view .LVU274
+ 794 00d0 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 795              		.loc 1 87 3 view .LVU275
+  79:src/util/debug.c **** 		USRLED_SET;
+ 796              		.loc 1 79 25 discriminator 3 view .LVU276
+ 797              	.LVL48:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 798              		.loc 1 79 16 discriminator 1 view .LVU277
+  80:src/util/debug.c **** 		RXLED_SET;
+ 799              		.loc 1 80 3 view .LVU278
+ 800 00d2 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 801              		.loc 1 81 3 view .LVU279
+ 802 00d4 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 803              		.loc 1 82 3 view .LVU280
+ 804 00d6 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 805              		.loc 1 83 3 view .LVU281
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 806              		.loc 1 84 3 view .LVU282
+ 807 00d8 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 808              		.loc 1 85 3 view .LVU283
+ 809 00da E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 810              		.loc 1 86 3 view .LVU284
+ 811 00dc E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 812              		.loc 1 87 3 view .LVU285
+  79:src/util/debug.c **** 		USRLED_SET;
+ 813              		.loc 1 79 25 discriminator 3 view .LVU286
+  79:src/util/debug.c **** 		USRLED_SET;
+ 814              		.loc 1 79 16 discriminator 1 view .LVU287
+ 815              	.LVL49:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 816              		.loc 1 79 16 is_stmt 0 discriminator 1 view .LVU288
+ 817              	.LBE41:
+ 818              	.LBE40:
+  96:src/util/debug.c **** 		flash_leds(16, 600);
+  97:src/util/debug.c **** 		usb_work();
+ 819              		.loc 1 97 3 is_stmt 1 discriminator 2 view .LVU289
+ 820 00de FFF7FEFF 		bl	usb_work
+ 821              	.LVL50:
+  93:src/util/debug.c **** 	{
+ 822              		.loc 1 93 8 view .LVU290
+  95:src/util/debug.c **** 		flash_leds(16, 600);
+ 823              		.loc 1 95 3 is_stmt 0 view .LVU291
+ 824 00e2 90E7     		b	.L28
+ARM GAS  /tmp/cciSqR9x.s 			page 21
+
+
+ 825              	.L31:
+ 826              		.align	2
+ 827              	.L30:
+ 828 00e4 00C00920 		.word	537509888
+ 829              		.cfi_endproc
+ 830              	.LFE8:
+ 832              		.section	.text.xTDMA_ERROR,"ax",%progbits
+ 833              		.align	1
+ 834              		.p2align 2,,3
+ 835              		.global	xTDMA_ERROR
+ 836              		.syntax unified
+ 837              		.thumb
+ 838              		.thumb_func
+ 840              	xTDMA_ERROR:
+ 841              	.LFB9:
+  98:src/util/debug.c **** 	}
+  99:src/util/debug.c **** }
+ 100:src/util/debug.c **** 
+ 101:src/util/debug.c **** void xTDMA_ERROR(void)
+ 102:src/util/debug.c **** {
+ 842              		.loc 1 102 1 is_stmt 1 view -0
+ 843              		.cfi_startproc
+ 844              		@ Volatile: function does not return.
+ 845              		@ args = 0, pretend = 0, frame = 0
+ 846              		@ frame_needed = 0, uses_anonymous_args = 0
+ 847 0000 08B5     		push	{r3, lr}
+ 848              		.cfi_def_cfa_offset 8
+ 849              		.cfi_offset 3, -8
+ 850              		.cfi_offset 14, -4
+ 851              	.LBB42:
+ 852              	.LBB43:
+  80:src/util/debug.c **** 		RXLED_SET;
+ 853              		.loc 1 80 3 is_stmt 0 view .LVU293
+ 854 0002 0225     		movs	r5, #2
+ 855 0004 3F4C     		ldr	r4, .L34
+ 856              	.L33:
+ 857              	.LBE43:
+ 858              	.LBE42:
+ 103:src/util/debug.c **** 	while (1)
+ 859              		.loc 1 103 2 is_stmt 1 view .LVU294
+ 104:src/util/debug.c **** 	{
+ 105:src/util/debug.c **** 		flash_leds(16, 300);
+ 860              		.loc 1 105 3 view .LVU295
+ 861              	.LVL51:
+ 862              	.LBB45:
+ 863              	.LBI42:
+  76:src/util/debug.c **** 	int i;
+ 864              		.loc 1 76 6 view .LVU296
+ 865              	.LBB44:
+  77:src/util/debug.c **** 
+ 866              		.loc 1 77 2 view .LVU297
+  79:src/util/debug.c **** 		USRLED_SET;
+ 867              		.loc 1 79 2 view .LVU298
+  79:src/util/debug.c **** 		USRLED_SET;
+ 868              		.loc 1 79 16 discriminator 1 view .LVU299
+  80:src/util/debug.c **** 		RXLED_SET;
+ 869              		.loc 1 80 3 view .LVU300
+ARM GAS  /tmp/cciSqR9x.s 			page 22
+
+
+  81:src/util/debug.c **** 		TXLED_SET;
+ 870              		.loc 1 81 3 is_stmt 0 view .LVU301
+ 871 0006 1022     		movs	r2, #16
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 872              		.loc 1 82 3 view .LVU302
+ 873 0008 4FF48073 		mov	r3, #256
+  80:src/util/debug.c **** 		RXLED_SET;
+ 874              		.loc 1 80 3 view .LVU303
+ 875 000c A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 876              		.loc 1 81 3 is_stmt 1 view .LVU304
+ 877 000e A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 878              		.loc 1 82 3 view .LVU305
+ 879 0010 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 880              		.loc 1 83 3 view .LVU306
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 881              		.loc 1 84 3 view .LVU307
+ 882 0012 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 883              		.loc 1 85 3 view .LVU308
+ 884 0014 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 885              		.loc 1 86 3 view .LVU309
+ 886 0016 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 887              		.loc 1 87 3 view .LVU310
+  79:src/util/debug.c **** 		USRLED_SET;
+ 888              		.loc 1 79 25 discriminator 3 view .LVU311
+ 889              	.LVL52:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 890              		.loc 1 79 16 discriminator 1 view .LVU312
+  80:src/util/debug.c **** 		RXLED_SET;
+ 891              		.loc 1 80 3 view .LVU313
+ 892 0018 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 893              		.loc 1 81 3 view .LVU314
+ 894 001a A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 895              		.loc 1 82 3 view .LVU315
+ 896 001c A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 897              		.loc 1 83 3 view .LVU316
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 898              		.loc 1 84 3 view .LVU317
+ 899 001e E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 900              		.loc 1 85 3 view .LVU318
+ 901 0020 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 902              		.loc 1 86 3 view .LVU319
+ 903 0022 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 904              		.loc 1 87 3 view .LVU320
+  79:src/util/debug.c **** 		USRLED_SET;
+ 905              		.loc 1 79 25 discriminator 3 view .LVU321
+ARM GAS  /tmp/cciSqR9x.s 			page 23
+
+
+ 906              	.LVL53:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 907              		.loc 1 79 16 discriminator 1 view .LVU322
+  80:src/util/debug.c **** 		RXLED_SET;
+ 908              		.loc 1 80 3 view .LVU323
+ 909 0024 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 910              		.loc 1 81 3 view .LVU324
+ 911 0026 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 912              		.loc 1 82 3 view .LVU325
+ 913 0028 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 914              		.loc 1 83 3 view .LVU326
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 915              		.loc 1 84 3 view .LVU327
+ 916 002a E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 917              		.loc 1 85 3 view .LVU328
+ 918 002c E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 919              		.loc 1 86 3 view .LVU329
+ 920 002e E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 921              		.loc 1 87 3 view .LVU330
+  79:src/util/debug.c **** 		USRLED_SET;
+ 922              		.loc 1 79 25 discriminator 3 view .LVU331
+ 923              	.LVL54:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 924              		.loc 1 79 16 discriminator 1 view .LVU332
+  80:src/util/debug.c **** 		RXLED_SET;
+ 925              		.loc 1 80 3 view .LVU333
+ 926 0030 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 927              		.loc 1 81 3 view .LVU334
+ 928 0032 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 929              		.loc 1 82 3 view .LVU335
+ 930 0034 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 931              		.loc 1 83 3 view .LVU336
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 932              		.loc 1 84 3 view .LVU337
+ 933 0036 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 934              		.loc 1 85 3 view .LVU338
+ 935 0038 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 936              		.loc 1 86 3 view .LVU339
+ 937 003a E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 938              		.loc 1 87 3 view .LVU340
+  79:src/util/debug.c **** 		USRLED_SET;
+ 939              		.loc 1 79 25 discriminator 3 view .LVU341
+ 940              	.LVL55:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 941              		.loc 1 79 16 discriminator 1 view .LVU342
+ARM GAS  /tmp/cciSqR9x.s 			page 24
+
+
+  80:src/util/debug.c **** 		RXLED_SET;
+ 942              		.loc 1 80 3 view .LVU343
+ 943 003c A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 944              		.loc 1 81 3 view .LVU344
+ 945 003e A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 946              		.loc 1 82 3 view .LVU345
+ 947 0040 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 948              		.loc 1 83 3 view .LVU346
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 949              		.loc 1 84 3 view .LVU347
+ 950 0042 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 951              		.loc 1 85 3 view .LVU348
+ 952 0044 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 953              		.loc 1 86 3 view .LVU349
+ 954 0046 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 955              		.loc 1 87 3 view .LVU350
+  79:src/util/debug.c **** 		USRLED_SET;
+ 956              		.loc 1 79 25 discriminator 3 view .LVU351
+ 957              	.LVL56:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 958              		.loc 1 79 16 discriminator 1 view .LVU352
+  80:src/util/debug.c **** 		RXLED_SET;
+ 959              		.loc 1 80 3 view .LVU353
+ 960 0048 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 961              		.loc 1 81 3 view .LVU354
+ 962 004a A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 963              		.loc 1 82 3 view .LVU355
+ 964 004c A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 965              		.loc 1 83 3 view .LVU356
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 966              		.loc 1 84 3 view .LVU357
+ 967 004e E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 968              		.loc 1 85 3 view .LVU358
+ 969 0050 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 970              		.loc 1 86 3 view .LVU359
+ 971 0052 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 972              		.loc 1 87 3 view .LVU360
+  79:src/util/debug.c **** 		USRLED_SET;
+ 973              		.loc 1 79 25 discriminator 3 view .LVU361
+ 974              	.LVL57:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 975              		.loc 1 79 16 discriminator 1 view .LVU362
+  80:src/util/debug.c **** 		RXLED_SET;
+ 976              		.loc 1 80 3 view .LVU363
+ 977 0054 A563     		str	r5, [r4, #56]
+ARM GAS  /tmp/cciSqR9x.s 			page 25
+
+
+  81:src/util/debug.c **** 		TXLED_SET;
+ 978              		.loc 1 81 3 view .LVU364
+ 979 0056 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 980              		.loc 1 82 3 view .LVU365
+ 981 0058 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 982              		.loc 1 83 3 view .LVU366
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 983              		.loc 1 84 3 view .LVU367
+ 984 005a E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 985              		.loc 1 85 3 view .LVU368
+ 986 005c E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 987              		.loc 1 86 3 view .LVU369
+ 988 005e E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 989              		.loc 1 87 3 view .LVU370
+  79:src/util/debug.c **** 		USRLED_SET;
+ 990              		.loc 1 79 25 discriminator 3 view .LVU371
+ 991              	.LVL58:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 992              		.loc 1 79 16 discriminator 1 view .LVU372
+  80:src/util/debug.c **** 		RXLED_SET;
+ 993              		.loc 1 80 3 view .LVU373
+ 994 0060 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 995              		.loc 1 81 3 view .LVU374
+ 996 0062 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 997              		.loc 1 82 3 view .LVU375
+ 998 0064 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 999              		.loc 1 83 3 view .LVU376
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1000              		.loc 1 84 3 view .LVU377
+ 1001 0066 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1002              		.loc 1 85 3 view .LVU378
+ 1003 0068 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1004              		.loc 1 86 3 view .LVU379
+ 1005 006a E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1006              		.loc 1 87 3 view .LVU380
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1007              		.loc 1 79 25 discriminator 3 view .LVU381
+ 1008              	.LVL59:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1009              		.loc 1 79 16 discriminator 1 view .LVU382
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1010              		.loc 1 80 3 view .LVU383
+ 1011 006c A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1012              		.loc 1 81 3 view .LVU384
+ 1013 006e A263     		str	r2, [r4, #56]
+ARM GAS  /tmp/cciSqR9x.s 			page 26
+
+
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1014              		.loc 1 82 3 view .LVU385
+ 1015 0070 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1016              		.loc 1 83 3 view .LVU386
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1017              		.loc 1 84 3 view .LVU387
+ 1018 0072 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1019              		.loc 1 85 3 view .LVU388
+ 1020 0074 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1021              		.loc 1 86 3 view .LVU389
+ 1022 0076 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1023              		.loc 1 87 3 view .LVU390
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1024              		.loc 1 79 25 discriminator 3 view .LVU391
+ 1025              	.LVL60:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1026              		.loc 1 79 16 discriminator 1 view .LVU392
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1027              		.loc 1 80 3 view .LVU393
+ 1028 0078 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1029              		.loc 1 81 3 view .LVU394
+ 1030 007a A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1031              		.loc 1 82 3 view .LVU395
+ 1032 007c A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1033              		.loc 1 83 3 view .LVU396
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1034              		.loc 1 84 3 view .LVU397
+ 1035 007e E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1036              		.loc 1 85 3 view .LVU398
+ 1037 0080 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1038              		.loc 1 86 3 view .LVU399
+ 1039 0082 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1040              		.loc 1 87 3 view .LVU400
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1041              		.loc 1 79 25 discriminator 3 view .LVU401
+ 1042              	.LVL61:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1043              		.loc 1 79 16 discriminator 1 view .LVU402
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1044              		.loc 1 80 3 view .LVU403
+ 1045 0084 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1046              		.loc 1 81 3 view .LVU404
+ 1047 0086 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1048              		.loc 1 82 3 view .LVU405
+ 1049 0088 A363     		str	r3, [r4, #56]
+ARM GAS  /tmp/cciSqR9x.s 			page 27
+
+
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1050              		.loc 1 83 3 view .LVU406
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1051              		.loc 1 84 3 view .LVU407
+ 1052 008a E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1053              		.loc 1 85 3 view .LVU408
+ 1054 008c E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1055              		.loc 1 86 3 view .LVU409
+ 1056 008e E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1057              		.loc 1 87 3 view .LVU410
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1058              		.loc 1 79 25 discriminator 3 view .LVU411
+ 1059              	.LVL62:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1060              		.loc 1 79 16 discriminator 1 view .LVU412
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1061              		.loc 1 80 3 view .LVU413
+ 1062 0090 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1063              		.loc 1 81 3 view .LVU414
+ 1064 0092 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1065              		.loc 1 82 3 view .LVU415
+ 1066 0094 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1067              		.loc 1 83 3 view .LVU416
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1068              		.loc 1 84 3 view .LVU417
+ 1069 0096 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1070              		.loc 1 85 3 view .LVU418
+ 1071 0098 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1072              		.loc 1 86 3 view .LVU419
+ 1073 009a E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1074              		.loc 1 87 3 view .LVU420
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1075              		.loc 1 79 25 discriminator 3 view .LVU421
+ 1076              	.LVL63:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1077              		.loc 1 79 16 discriminator 1 view .LVU422
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1078              		.loc 1 80 3 view .LVU423
+ 1079 009c A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1080              		.loc 1 81 3 view .LVU424
+ 1081 009e A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1082              		.loc 1 82 3 view .LVU425
+ 1083 00a0 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1084              		.loc 1 83 3 view .LVU426
+  84:src/util/debug.c **** 		RXLED_CLR;
+ARM GAS  /tmp/cciSqR9x.s 			page 28
+
+
+ 1085              		.loc 1 84 3 view .LVU427
+ 1086 00a2 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1087              		.loc 1 85 3 view .LVU428
+ 1088 00a4 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1089              		.loc 1 86 3 view .LVU429
+ 1090 00a6 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1091              		.loc 1 87 3 view .LVU430
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1092              		.loc 1 79 25 discriminator 3 view .LVU431
+ 1093              	.LVL64:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1094              		.loc 1 79 16 discriminator 1 view .LVU432
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1095              		.loc 1 80 3 view .LVU433
+ 1096 00a8 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1097              		.loc 1 81 3 view .LVU434
+ 1098 00aa A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1099              		.loc 1 82 3 view .LVU435
+ 1100 00ac A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1101              		.loc 1 83 3 view .LVU436
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1102              		.loc 1 84 3 view .LVU437
+ 1103 00ae E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1104              		.loc 1 85 3 view .LVU438
+ 1105 00b0 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1106              		.loc 1 86 3 view .LVU439
+ 1107 00b2 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1108              		.loc 1 87 3 view .LVU440
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1109              		.loc 1 79 25 discriminator 3 view .LVU441
+ 1110              	.LVL65:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1111              		.loc 1 79 16 discriminator 1 view .LVU442
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1112              		.loc 1 80 3 view .LVU443
+ 1113 00b4 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1114              		.loc 1 81 3 view .LVU444
+ 1115 00b6 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1116              		.loc 1 82 3 view .LVU445
+ 1117 00b8 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1118              		.loc 1 83 3 view .LVU446
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1119              		.loc 1 84 3 view .LVU447
+ 1120 00ba E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ARM GAS  /tmp/cciSqR9x.s 			page 29
+
+
+ 1121              		.loc 1 85 3 view .LVU448
+ 1122 00bc E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1123              		.loc 1 86 3 view .LVU449
+ 1124 00be E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1125              		.loc 1 87 3 view .LVU450
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1126              		.loc 1 79 25 discriminator 3 view .LVU451
+ 1127              	.LVL66:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1128              		.loc 1 79 16 discriminator 1 view .LVU452
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1129              		.loc 1 80 3 view .LVU453
+ 1130 00c0 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1131              		.loc 1 81 3 view .LVU454
+ 1132 00c2 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1133              		.loc 1 82 3 view .LVU455
+ 1134 00c4 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1135              		.loc 1 83 3 view .LVU456
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1136              		.loc 1 84 3 view .LVU457
+ 1137 00c6 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1138              		.loc 1 85 3 view .LVU458
+ 1139 00c8 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1140              		.loc 1 86 3 view .LVU459
+ 1141 00ca E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1142              		.loc 1 87 3 view .LVU460
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1143              		.loc 1 79 25 discriminator 3 view .LVU461
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1144              		.loc 1 79 16 discriminator 1 view .LVU462
+ 1145              	.LVL67:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1146              		.loc 1 79 16 is_stmt 0 discriminator 1 view .LVU463
+ 1147              	.LBE44:
+ 1148              	.LBE45:
+ 1149              	.LBB46:
+ 1150              	.LBB47:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1151              		.loc 1 79 16 is_stmt 1 discriminator 1 view .LVU464
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1152              		.loc 1 80 3 view .LVU465
+ 1153 00cc A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1154              		.loc 1 81 3 view .LVU466
+ 1155 00ce A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1156              		.loc 1 82 3 view .LVU467
+ 1157 00d0 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ARM GAS  /tmp/cciSqR9x.s 			page 30
+
+
+ 1158              		.loc 1 83 3 view .LVU468
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1159              		.loc 1 84 3 view .LVU469
+ 1160 00d2 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1161              		.loc 1 85 3 view .LVU470
+ 1162 00d4 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1163              		.loc 1 86 3 view .LVU471
+ 1164 00d6 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1165              		.loc 1 87 3 view .LVU472
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1166              		.loc 1 79 25 discriminator 3 view .LVU473
+ 1167              	.LVL68:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1168              		.loc 1 79 16 discriminator 1 view .LVU474
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1169              		.loc 1 80 3 view .LVU475
+ 1170 00d8 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1171              		.loc 1 81 3 view .LVU476
+ 1172 00da A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1173              		.loc 1 82 3 view .LVU477
+ 1174 00dc A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1175              		.loc 1 83 3 view .LVU478
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1176              		.loc 1 84 3 view .LVU479
+ 1177 00de E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1178              		.loc 1 85 3 view .LVU480
+ 1179 00e0 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1180              		.loc 1 86 3 view .LVU481
+ 1181 00e2 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1182              		.loc 1 87 3 view .LVU482
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1183              		.loc 1 79 25 discriminator 3 view .LVU483
+ 1184              	.LVL69:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1185              		.loc 1 79 16 discriminator 1 view .LVU484
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1186              		.loc 1 80 3 view .LVU485
+ 1187 00e4 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1188              		.loc 1 81 3 view .LVU486
+ 1189 00e6 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1190              		.loc 1 82 3 view .LVU487
+ 1191 00e8 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1192              		.loc 1 83 3 view .LVU488
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1193              		.loc 1 84 3 view .LVU489
+ARM GAS  /tmp/cciSqR9x.s 			page 31
+
+
+ 1194 00ea E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1195              		.loc 1 85 3 view .LVU490
+ 1196 00ec E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1197              		.loc 1 86 3 view .LVU491
+ 1198 00ee E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1199              		.loc 1 87 3 view .LVU492
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1200              		.loc 1 79 25 discriminator 3 view .LVU493
+ 1201              	.LVL70:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1202              		.loc 1 79 16 discriminator 1 view .LVU494
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1203              		.loc 1 80 3 view .LVU495
+ 1204 00f0 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1205              		.loc 1 81 3 view .LVU496
+ 1206 00f2 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1207              		.loc 1 82 3 view .LVU497
+ 1208 00f4 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1209              		.loc 1 83 3 view .LVU498
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1210              		.loc 1 84 3 view .LVU499
+ 1211 00f6 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1212              		.loc 1 85 3 view .LVU500
+ 1213 00f8 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1214              		.loc 1 86 3 view .LVU501
+ 1215 00fa E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1216              		.loc 1 87 3 view .LVU502
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1217              		.loc 1 79 25 discriminator 3 view .LVU503
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1218              		.loc 1 79 16 discriminator 1 view .LVU504
+ 1219              	.LVL71:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1220              		.loc 1 79 16 is_stmt 0 discriminator 1 view .LVU505
+ 1221              	.LBE47:
+ 1222              	.LBE46:
+ 106:src/util/debug.c **** 		flash_leds(4, 600);
+ 107:src/util/debug.c **** 		usb_work();
+ 1223              		.loc 1 107 3 is_stmt 1 discriminator 2 view .LVU506
+ 1224 00fc FFF7FEFF 		bl	usb_work
+ 1225              	.LVL72:
+ 103:src/util/debug.c **** 	{
+ 1226              		.loc 1 103 8 view .LVU507
+ 1227 0100 81E7     		b	.L33
+ 1228              	.L35:
+ 1229 0102 00BF     		.align	2
+ 1230              	.L34:
+ 1231 0104 00C00920 		.word	537509888
+ARM GAS  /tmp/cciSqR9x.s 			page 32
+
+
+ 1232              		.cfi_endproc
+ 1233              	.LFE9:
+ 1235              		.section	.text.xDMA_ERROR,"ax",%progbits
+ 1236              		.align	1
+ 1237              		.p2align 2,,3
+ 1238              		.global	xDMA_ERROR
+ 1239              		.syntax unified
+ 1240              		.thumb
+ 1241              		.thumb_func
+ 1243              	xDMA_ERROR:
+ 1244              	.LFB10:
+ 108:src/util/debug.c **** 	}
+ 109:src/util/debug.c **** }
+ 110:src/util/debug.c **** 
+ 111:src/util/debug.c **** void xDMA_ERROR(void)
+ 112:src/util/debug.c **** {
+ 1245              		.loc 1 112 1 view -0
+ 1246              		.cfi_startproc
+ 1247              		@ Volatile: function does not return.
+ 1248              		@ args = 0, pretend = 0, frame = 0
+ 1249              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1250 0000 08B5     		push	{r3, lr}
+ 1251              		.cfi_def_cfa_offset 8
+ 1252              		.cfi_offset 3, -8
+ 1253              		.cfi_offset 14, -4
+ 1254              	.LBB48:
+ 1255              	.LBB49:
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1256              		.loc 1 80 3 is_stmt 0 view .LVU509
+ 1257 0002 0225     		movs	r5, #2
+ 1258 0004 274C     		ldr	r4, .L38
+ 1259              	.L37:
+ 1260              	.LBE49:
+ 1261              	.LBE48:
+ 113:src/util/debug.c **** 	while (1)
+ 1262              		.loc 1 113 2 is_stmt 1 view .LVU510
+ 114:src/util/debug.c **** 	{
+ 115:src/util/debug.c **** 		flash_leds(8, 300);
+ 1263              		.loc 1 115 3 view .LVU511
+ 1264              	.LVL73:
+ 1265              	.LBB51:
+ 1266              	.LBI48:
+  76:src/util/debug.c **** 	int i;
+ 1267              		.loc 1 76 6 view .LVU512
+ 1268              	.LBB50:
+  77:src/util/debug.c **** 
+ 1269              		.loc 1 77 2 view .LVU513
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1270              		.loc 1 79 2 view .LVU514
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1271              		.loc 1 79 16 discriminator 1 view .LVU515
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1272              		.loc 1 80 3 view .LVU516
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1273              		.loc 1 81 3 is_stmt 0 view .LVU517
+ 1274 0006 1022     		movs	r2, #16
+  82:src/util/debug.c **** 		active_msleep(delay);
+ARM GAS  /tmp/cciSqR9x.s 			page 33
+
+
+ 1275              		.loc 1 82 3 view .LVU518
+ 1276 0008 4FF48073 		mov	r3, #256
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1277              		.loc 1 80 3 view .LVU519
+ 1278 000c A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1279              		.loc 1 81 3 is_stmt 1 view .LVU520
+ 1280 000e A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1281              		.loc 1 82 3 view .LVU521
+ 1282 0010 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1283              		.loc 1 83 3 view .LVU522
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1284              		.loc 1 84 3 view .LVU523
+ 1285 0012 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1286              		.loc 1 85 3 view .LVU524
+ 1287 0014 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1288              		.loc 1 86 3 view .LVU525
+ 1289 0016 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1290              		.loc 1 87 3 view .LVU526
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1291              		.loc 1 79 25 discriminator 3 view .LVU527
+ 1292              	.LVL74:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1293              		.loc 1 79 16 discriminator 1 view .LVU528
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1294              		.loc 1 80 3 view .LVU529
+ 1295 0018 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1296              		.loc 1 81 3 view .LVU530
+ 1297 001a A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1298              		.loc 1 82 3 view .LVU531
+ 1299 001c A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1300              		.loc 1 83 3 view .LVU532
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1301              		.loc 1 84 3 view .LVU533
+ 1302 001e E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1303              		.loc 1 85 3 view .LVU534
+ 1304 0020 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1305              		.loc 1 86 3 view .LVU535
+ 1306 0022 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1307              		.loc 1 87 3 view .LVU536
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1308              		.loc 1 79 25 discriminator 3 view .LVU537
+ 1309              	.LVL75:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1310              		.loc 1 79 16 discriminator 1 view .LVU538
+  80:src/util/debug.c **** 		RXLED_SET;
+ARM GAS  /tmp/cciSqR9x.s 			page 34
+
+
+ 1311              		.loc 1 80 3 view .LVU539
+ 1312 0024 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1313              		.loc 1 81 3 view .LVU540
+ 1314 0026 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1315              		.loc 1 82 3 view .LVU541
+ 1316 0028 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1317              		.loc 1 83 3 view .LVU542
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1318              		.loc 1 84 3 view .LVU543
+ 1319 002a E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1320              		.loc 1 85 3 view .LVU544
+ 1321 002c E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1322              		.loc 1 86 3 view .LVU545
+ 1323 002e E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1324              		.loc 1 87 3 view .LVU546
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1325              		.loc 1 79 25 discriminator 3 view .LVU547
+ 1326              	.LVL76:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1327              		.loc 1 79 16 discriminator 1 view .LVU548
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1328              		.loc 1 80 3 view .LVU549
+ 1329 0030 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1330              		.loc 1 81 3 view .LVU550
+ 1331 0032 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1332              		.loc 1 82 3 view .LVU551
+ 1333 0034 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1334              		.loc 1 83 3 view .LVU552
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1335              		.loc 1 84 3 view .LVU553
+ 1336 0036 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1337              		.loc 1 85 3 view .LVU554
+ 1338 0038 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1339              		.loc 1 86 3 view .LVU555
+ 1340 003a E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1341              		.loc 1 87 3 view .LVU556
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1342              		.loc 1 79 25 discriminator 3 view .LVU557
+ 1343              	.LVL77:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1344              		.loc 1 79 16 discriminator 1 view .LVU558
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1345              		.loc 1 80 3 view .LVU559
+ 1346 003c A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ARM GAS  /tmp/cciSqR9x.s 			page 35
+
+
+ 1347              		.loc 1 81 3 view .LVU560
+ 1348 003e A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1349              		.loc 1 82 3 view .LVU561
+ 1350 0040 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1351              		.loc 1 83 3 view .LVU562
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1352              		.loc 1 84 3 view .LVU563
+ 1353 0042 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1354              		.loc 1 85 3 view .LVU564
+ 1355 0044 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1356              		.loc 1 86 3 view .LVU565
+ 1357 0046 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1358              		.loc 1 87 3 view .LVU566
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1359              		.loc 1 79 25 discriminator 3 view .LVU567
+ 1360              	.LVL78:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1361              		.loc 1 79 16 discriminator 1 view .LVU568
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1362              		.loc 1 80 3 view .LVU569
+ 1363 0048 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1364              		.loc 1 81 3 view .LVU570
+ 1365 004a A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1366              		.loc 1 82 3 view .LVU571
+ 1367 004c A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1368              		.loc 1 83 3 view .LVU572
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1369              		.loc 1 84 3 view .LVU573
+ 1370 004e E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1371              		.loc 1 85 3 view .LVU574
+ 1372 0050 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1373              		.loc 1 86 3 view .LVU575
+ 1374 0052 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1375              		.loc 1 87 3 view .LVU576
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1376              		.loc 1 79 25 discriminator 3 view .LVU577
+ 1377              	.LVL79:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1378              		.loc 1 79 16 discriminator 1 view .LVU578
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1379              		.loc 1 80 3 view .LVU579
+ 1380 0054 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1381              		.loc 1 81 3 view .LVU580
+ 1382 0056 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ARM GAS  /tmp/cciSqR9x.s 			page 36
+
+
+ 1383              		.loc 1 82 3 view .LVU581
+ 1384 0058 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1385              		.loc 1 83 3 view .LVU582
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1386              		.loc 1 84 3 view .LVU583
+ 1387 005a E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1388              		.loc 1 85 3 view .LVU584
+ 1389 005c E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1390              		.loc 1 86 3 view .LVU585
+ 1391 005e E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1392              		.loc 1 87 3 view .LVU586
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1393              		.loc 1 79 25 discriminator 3 view .LVU587
+ 1394              	.LVL80:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1395              		.loc 1 79 16 discriminator 1 view .LVU588
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1396              		.loc 1 80 3 view .LVU589
+ 1397 0060 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1398              		.loc 1 81 3 view .LVU590
+ 1399 0062 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1400              		.loc 1 82 3 view .LVU591
+ 1401 0064 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1402              		.loc 1 83 3 view .LVU592
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1403              		.loc 1 84 3 view .LVU593
+ 1404 0066 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1405              		.loc 1 85 3 view .LVU594
+ 1406 0068 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1407              		.loc 1 86 3 view .LVU595
+ 1408 006a E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1409              		.loc 1 87 3 view .LVU596
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1410              		.loc 1 79 25 discriminator 3 view .LVU597
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1411              		.loc 1 79 16 discriminator 1 view .LVU598
+ 1412              	.LVL81:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1413              		.loc 1 79 16 is_stmt 0 discriminator 1 view .LVU599
+ 1414              	.LBE50:
+ 1415              	.LBE51:
+ 1416              	.LBB52:
+ 1417              	.LBB53:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1418              		.loc 1 79 16 is_stmt 1 discriminator 1 view .LVU600
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1419              		.loc 1 80 3 view .LVU601
+ARM GAS  /tmp/cciSqR9x.s 			page 37
+
+
+ 1420 006c A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1421              		.loc 1 81 3 view .LVU602
+ 1422 006e A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1423              		.loc 1 82 3 view .LVU603
+ 1424 0070 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1425              		.loc 1 83 3 view .LVU604
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1426              		.loc 1 84 3 view .LVU605
+ 1427 0072 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1428              		.loc 1 85 3 view .LVU606
+ 1429 0074 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1430              		.loc 1 86 3 view .LVU607
+ 1431 0076 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1432              		.loc 1 87 3 view .LVU608
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1433              		.loc 1 79 25 discriminator 3 view .LVU609
+ 1434              	.LVL82:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1435              		.loc 1 79 16 discriminator 1 view .LVU610
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1436              		.loc 1 80 3 view .LVU611
+ 1437 0078 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1438              		.loc 1 81 3 view .LVU612
+ 1439 007a A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1440              		.loc 1 82 3 view .LVU613
+ 1441 007c A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1442              		.loc 1 83 3 view .LVU614
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1443              		.loc 1 84 3 view .LVU615
+ 1444 007e E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1445              		.loc 1 85 3 view .LVU616
+ 1446 0080 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1447              		.loc 1 86 3 view .LVU617
+ 1448 0082 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1449              		.loc 1 87 3 view .LVU618
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1450              		.loc 1 79 25 discriminator 3 view .LVU619
+ 1451              	.LVL83:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1452              		.loc 1 79 16 discriminator 1 view .LVU620
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1453              		.loc 1 80 3 view .LVU621
+ 1454 0084 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1455              		.loc 1 81 3 view .LVU622
+ARM GAS  /tmp/cciSqR9x.s 			page 38
+
+
+ 1456 0086 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1457              		.loc 1 82 3 view .LVU623
+ 1458 0088 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1459              		.loc 1 83 3 view .LVU624
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1460              		.loc 1 84 3 view .LVU625
+ 1461 008a E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1462              		.loc 1 85 3 view .LVU626
+ 1463 008c E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1464              		.loc 1 86 3 view .LVU627
+ 1465 008e E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1466              		.loc 1 87 3 view .LVU628
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1467              		.loc 1 79 25 discriminator 3 view .LVU629
+ 1468              	.LVL84:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1469              		.loc 1 79 16 discriminator 1 view .LVU630
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1470              		.loc 1 80 3 view .LVU631
+ 1471 0090 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1472              		.loc 1 81 3 view .LVU632
+ 1473 0092 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1474              		.loc 1 82 3 view .LVU633
+ 1475 0094 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1476              		.loc 1 83 3 view .LVU634
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1477              		.loc 1 84 3 view .LVU635
+ 1478 0096 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1479              		.loc 1 85 3 view .LVU636
+ 1480 0098 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1481              		.loc 1 86 3 view .LVU637
+ 1482 009a E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1483              		.loc 1 87 3 view .LVU638
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1484              		.loc 1 79 25 discriminator 3 view .LVU639
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1485              		.loc 1 79 16 discriminator 1 view .LVU640
+ 1486              	.LVL85:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1487              		.loc 1 79 16 is_stmt 0 discriminator 1 view .LVU641
+ 1488              	.LBE53:
+ 1489              	.LBE52:
+ 116:src/util/debug.c **** 		flash_leds(4, 600);
+ 117:src/util/debug.c **** 		usb_work();
+ 1490              		.loc 1 117 3 is_stmt 1 discriminator 2 view .LVU642
+ 1491 009c FFF7FEFF 		bl	usb_work
+ARM GAS  /tmp/cciSqR9x.s 			page 39
+
+
+ 1492              	.LVL86:
+ 113:src/util/debug.c **** 	{
+ 1493              		.loc 1 113 8 view .LVU643
+ 1494 00a0 B1E7     		b	.L37
+ 1495              	.L39:
+ 1496 00a2 00BF     		.align	2
+ 1497              	.L38:
+ 1498 00a4 00C00920 		.word	537509888
+ 1499              		.cfi_endproc
+ 1500              	.LFE10:
+ 1502              		.section	.text.xOTHER_ERROR,"ax",%progbits
+ 1503              		.align	1
+ 1504              		.p2align 2,,3
+ 1505              		.global	xOTHER_ERROR
+ 1506              		.syntax unified
+ 1507              		.thumb
+ 1508              		.thumb_func
+ 1510              	xOTHER_ERROR:
+ 1511              	.LFB11:
+ 118:src/util/debug.c **** 	}
+ 119:src/util/debug.c **** }
+ 120:src/util/debug.c **** 
+ 121:src/util/debug.c **** void xOTHER_ERROR(void)
+ 122:src/util/debug.c **** {
+ 1512              		.loc 1 122 1 view -0
+ 1513              		.cfi_startproc
+ 1514              		@ Volatile: function does not return.
+ 1515              		@ args = 0, pretend = 0, frame = 0
+ 1516              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1517 0000 08B5     		push	{r3, lr}
+ 1518              		.cfi_def_cfa_offset 8
+ 1519              		.cfi_offset 3, -8
+ 1520              		.cfi_offset 14, -4
+ 1521              	.LBB54:
+ 1522              	.LBB55:
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1523              		.loc 1 80 3 is_stmt 0 view .LVU645
+ 1524 0002 0225     		movs	r5, #2
+ 1525 0004 0C4C     		ldr	r4, .L42
+ 1526              	.L41:
+ 1527              	.LBE55:
+ 1528              	.LBE54:
+ 123:src/util/debug.c **** 	while (1)
+ 1529              		.loc 1 123 2 is_stmt 1 view .LVU646
+ 124:src/util/debug.c **** 	{
+ 125:src/util/debug.c **** 		flash_leds(2,300);
+ 1530              		.loc 1 125 3 view .LVU647
+ 1531              	.LVL87:
+ 1532              	.LBB57:
+ 1533              	.LBI54:
+  76:src/util/debug.c **** 	int i;
+ 1534              		.loc 1 76 6 view .LVU648
+ 1535              	.LBB56:
+  77:src/util/debug.c **** 
+ 1536              		.loc 1 77 2 view .LVU649
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1537              		.loc 1 79 2 view .LVU650
+ARM GAS  /tmp/cciSqR9x.s 			page 40
+
+
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1538              		.loc 1 79 16 discriminator 1 view .LVU651
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1539              		.loc 1 80 3 view .LVU652
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1540              		.loc 1 81 3 is_stmt 0 view .LVU653
+ 1541 0006 1022     		movs	r2, #16
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1542              		.loc 1 82 3 view .LVU654
+ 1543 0008 4FF48073 		mov	r3, #256
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1544              		.loc 1 80 3 view .LVU655
+ 1545 000c A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1546              		.loc 1 81 3 is_stmt 1 view .LVU656
+ 1547 000e A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1548              		.loc 1 82 3 view .LVU657
+ 1549 0010 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1550              		.loc 1 83 3 view .LVU658
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1551              		.loc 1 84 3 view .LVU659
+ 1552 0012 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1553              		.loc 1 85 3 view .LVU660
+ 1554 0014 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1555              		.loc 1 86 3 view .LVU661
+ 1556 0016 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1557              		.loc 1 87 3 view .LVU662
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1558              		.loc 1 79 25 discriminator 3 view .LVU663
+ 1559              	.LVL88:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1560              		.loc 1 79 16 discriminator 1 view .LVU664
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1561              		.loc 1 80 3 view .LVU665
+ 1562 0018 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1563              		.loc 1 81 3 view .LVU666
+ 1564 001a A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1565              		.loc 1 82 3 view .LVU667
+ 1566 001c A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1567              		.loc 1 83 3 view .LVU668
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1568              		.loc 1 84 3 view .LVU669
+ 1569 001e E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1570              		.loc 1 85 3 view .LVU670
+ 1571 0020 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1572              		.loc 1 86 3 view .LVU671
+ 1573 0022 E363     		str	r3, [r4, #60]
+ARM GAS  /tmp/cciSqR9x.s 			page 41
+
+
+  87:src/util/debug.c **** 	}
+ 1574              		.loc 1 87 3 view .LVU672
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1575              		.loc 1 79 25 discriminator 3 view .LVU673
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1576              		.loc 1 79 16 discriminator 1 view .LVU674
+ 1577              	.LVL89:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1578              		.loc 1 79 16 is_stmt 0 discriminator 1 view .LVU675
+ 1579              	.LBE56:
+ 1580              	.LBE57:
+ 1581              	.LBB58:
+ 1582              	.LBB59:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1583              		.loc 1 79 16 is_stmt 1 discriminator 1 view .LVU676
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1584              		.loc 1 80 3 view .LVU677
+ 1585 0024 A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1586              		.loc 1 81 3 view .LVU678
+ 1587 0026 A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1588              		.loc 1 82 3 view .LVU679
+ 1589 0028 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1590              		.loc 1 83 3 view .LVU680
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1591              		.loc 1 84 3 view .LVU681
+ 1592 002a E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1593              		.loc 1 85 3 view .LVU682
+ 1594 002c E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1595              		.loc 1 86 3 view .LVU683
+ 1596 002e E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1597              		.loc 1 87 3 view .LVU684
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1598              		.loc 1 79 25 discriminator 3 view .LVU685
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1599              		.loc 1 79 16 discriminator 1 view .LVU686
+ 1600              	.LVL90:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1601              		.loc 1 79 16 is_stmt 0 discriminator 1 view .LVU687
+ 1602              	.LBE59:
+ 1603              	.LBE58:
+ 126:src/util/debug.c **** 		flash_leds(1,600);
+ 127:src/util/debug.c **** 		usb_work();
+ 1604              		.loc 1 127 3 is_stmt 1 discriminator 2 view .LVU688
+ 1605 0030 FFF7FEFF 		bl	usb_work
+ 1606              	.LVL91:
+ 123:src/util/debug.c **** 	{
+ 1607              		.loc 1 123 8 view .LVU689
+ 1608 0034 E7E7     		b	.L41
+ 1609              	.L43:
+ 1610 0036 00BF     		.align	2
+ 1611              	.L42:
+ARM GAS  /tmp/cciSqR9x.s 			page 42
+
+
+ 1612 0038 00C00920 		.word	537509888
+ 1613              		.cfi_endproc
+ 1614              	.LFE11:
+ 1616              		.section	.text.xWIN,"ax",%progbits
+ 1617              		.align	1
+ 1618              		.p2align 2,,3
+ 1619              		.global	xWIN
+ 1620              		.syntax unified
+ 1621              		.thumb
+ 1622              		.thumb_func
+ 1624              	xWIN:
+ 1625              	.LFB12:
+ 128:src/util/debug.c **** 	}
+ 129:src/util/debug.c **** }
+ 130:src/util/debug.c **** 
+ 131:src/util/debug.c **** void xWIN(void)
+ 132:src/util/debug.c **** {
+ 1626              		.loc 1 132 1 view -0
+ 1627              		.cfi_startproc
+ 1628              		@ Volatile: function does not return.
+ 1629              		@ args = 0, pretend = 0, frame = 0
+ 1630              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1631 0000 08B5     		push	{r3, lr}
+ 1632              		.cfi_def_cfa_offset 8
+ 1633              		.cfi_offset 3, -8
+ 1634              		.cfi_offset 14, -4
+ 1635              	.LBB60:
+ 1636              	.LBB61:
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1637              		.loc 1 80 3 is_stmt 0 view .LVU691
+ 1638 0002 0225     		movs	r5, #2
+ 1639 0004 064C     		ldr	r4, .L46
+ 1640              	.L45:
+ 1641              	.LBE61:
+ 1642              	.LBE60:
+ 133:src/util/debug.c **** 	while (1)
+ 1643              		.loc 1 133 2 is_stmt 1 view .LVU692
+ 134:src/util/debug.c **** 	{
+ 135:src/util/debug.c **** 		flash_leds(1,150);
+ 1644              		.loc 1 135 3 view .LVU693
+ 1645              	.LVL92:
+ 1646              	.LBB63:
+ 1647              	.LBI60:
+  76:src/util/debug.c **** 	int i;
+ 1648              		.loc 1 76 6 view .LVU694
+ 1649              	.LBB62:
+  77:src/util/debug.c **** 
+ 1650              		.loc 1 77 2 view .LVU695
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1651              		.loc 1 79 2 view .LVU696
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1652              		.loc 1 79 16 discriminator 1 view .LVU697
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1653              		.loc 1 80 3 view .LVU698
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1654              		.loc 1 81 3 is_stmt 0 view .LVU699
+ 1655 0006 1022     		movs	r2, #16
+ARM GAS  /tmp/cciSqR9x.s 			page 43
+
+
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1656              		.loc 1 82 3 view .LVU700
+ 1657 0008 4FF48073 		mov	r3, #256
+  80:src/util/debug.c **** 		RXLED_SET;
+ 1658              		.loc 1 80 3 view .LVU701
+ 1659 000c A563     		str	r5, [r4, #56]
+  81:src/util/debug.c **** 		TXLED_SET;
+ 1660              		.loc 1 81 3 is_stmt 1 view .LVU702
+ 1661 000e A263     		str	r2, [r4, #56]
+  82:src/util/debug.c **** 		active_msleep(delay);
+ 1662              		.loc 1 82 3 view .LVU703
+ 1663 0010 A363     		str	r3, [r4, #56]
+  83:src/util/debug.c **** 		USRLED_CLR;
+ 1664              		.loc 1 83 3 view .LVU704
+  84:src/util/debug.c **** 		RXLED_CLR;
+ 1665              		.loc 1 84 3 view .LVU705
+ 1666 0012 E563     		str	r5, [r4, #60]
+  85:src/util/debug.c **** 		TXLED_CLR;
+ 1667              		.loc 1 85 3 view .LVU706
+ 1668 0014 E263     		str	r2, [r4, #60]
+  86:src/util/debug.c **** 		active_msleep(delay);
+ 1669              		.loc 1 86 3 view .LVU707
+ 1670 0016 E363     		str	r3, [r4, #60]
+  87:src/util/debug.c **** 	}
+ 1671              		.loc 1 87 3 view .LVU708
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1672              		.loc 1 79 25 discriminator 3 view .LVU709
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1673              		.loc 1 79 16 discriminator 1 view .LVU710
+ 1674              	.LVL93:
+  79:src/util/debug.c **** 		USRLED_SET;
+ 1675              		.loc 1 79 16 is_stmt 0 discriminator 1 view .LVU711
+ 1676              	.LBE62:
+ 1677              	.LBE63:
+ 136:src/util/debug.c **** 		usb_work();
+ 1678              		.loc 1 136 3 is_stmt 1 discriminator 2 view .LVU712
+ 1679 0018 FFF7FEFF 		bl	usb_work
+ 1680              	.LVL94:
+ 133:src/util/debug.c **** 	{
+ 1681              		.loc 1 133 8 view .LVU713
+ 1682 001c F3E7     		b	.L45
+ 1683              	.L47:
+ 1684 001e 00BF     		.align	2
+ 1685              	.L46:
+ 1686 0020 00C00920 		.word	537509888
+ 1687              		.cfi_endproc
+ 1688              	.LFE12:
+ 1690              		.text
+ 1691              	.Letext0:
+ 1692              		.file 3 "/usr/lib/gcc/arm-none-eabi/15/include/stdarg.h"
+ 1693              		.file 4 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 1694              		.file 5 "/usr/lib/gcc/arm-none-eabi/15/include/stddef.h"
+ 1695              		.file 6 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 1696              		.file 7 "src/util/tinyprintf.h"
+ 1697              		.file 8 "include/ubtbr/ubertooth_usb.h"
+ 1698              		.file 9 "include/ubtbr/console.h"
+ 1699              		.file 10 "<built-in>"
+ARM GAS  /tmp/cciSqR9x.s 			page 44
+
+
+ 1700              		.file 11 "../../host/libubertooth/src/ubertooth_interface.h"
+ARM GAS  /tmp/cciSqR9x.s 			page 45
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 debug.c
+     /tmp/cciSqR9x.s:19     .text.a_putc:00000000 $t
+     /tmp/cciSqR9x.s:25     .text.a_putc:00000000 a_putc
+     /tmp/cciSqR9x.s:45     .rodata.str1.4:00000000 $d
+     /tmp/cciSqR9x.s:49     .text.cprintf.constprop.0:00000000 $t
+     /tmp/cciSqR9x.s:55     .text.cprintf.constprop.0:00000000 cprintf.constprop.0
+     /tmp/cciSqR9x.s:108    .text.cprintf.constprop.0:00000020 $d
+     /tmp/cciSqR9x.s:114    .text.cprintf:00000000 $t
+     /tmp/cciSqR9x.s:121    .text.cprintf:00000000 cprintf
+     /tmp/cciSqR9x.s:172    .text.cprintf:00000020 $d
+     /tmp/cciSqR9x.s:177    .text.early_printf:00000000 $t
+     /tmp/cciSqR9x.s:184    .text.early_printf:00000000 early_printf
+     /tmp/cciSqR9x.s:310    .text.print_hex:00000000 $t
+     /tmp/cciSqR9x.s:317    .text.print_hex:00000000 print_hex
+     /tmp/cciSqR9x.s:361    .text.print_hex:0000001c $d
+     /tmp/cciSqR9x.s:366    .text.active_msleep:00000000 $t
+     /tmp/cciSqR9x.s:373    .text.active_msleep:00000000 active_msleep
+     /tmp/cciSqR9x.s:391    .text.flash_leds:00000000 $t
+     /tmp/cciSqR9x.s:398    .text.flash_leds:00000000 flash_leds
+     /tmp/cciSqR9x.s:464    .text.flash_leds:0000002c $d
+     /tmp/cciSqR9x.s:469    .text.xUSB_ERROR:00000000 $t
+     /tmp/cciSqR9x.s:476    .text.xUSB_ERROR:00000000 xUSB_ERROR
+     /tmp/cciSqR9x.s:828    .text.xUSB_ERROR:000000e4 $d
+     /tmp/cciSqR9x.s:833    .text.xTDMA_ERROR:00000000 $t
+     /tmp/cciSqR9x.s:840    .text.xTDMA_ERROR:00000000 xTDMA_ERROR
+     /tmp/cciSqR9x.s:1231   .text.xTDMA_ERROR:00000104 $d
+     /tmp/cciSqR9x.s:1236   .text.xDMA_ERROR:00000000 $t
+     /tmp/cciSqR9x.s:1243   .text.xDMA_ERROR:00000000 xDMA_ERROR
+     /tmp/cciSqR9x.s:1498   .text.xDMA_ERROR:000000a4 $d
+     /tmp/cciSqR9x.s:1503   .text.xOTHER_ERROR:00000000 $t
+     /tmp/cciSqR9x.s:1510   .text.xOTHER_ERROR:00000000 xOTHER_ERROR
+     /tmp/cciSqR9x.s:1612   .text.xOTHER_ERROR:00000038 $d
+     /tmp/cciSqR9x.s:1617   .text.xWIN:00000000 $t
+     /tmp/cciSqR9x.s:1624   .text.xWIN:00000000 xWIN
+     /tmp/cciSqR9x.s:1686   .text.xWIN:00000020 $d
+
+UNDEFINED SYMBOLS
+console_putc
+tfp_format
+memset
+tfp_vsnprintf
+usb_send_sync
+usb_work

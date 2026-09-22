@@ -1,0 +1,233 @@
+ARM GAS  /tmp/ccPgykzH.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"btbb.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/codec/btbb.c"
+  18              		.section	.text.btbb_gen_syncword,"ax",%progbits
+  19              		.align	1
+  20              		.p2align 2,,3
+  21              		.global	btbb_gen_syncword
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	btbb_gen_syncword:
+  27              	.LVL0:
+  28              	.LFB0:
+   1:src/codec/btbb.c **** /* -*- c -*- */
+   2:src/codec/btbb.c **** /*
+   3:src/codec/btbb.c ****  * Copyright 2007 - 2013 Dominic Spill, Michael Ossmann, Will Code
+   4:src/codec/btbb.c ****  *
+   5:src/codec/btbb.c ****  * This file is part of libbtbb
+   6:src/codec/btbb.c ****  *
+   7:src/codec/btbb.c ****  * This program is free software; you can redistribute it and/or modify
+   8:src/codec/btbb.c ****  * it under the terms of the GNU General Public License as published by
+   9:src/codec/btbb.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  10:src/codec/btbb.c ****  * any later version.
+  11:src/codec/btbb.c ****  *
+  12:src/codec/btbb.c ****  * This program is distributed in the hope that it will be useful,
+  13:src/codec/btbb.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  14:src/codec/btbb.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  15:src/codec/btbb.c ****  * GNU General Public License for more details.
+  16:src/codec/btbb.c ****  *
+  17:src/codec/btbb.c ****  * You should have received a copy of the GNU General Public License
+  18:src/codec/btbb.c ****  * along with libbtbb; see the file COPYING.  If not, write to
+  19:src/codec/btbb.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  20:src/codec/btbb.c ****  * Boston, MA 02110-1301, USA.
+  21:src/codec/btbb.c ****  */
+  22:src/codec/btbb.c **** 
+  23:src/codec/btbb.c **** #include <stdint.h>
+  24:src/codec/btbb.c **** 
+  25:src/codec/btbb.c **** /* default codeword modified for PN sequence and barker code */
+  26:src/codec/btbb.c **** #define DEFAULT_CODEWORD 0xb0000002c7820e7eULL
+  27:src/codec/btbb.c **** /*
+  28:src/codec/btbb.c ****  * generator matrix for sync word (64,30) linear block code
+  29:src/codec/btbb.c ****  * based on polynomial 0260534236651
+  30:src/codec/btbb.c ****  * thanks to http://www.ee.unb.ca/cgi-bin/tervo/polygen.pl
+ARM GAS  /tmp/ccPgykzH.s 			page 2
+
+
+  31:src/codec/btbb.c ****  * modified for barker code
+  32:src/codec/btbb.c ****  */
+  33:src/codec/btbb.c **** static const uint64_t sw_matrix[24] = {
+  34:src/codec/btbb.c ****         0xfe000002a0d1c014ULL, 0x01000003f0b9201fULL, 0x008000033ae40edbULL, 0x004000035fca99b9ULL,
+  35:src/codec/btbb.c ****         0x002000036d5dd208ULL, 0x00100001b6aee904ULL, 0x00080000db577482ULL, 0x000400006dabba41ULL,
+  36:src/codec/btbb.c ****         0x00020002f46d43f4ULL, 0x000100017a36a1faULL, 0x00008000bd1b50fdULL, 0x000040029c3536aaULL,
+  37:src/codec/btbb.c ****         0x000020014e1a9b55ULL, 0x0000100265b5d37eULL, 0x0000080132dae9bfULL, 0x000004025bd5ea0bULL,
+  38:src/codec/btbb.c ****         0x00000203ef526bd1ULL, 0x000001033511ab3cULL, 0x000000819a88d59eULL, 0x00000040cd446acfULL,
+  39:src/codec/btbb.c ****         0x00000022a41aabb3ULL, 0x0000001390b5cb0dULL, 0x0000000b0ae27b52ULL, 0x0000000585713da9ULL}
+  40:src/codec/btbb.c **** 
+  41:src/codec/btbb.c **** /* Generate Sync Word from an LAP */
+  42:src/codec/btbb.c **** uint64_t btbb_gen_syncword(const uint32_t LAP)
+  43:src/codec/btbb.c **** {
+  29              		.loc 1 43 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		.loc 1 43 1 is_stmt 0 view .LVU1
+  34 0000 30B5     		push	{r4, r5, lr}
+  35              		.cfi_def_cfa_offset 12
+  36              		.cfi_offset 4, -12
+  37              		.cfi_offset 5, -8
+  38              		.cfi_offset 14, -4
+  44:src/codec/btbb.c ****         int i;
+  39              		.loc 1 44 9 is_stmt 1 view .LVU2
+  45:src/codec/btbb.c ****         uint64_t codeword = DEFAULT_CODEWORD;
+  40              		.loc 1 45 9 view .LVU3
+  46:src/codec/btbb.c **** 
+  47:src/codec/btbb.c ****         /* the sync word generated is in host order, not air order */
+  48:src/codec/btbb.c ****         for (i = 0; i < 24; i++)
+  41              		.loc 1 48 9 view .LVU4
+  42              	.LVL1:
+  43              		.loc 1 48 23 discriminator 1 view .LVU5
+  44              		.loc 1 48 16 is_stmt 0 view .LVU6
+  45 0002 0023     		movs	r3, #0
+  49:src/codec/btbb.c ****                 if (LAP & (0x800000 >> i))
+  46              		.loc 1 49 37 view .LVU7
+  47 0004 4FF4000E 		mov	lr, #8388608
+  43:src/codec/btbb.c ****         int i;
+  48              		.loc 1 43 1 view .LVU8
+  49 0008 0446     		mov	r4, r0
+  50 000a DFF824C0 		ldr	ip, .L9
+  45:src/codec/btbb.c **** 
+  51              		.loc 1 45 18 view .LVU9
+  52 000e 0948     		ldr	r0, .L9+4
+  53              	.LVL2:
+  45:src/codec/btbb.c **** 
+  54              		.loc 1 45 18 view .LVU10
+  55 0010 0949     		ldr	r1, .L9+8
+  56              	.LVL3:
+  57              	.L3:
+  58              		.loc 1 49 17 is_stmt 1 view .LVU11
+  50:src/codec/btbb.c ****                         codeword ^= sw_matrix[i];
+  59              		.loc 1 50 25 view .LVU12
+  49:src/codec/btbb.c ****                         codeword ^= sw_matrix[i];
+  60              		.loc 1 49 37 is_stmt 0 view .LVU13
+  61 0012 4EFA03F2 		asr	r2, lr, r3
+ARM GAS  /tmp/ccPgykzH.s 			page 3
+
+
+  49:src/codec/btbb.c ****                         codeword ^= sw_matrix[i];
+  62              		.loc 1 49 20 view .LVU14
+  63 0016 2242     		tst	r2, r4
+  64 0018 03F10103 		add	r3, r3, #1
+  65              	.LVL4:
+  49:src/codec/btbb.c ****                         codeword ^= sw_matrix[i];
+  66              		.loc 1 49 20 view .LVU15
+  67 001c 03D0     		beq	.L2
+  68              		.loc 1 50 34 view .LVU16
+  69 001e DCE90052 		ldrd	r5, r2, [ip]
+  70 0022 6840     		eors	r0, r0, r5
+  71              	.LVL5:
+  72              		.loc 1 50 34 view .LVU17
+  73 0024 5140     		eors	r1, r1, r2
+  74              	.L2:
+  75              	.LVL6:
+  48:src/codec/btbb.c ****                 if (LAP & (0x800000 >> i))
+  76              		.loc 1 48 30 is_stmt 1 discriminator 2 view .LVU18
+  48:src/codec/btbb.c ****                 if (LAP & (0x800000 >> i))
+  77              		.loc 1 48 23 discriminator 1 view .LVU19
+  78 0026 182B     		cmp	r3, #24
+  79 0028 0CF1080C 		add	ip, ip, #8
+  80 002c F1D1     		bne	.L3
+  51:src/codec/btbb.c **** 
+  52:src/codec/btbb.c ****         return codeword;
+  81              		.loc 1 52 9 view .LVU20
+  53:src/codec/btbb.c **** }
+  82              		.loc 1 53 1 is_stmt 0 view .LVU21
+  83 002e 30BD     		pop	{r4, r5, pc}
+  84              	.LVL7:
+  85              	.L10:
+  86              		.loc 1 53 1 view .LVU22
+  87              		.align	2
+  88              	.L9:
+  89 0030 00000000 		.word	.LANCHOR0
+  90 0034 7E0E82C7 		.word	-947777922
+  91 0038 020000B0 		.word	-1342177278
+  92              		.cfi_endproc
+  93              	.LFE0:
+  95              		.section	.rodata
+  96              		.align	3
+  97              		.set	.LANCHOR0,. + 0
+ 100              	sw_matrix:
+ 101 0000 14C0D1A0 		.word	-1596866540
+ 102 0004 020000FE 		.word	-33554430
+ 103 0008 1F20B9F0 		.word	-256303073
+ 104 000c 03000001 		.word	16777219
+ 105 0010 DB0EE43A 		.word	988024539
+ 106 0014 03008000 		.word	8388611
+ 107 0018 B999CA5F 		.word	1607113145
+ 108 001c 03004000 		.word	4194307
+ 109 0020 08D25D6D 		.word	1834865160
+ 110 0024 03002000 		.word	2097155
+ 111 0028 04E9AEB6 		.word	-1230051068
+ 112 002c 01001000 		.word	1048577
+ 113 0030 827457DB 		.word	-615025534
+ 114 0034 00000800 		.word	524288
+ARM GAS  /tmp/ccPgykzH.s 			page 4
+
+
+ 115 0038 41BAAB6D 		.word	1839970881
+ 116 003c 00000400 		.word	262144
+ 117 0040 F4436DF4 		.word	-194165772
+ 118 0044 02000200 		.word	131074
+ 119 0048 FAA1367A 		.word	2050400762
+ 120 004c 01000100 		.word	65537
+ 121 0050 FD501BBD 		.word	-1122283267
+ 122 0054 00800000 		.word	32768
+ 123 0058 AA36359C 		.word	-1674234198
+ 124 005c 02400000 		.word	16386
+ 125 0060 559B1A4E 		.word	1310366549
+ 126 0064 01200000 		.word	8193
+ 127 0068 7ED3B565 		.word	1706414974
+ 128 006c 02100000 		.word	4098
+ 129 0070 BFE9DA32 		.word	853207487
+ 130 0074 01080000 		.word	2049
+ 131 0078 0BEAD55B 		.word	1540745739
+ 132 007c 02040000 		.word	1026
+ 133 0080 D16B52EF 		.word	-279811119
+ 134 0084 03020000 		.word	515
+ 135 0088 3CAB1135 		.word	890350396
+ 136 008c 03010000 		.word	259
+ 137 0090 9ED5889A 		.word	-1702308450
+ 138 0094 81000000 		.word	129
+ 139 0098 CF6A44CD 		.word	-851154225
+ 140 009c 40000000 		.word	64
+ 141 00a0 B3AB1AA4 		.word	-1541755981
+ 142 00a4 22000000 		.word	34
+ 143 00a8 0DCBB590 		.word	-1867134195
+ 144 00ac 13000000 		.word	19
+ 145 00b0 527BE20A 		.word	182614866
+ 146 00b4 0B000000 		.word	11
+ 147 00b8 A93D7185 		.word	-2056176215
+ 148 00bc 05000000 		.word	5
+ 149              		.text
+ 150              	.Letext0:
+ 151              		.file 2 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 152              		.file 3 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ARM GAS  /tmp/ccPgykzH.s 			page 5
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 btbb.c
+     /tmp/ccPgykzH.s:19     .text.btbb_gen_syncword:00000000 $t
+     /tmp/ccPgykzH.s:26     .text.btbb_gen_syncword:00000000 btbb_gen_syncword
+     /tmp/ccPgykzH.s:89     .text.btbb_gen_syncword:00000030 $d
+     /tmp/ccPgykzH.s:96     .rodata:00000000 $d
+     /tmp/ccPgykzH.s:100    .rodata:00000000 sw_matrix
+
+NO UNDEFINED SYMBOLS

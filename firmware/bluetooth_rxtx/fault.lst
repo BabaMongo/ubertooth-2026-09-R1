@@ -1,0 +1,736 @@
+ARM GAS  /tmp/cc4aJ1h0.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 4
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"fault.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "fault.c"
+  18              		.section	.text.delay_30ms,"ax",%progbits
+  19              		.align	1
+  20              		.syntax unified
+  21              		.thumb
+  22              		.thumb_func
+  24              	delay_30ms:
+  25              	.LFB0:
+   1:fault.c       **** /*
+   2:fault.c       ****  * Copyright 2019 Mike Ryan
+   3:fault.c       ****  *
+   4:fault.c       ****  * This file is part of Project Ubertooth and is released under the
+   5:fault.c       ****  * terms of the GPL. Refer to COPYING for more information.
+   6:fault.c       ****  */
+   7:fault.c       **** 
+   8:fault.c       **** #include "ubertooth.h"
+   9:fault.c       **** 
+  10:fault.c       **** // delay for about 30 ms (very rough)
+  11:fault.c       **** static void delay_30ms(void) {
+  26              		.loc 1 11 30 view -0
+  27              		.cfi_startproc
+  28              		@ args = 0, pretend = 0, frame = 8
+  29              		@ frame_needed = 0, uses_anonymous_args = 0
+  30              		@ link register save eliminated.
+  31 0000 82B0     		sub	sp, sp, #8
+  32              		.cfi_def_cfa_offset 8
+  12:fault.c       **** 	volatile int i;
+  33              		.loc 1 12 2 view .LVU1
+  13:fault.c       **** 	for (i = 0; i < 3000000; ++i)
+  34              		.loc 1 13 2 view .LVU2
+  35              		.loc 1 13 9 is_stmt 0 view .LVU3
+  36 0002 0023     		movs	r3, #0
+  37              		.loc 1 13 16 discriminator 1 view .LVU4
+  38 0004 054A     		ldr	r2, .L4
+  39              		.loc 1 13 9 view .LVU5
+  40 0006 0193     		str	r3, [sp, #4]
+  41              	.L2:
+  42              		.loc 1 13 16 is_stmt 1 discriminator 1 view .LVU6
+  43 0008 019B     		ldr	r3, [sp, #4]
+  44 000a 9342     		cmp	r3, r2
+  45 000c 01DD     		ble	.L3
+ARM GAS  /tmp/cc4aJ1h0.s 			page 2
+
+
+  14:fault.c       **** 		;
+  15:fault.c       **** }
+  46              		.loc 1 15 1 is_stmt 0 view .LVU7
+  47 000e 02B0     		add	sp, sp, #8
+  48              		.cfi_remember_state
+  49              		.cfi_def_cfa_offset 0
+  50              		@ sp needed
+  51 0010 7047     		bx	lr
+  52              	.L3:
+  53              		.cfi_restore_state
+  13:fault.c       **** 	for (i = 0; i < 3000000; ++i)
+  54              		.loc 1 13 27 is_stmt 1 discriminator 3 view .LVU8
+  55 0012 019B     		ldr	r3, [sp, #4]
+  56 0014 0133     		adds	r3, r3, #1
+  57 0016 0193     		str	r3, [sp, #4]
+  58 0018 F6E7     		b	.L2
+  59              	.L5:
+  60 001a 00BF     		.align	2
+  61              	.L4:
+  62 001c BFC62D00 		.word	2999999
+  63              		.cfi_endproc
+  64              	.LFE0:
+  66              		.section	.text.flash_leds,"ax",%progbits
+  67              		.align	1
+  68              		.syntax unified
+  69              		.thumb
+  70              		.thumb_func
+  72              	flash_leds:
+  73              	.LVL0:
+  74              	.LFB1:
+  16:fault.c       **** 
+  17:fault.c       **** // flash LEDs a certain number of times
+  18:fault.c       **** static void flash_leds(int count) {
+  75              		.loc 1 18 35 view -0
+  76              		.cfi_startproc
+  77              		@ args = 0, pretend = 0, frame = 0
+  78              		@ frame_needed = 0, uses_anonymous_args = 0
+  79              		.loc 1 18 35 is_stmt 0 view .LVU10
+  80 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+  81              		.cfi_def_cfa_offset 24
+  82              		.cfi_offset 3, -24
+  83              		.cfi_offset 4, -20
+  84              		.cfi_offset 5, -16
+  85              		.cfi_offset 6, -12
+  86              		.cfi_offset 7, -8
+  87              		.cfi_offset 14, -4
+  19:fault.c       **** 	int i;
+  88              		.loc 1 19 2 is_stmt 1 view .LVU11
+  20:fault.c       **** 
+  21:fault.c       **** 	for (i = 0; i < count; ++i) {
+  89              		.loc 1 21 2 view .LVU12
+  90              	.LVL1:
+  91              		.loc 1 21 16 discriminator 1 view .LVU13
+  92              		.loc 1 21 9 is_stmt 0 view .LVU14
+  93 0002 0024     		movs	r4, #0
+  22:fault.c       **** 		USRLED_SET;
+  94              		.loc 1 22 3 view .LVU15
+ARM GAS  /tmp/cc4aJ1h0.s 			page 3
+
+
+  95 0004 0227     		movs	r7, #2
+  96 0006 0C49     		ldr	r1, .L9
+  97              	.LVL2:
+  98              	.L7:
+  99              		.loc 1 22 3 is_stmt 1 view .LVU16
+  23:fault.c       **** 		RXLED_SET;
+ 100              		.loc 1 23 3 is_stmt 0 view .LVU17
+ 101 0008 1026     		movs	r6, #16
+  24:fault.c       **** 		TXLED_SET;
+ 102              		.loc 1 24 3 view .LVU18
+ 103 000a 4FF48075 		mov	r5, #256
+  22:fault.c       **** 		USRLED_SET;
+ 104              		.loc 1 22 3 view .LVU19
+ 105 000e 8F63     		str	r7, [r1, #56]
+  23:fault.c       **** 		RXLED_SET;
+ 106              		.loc 1 23 3 is_stmt 1 view .LVU20
+ 107 0010 8E63     		str	r6, [r1, #56]
+ 108              		.loc 1 24 3 view .LVU21
+ 109 0012 8D63     		str	r5, [r1, #56]
+  25:fault.c       **** 		delay_30ms();
+ 110              		.loc 1 25 3 view .LVU22
+ 111 0014 FFF7FEFF 		bl	delay_30ms
+ 112              	.LVL3:
+  26:fault.c       **** 		USRLED_CLR;
+ 113              		.loc 1 26 3 view .LVU23
+  21:fault.c       **** 		USRLED_SET;
+ 114              		.loc 1 21 25 is_stmt 0 discriminator 3 view .LVU24
+ 115 0018 0134     		adds	r4, r4, #1
+ 116              	.LVL4:
+ 117              		.loc 1 26 3 view .LVU25
+ 118 001a CF63     		str	r7, [r1, #60]
+  27:fault.c       **** 		RXLED_CLR;
+ 119              		.loc 1 27 3 is_stmt 1 view .LVU26
+ 120 001c CE63     		str	r6, [r1, #60]
+  28:fault.c       **** 		TXLED_CLR;
+ 121              		.loc 1 28 3 view .LVU27
+ 122 001e CD63     		str	r5, [r1, #60]
+  29:fault.c       **** 		delay_30ms();
+ 123              		.loc 1 29 3 view .LVU28
+ 124 0020 FFF7FEFF 		bl	delay_30ms
+ 125              	.LVL5:
+  21:fault.c       **** 		USRLED_SET;
+ 126              		.loc 1 21 25 discriminator 3 view .LVU29
+  21:fault.c       **** 		USRLED_SET;
+ 127              		.loc 1 21 16 discriminator 1 view .LVU30
+ 128 0024 A042     		cmp	r0, r4
+ 129 0026 EFD1     		bne	.L7
+  30:fault.c       **** 	}
+  31:fault.c       **** 	delay_30ms();
+ 130              		.loc 1 31 2 view .LVU31
+ 131 0028 FFF7FEFF 		bl	delay_30ms
+ 132              	.LVL6:
+  32:fault.c       **** 	delay_30ms();
+ 133              		.loc 1 32 2 view .LVU32
+ 134 002c FFF7FEFF 		bl	delay_30ms
+ 135              	.LVL7:
+  33:fault.c       **** 	delay_30ms();
+ARM GAS  /tmp/cc4aJ1h0.s 			page 4
+
+
+ 136              		.loc 1 33 2 view .LVU33
+  34:fault.c       **** }
+ 137              		.loc 1 34 1 is_stmt 0 view .LVU34
+ 138 0030 BDE8F840 		pop	{r3, r4, r5, r6, r7, lr}
+ 139              		.cfi_restore 14
+ 140              		.cfi_restore 7
+ 141              		.cfi_restore 6
+ 142              		.cfi_restore 5
+ 143              		.cfi_restore 4
+ 144              		.cfi_restore 3
+ 145              		.cfi_def_cfa_offset 0
+ 146              	.LVL8:
+  33:fault.c       **** 	delay_30ms();
+ 147              		.loc 1 33 2 view .LVU35
+ 148 0034 FFF7FEBF 		b	delay_30ms
+ 149              	.LVL9:
+ 150              	.L10:
+ 151              		.align	2
+ 152              	.L9:
+ 153 0038 00C00920 		.word	537509888
+ 154              		.cfi_endproc
+ 155              	.LFE1:
+ 157              		.section	.text.HardFault_Handler,"ax",%progbits
+ 158              		.align	1
+ 159              		.global	HardFault_Handler
+ 160              		.syntax unified
+ 161              		.thumb
+ 162              		.thumb_func
+ 164              	HardFault_Handler:
+ 165              	.LFB2:
+  35:fault.c       **** 
+  36:fault.c       **** void HardFault_Handler(void) {
+ 166              		.loc 1 36 30 is_stmt 1 view -0
+ 167              		.cfi_startproc
+ 168              		@ args = 0, pretend = 0, frame = 0
+ 169              		@ frame_needed = 0, uses_anonymous_args = 0
+ 170 0000 38B5     		push	{r3, r4, r5, lr}
+ 171              		.cfi_def_cfa_offset 16
+ 172              		.cfi_offset 3, -16
+ 173              		.cfi_offset 4, -12
+ 174              		.cfi_offset 5, -8
+ 175              		.cfi_offset 14, -4
+  37:fault.c       **** 	uint32_t val = SCB_HFSR;
+ 176              		.loc 1 37 2 view .LVU37
+ 177              		.loc 1 37 11 is_stmt 0 view .LVU38
+ 178 0002 4FF0E023 		mov	r3, #-536813568
+ 179 0006 D3F82C4D 		ldr	r4, [r3, #3372]
+ 180              	.LVL10:
+  38:fault.c       **** 
+  39:fault.c       **** 	while (1) {
+  40:fault.c       **** 		flash_leds(2);
+  41:fault.c       **** 
+  42:fault.c       **** 		if (val & (1 << 1)) {
+ 181              		.loc 1 42 11 view .LVU39
+ 182 000a 04F00205 		and	r5, r4, #2
+  43:fault.c       **** 			flash_leds(3); // vector table read
+  44:fault.c       **** 		} else if (val & (1 << 30)) {
+ARM GAS  /tmp/cc4aJ1h0.s 			page 5
+
+
+ 183              		.loc 1 44 18 view .LVU40
+ 184 000e 04F08044 		and	r4, r4, #1073741824
+ 185              	.LVL11:
+ 186              	.L14:
+  39:fault.c       **** 		flash_leds(2);
+ 187              		.loc 1 39 2 is_stmt 1 view .LVU41
+  40:fault.c       **** 
+ 188              		.loc 1 40 3 view .LVU42
+ 189 0012 0220     		movs	r0, #2
+ 190 0014 FFF7FEFF 		bl	flash_leds
+ 191              	.LVL12:
+  42:fault.c       **** 			flash_leds(3); // vector table read
+ 192              		.loc 1 42 3 view .LVU43
+  42:fault.c       **** 			flash_leds(3); // vector table read
+ 193              		.loc 1 42 6 is_stmt 0 view .LVU44
+ 194 0018 4DB1     		cbz	r5, .L12
+  43:fault.c       **** 		} else if (val & (1 << 30)) {
+ 195              		.loc 1 43 4 is_stmt 1 view .LVU45
+ 196 001a 0320     		movs	r0, #3
+ 197              	.L18:
+  45:fault.c       **** 			flash_leds(4); // forced (should never happen)
+ 198              		.loc 1 45 4 is_stmt 0 view .LVU46
+ 199 001c FFF7FEFF 		bl	flash_leds
+ 200              	.LVL13:
+ 201              	.L13:
+  46:fault.c       **** 		}
+  47:fault.c       **** 
+  48:fault.c       **** 		delay_30ms();
+ 202              		.loc 1 48 3 is_stmt 1 view .LVU47
+ 203 0020 FFF7FEFF 		bl	delay_30ms
+ 204              	.LVL14:
+  49:fault.c       **** 		delay_30ms();
+ 205              		.loc 1 49 3 view .LVU48
+ 206 0024 FFF7FEFF 		bl	delay_30ms
+ 207              	.LVL15:
+  50:fault.c       **** 		delay_30ms();
+ 208              		.loc 1 50 3 view .LVU49
+ 209 0028 FFF7FEFF 		bl	delay_30ms
+ 210              	.LVL16:
+  39:fault.c       **** 		flash_leds(2);
+ 211              		.loc 1 39 8 view .LVU50
+  40:fault.c       **** 
+ 212              		.loc 1 40 3 is_stmt 0 view .LVU51
+ 213 002c F1E7     		b	.L14
+ 214              	.L12:
+  44:fault.c       **** 			flash_leds(4); // forced (should never happen)
+ 215              		.loc 1 44 10 is_stmt 1 view .LVU52
+  44:fault.c       **** 			flash_leds(4); // forced (should never happen)
+ 216              		.loc 1 44 13 is_stmt 0 view .LVU53
+ 217 002e 002C     		cmp	r4, #0
+ 218 0030 F6D0     		beq	.L13
+  45:fault.c       **** 		}
+ 219              		.loc 1 45 4 is_stmt 1 view .LVU54
+ 220 0032 0420     		movs	r0, #4
+ 221 0034 F2E7     		b	.L18
+ 222              		.cfi_endproc
+ 223              	.LFE2:
+ARM GAS  /tmp/cc4aJ1h0.s 			page 6
+
+
+ 225              		.section	.text.MemManagement_Handler,"ax",%progbits
+ 226              		.align	1
+ 227              		.global	MemManagement_Handler
+ 228              		.syntax unified
+ 229              		.thumb
+ 230              		.thumb_func
+ 232              	MemManagement_Handler:
+ 233              	.LFB3:
+  51:fault.c       **** 	}
+  52:fault.c       **** }
+  53:fault.c       **** 
+  54:fault.c       **** void MemManagement_Handler(void) {
+ 234              		.loc 1 54 34 view -0
+ 235              		.cfi_startproc
+ 236              		@ args = 0, pretend = 0, frame = 24
+ 237              		@ frame_needed = 0, uses_anonymous_args = 0
+ 238 0000 30B5     		push	{r4, r5, lr}
+ 239              		.cfi_def_cfa_offset 12
+ 240              		.cfi_offset 4, -12
+ 241              		.cfi_offset 5, -8
+ 242              		.cfi_offset 14, -4
+ 243 0002 87B0     		sub	sp, sp, #28
+ 244              		.cfi_def_cfa_offset 40
+  55:fault.c       **** 	int i;
+ 245              		.loc 1 55 2 view .LVU56
+  56:fault.c       **** 	int offset[5] = { 7, 4, 3, 1, 0 };
+ 246              		.loc 1 56 2 view .LVU57
+ 247              		.loc 1 56 6 is_stmt 0 view .LVU58
+ 248 0004 114D     		ldr	r5, .L25
+ 249 0006 01AC     		add	r4, sp, #4
+ 250 0008 0FCD     		ldmia	r5!, {r0, r1, r2, r3}
+ 251 000a 0FC4     		stmia	r4!, {r0, r1, r2, r3}
+ 252 000c 2B68     		ldr	r3, [r5]
+ 253 000e 2360     		str	r3, [r4]
+  57:fault.c       **** 	uint8_t mmsr = SCB_MMSR;
+ 254              		.loc 1 57 2 is_stmt 1 view .LVU59
+ 255              		.loc 1 57 10 is_stmt 0 view .LVU60
+ 256 0010 0F4B     		ldr	r3, .L25+4
+ 257 0012 93F82840 		ldrb	r4, [r3, #40]	@ zero_extendqisi2
+ 258 0016 E4B2     		uxtb	r4, r4
+ 259              	.LVL17:
+ 260              	.L23:
+  58:fault.c       **** 
+  59:fault.c       **** 	while (1) {
+ 261              		.loc 1 59 2 is_stmt 1 view .LVU61
+  60:fault.c       **** 		flash_leds(3);
+ 262              		.loc 1 60 3 view .LVU62
+ 263 0018 0320     		movs	r0, #3
+ 264 001a FFF7FEFF 		bl	flash_leds
+ 265              	.LVL18:
+  61:fault.c       **** 
+  62:fault.c       **** 		for (i = 0; i < 5; ++i) {
+ 266              		.loc 1 62 3 view .LVU63
+ 267              		.loc 1 62 17 discriminator 1 view .LVU64
+ 268              		.loc 1 62 10 is_stmt 0 view .LVU65
+ 269 001e 0020     		movs	r0, #0
+ 270 0020 01AB     		add	r3, sp, #4
+ARM GAS  /tmp/cc4aJ1h0.s 			page 7
+
+
+ 271              	.LVL19:
+ 272              	.L22:
+  63:fault.c       **** 			if (mmsr & (1 << offset[i])) {
+ 273              		.loc 1 63 4 is_stmt 1 view .LVU66
+ 274              		.loc 1 63 8 is_stmt 0 view .LVU67
+ 275 0022 1A68     		ldr	r2, [r3]
+  64:fault.c       **** 				flash_leds(i+1);
+ 276              		.loc 1 64 5 view .LVU68
+ 277 0024 0130     		adds	r0, r0, #1
+ 278              	.LVL20:
+  63:fault.c       **** 			if (mmsr & (1 << offset[i])) {
+ 279              		.loc 1 63 8 view .LVU69
+ 280 0026 44FA02F2 		asr	r2, r4, r2
+  63:fault.c       **** 			if (mmsr & (1 << offset[i])) {
+ 281              		.loc 1 63 7 view .LVU70
+ 282 002a D207     		lsls	r2, r2, #31
+ 283 002c 08D5     		bpl	.L20
+ 284              		.loc 1 64 5 is_stmt 1 view .LVU71
+ 285 002e FFF7FEFF 		bl	flash_leds
+ 286              	.LVL21:
+  65:fault.c       **** 				break;
+ 287              		.loc 1 65 5 view .LVU72
+ 288              	.L21:
+  66:fault.c       **** 			}
+  67:fault.c       **** 		}
+  68:fault.c       **** 
+  69:fault.c       **** 		delay_30ms();
+ 289              		.loc 1 69 3 view .LVU73
+ 290 0032 FFF7FEFF 		bl	delay_30ms
+ 291              	.LVL22:
+  70:fault.c       **** 		delay_30ms();
+ 292              		.loc 1 70 3 view .LVU74
+ 293 0036 FFF7FEFF 		bl	delay_30ms
+ 294              	.LVL23:
+  71:fault.c       **** 		delay_30ms();
+ 295              		.loc 1 71 3 view .LVU75
+ 296 003a FFF7FEFF 		bl	delay_30ms
+ 297              	.LVL24:
+  59:fault.c       **** 		flash_leds(3);
+ 298              		.loc 1 59 8 view .LVU76
+  60:fault.c       **** 
+ 299              		.loc 1 60 3 is_stmt 0 view .LVU77
+ 300 003e EBE7     		b	.L23
+ 301              	.LVL25:
+ 302              	.L20:
+  62:fault.c       **** 			if (mmsr & (1 << offset[i])) {
+ 303              		.loc 1 62 17 discriminator 1 view .LVU78
+ 304 0040 0528     		cmp	r0, #5
+ 305 0042 03F10403 		add	r3, r3, #4
+  62:fault.c       **** 			if (mmsr & (1 << offset[i])) {
+ 306              		.loc 1 62 22 is_stmt 1 discriminator 2 view .LVU79
+ 307              	.LVL26:
+  62:fault.c       **** 			if (mmsr & (1 << offset[i])) {
+ 308              		.loc 1 62 17 discriminator 1 view .LVU80
+ 309 0046 ECD1     		bne	.L22
+ 310 0048 F3E7     		b	.L21
+ 311              	.L26:
+ARM GAS  /tmp/cc4aJ1h0.s 			page 8
+
+
+ 312 004a 00BF     		.align	2
+ 313              	.L25:
+ 314 004c 00000000 		.word	.LANCHOR0
+ 315 0050 00ED00E0 		.word	-536810240
+ 316              		.cfi_endproc
+ 317              	.LFE3:
+ 319              		.section	.text.BusFault_Handler,"ax",%progbits
+ 320              		.align	1
+ 321              		.global	BusFault_Handler
+ 322              		.syntax unified
+ 323              		.thumb
+ 324              		.thumb_func
+ 326              	BusFault_Handler:
+ 327              	.LFB4:
+  72:fault.c       **** 	}
+  73:fault.c       **** }
+  74:fault.c       **** 
+  75:fault.c       **** void BusFault_Handler(void) {
+ 328              		.loc 1 75 29 view -0
+ 329              		.cfi_startproc
+ 330              		@ args = 0, pretend = 0, frame = 24
+ 331              		@ frame_needed = 0, uses_anonymous_args = 0
+ 332 0000 30B5     		push	{r4, r5, lr}
+ 333              		.cfi_def_cfa_offset 12
+ 334              		.cfi_offset 4, -12
+ 335              		.cfi_offset 5, -8
+ 336              		.cfi_offset 14, -4
+ 337 0002 87B0     		sub	sp, sp, #28
+ 338              		.cfi_def_cfa_offset 40
+  76:fault.c       **** 	int i;
+ 339              		.loc 1 76 2 view .LVU82
+  77:fault.c       **** 	int offset[6] = { 7, 4, 3, 2, 1, 0 };
+ 340              		.loc 1 77 2 view .LVU83
+ 341              		.loc 1 77 6 is_stmt 0 view .LVU84
+ 342 0004 6C46     		mov	r4, sp
+ 343 0006 124D     		ldr	r5, .L33
+ 344 0008 0FCD     		ldmia	r5!, {r0, r1, r2, r3}
+ 345 000a 0FC4     		stmia	r4!, {r0, r1, r2, r3}
+ 346 000c 95E80300 		ldm	r5, {r0, r1}
+ 347 0010 84E80300 		stm	r4, {r0, r1}
+  78:fault.c       **** 	uint8_t bfsr = SCB_BFSR;
+ 348              		.loc 1 78 2 is_stmt 1 view .LVU85
+ 349              		.loc 1 78 10 is_stmt 0 view .LVU86
+ 350 0014 0F4B     		ldr	r3, .L33+4
+ 351 0016 93F82940 		ldrb	r4, [r3, #41]	@ zero_extendqisi2
+ 352 001a E4B2     		uxtb	r4, r4
+ 353              	.LVL27:
+ 354              	.L31:
+  79:fault.c       **** 
+  80:fault.c       **** 	while (1) {
+ 355              		.loc 1 80 2 is_stmt 1 view .LVU87
+  81:fault.c       **** 		flash_leds(4);
+ 356              		.loc 1 81 3 view .LVU88
+ 357 001c 0420     		movs	r0, #4
+ 358 001e FFF7FEFF 		bl	flash_leds
+ 359              	.LVL28:
+  82:fault.c       **** 
+ARM GAS  /tmp/cc4aJ1h0.s 			page 9
+
+
+  83:fault.c       **** 		for (i = 0; i < 6; ++i) {
+ 360              		.loc 1 83 3 view .LVU89
+ 361              		.loc 1 83 17 discriminator 1 view .LVU90
+ 362 0022 6B46     		mov	r3, sp
+ 363              		.loc 1 83 10 is_stmt 0 view .LVU91
+ 364 0024 0020     		movs	r0, #0
+ 365              	.LVL29:
+ 366              	.L30:
+  84:fault.c       **** 			if (bfsr & (1 << offset[i])) {
+ 367              		.loc 1 84 4 is_stmt 1 view .LVU92
+ 368              		.loc 1 84 8 is_stmt 0 view .LVU93
+ 369 0026 1A68     		ldr	r2, [r3]
+  85:fault.c       **** 				flash_leds(i+1);
+ 370              		.loc 1 85 5 view .LVU94
+ 371 0028 0130     		adds	r0, r0, #1
+ 372              	.LVL30:
+  84:fault.c       **** 			if (bfsr & (1 << offset[i])) {
+ 373              		.loc 1 84 8 view .LVU95
+ 374 002a 44FA02F2 		asr	r2, r4, r2
+  84:fault.c       **** 			if (bfsr & (1 << offset[i])) {
+ 375              		.loc 1 84 7 view .LVU96
+ 376 002e D207     		lsls	r2, r2, #31
+ 377 0030 08D5     		bpl	.L28
+ 378              		.loc 1 85 5 is_stmt 1 view .LVU97
+ 379 0032 FFF7FEFF 		bl	flash_leds
+ 380              	.LVL31:
+  86:fault.c       **** 				break;
+ 381              		.loc 1 86 5 view .LVU98
+ 382              	.L29:
+  87:fault.c       **** 			}
+  88:fault.c       **** 		}
+  89:fault.c       **** 
+  90:fault.c       **** 		delay_30ms();
+ 383              		.loc 1 90 3 view .LVU99
+ 384 0036 FFF7FEFF 		bl	delay_30ms
+ 385              	.LVL32:
+  91:fault.c       **** 		delay_30ms();
+ 386              		.loc 1 91 3 view .LVU100
+ 387 003a FFF7FEFF 		bl	delay_30ms
+ 388              	.LVL33:
+  92:fault.c       **** 		delay_30ms();
+ 389              		.loc 1 92 3 view .LVU101
+ 390 003e FFF7FEFF 		bl	delay_30ms
+ 391              	.LVL34:
+  80:fault.c       **** 		flash_leds(4);
+ 392              		.loc 1 80 8 view .LVU102
+  81:fault.c       **** 
+ 393              		.loc 1 81 3 is_stmt 0 view .LVU103
+ 394 0042 EBE7     		b	.L31
+ 395              	.LVL35:
+ 396              	.L28:
+  83:fault.c       **** 			if (bfsr & (1 << offset[i])) {
+ 397              		.loc 1 83 17 discriminator 1 view .LVU104
+ 398 0044 0628     		cmp	r0, #6
+ 399 0046 03F10403 		add	r3, r3, #4
+  83:fault.c       **** 			if (bfsr & (1 << offset[i])) {
+ 400              		.loc 1 83 22 is_stmt 1 discriminator 2 view .LVU105
+ARM GAS  /tmp/cc4aJ1h0.s 			page 10
+
+
+ 401              	.LVL36:
+  83:fault.c       **** 			if (bfsr & (1 << offset[i])) {
+ 402              		.loc 1 83 17 discriminator 1 view .LVU106
+ 403 004a ECD1     		bne	.L30
+ 404 004c F3E7     		b	.L29
+ 405              	.L34:
+ 406 004e 00BF     		.align	2
+ 407              	.L33:
+ 408 0050 14000000 		.word	.LANCHOR0+20
+ 409 0054 00ED00E0 		.word	-536810240
+ 410              		.cfi_endproc
+ 411              	.LFE4:
+ 413              		.section	.text.UsageFault_Handler,"ax",%progbits
+ 414              		.align	1
+ 415              		.global	UsageFault_Handler
+ 416              		.syntax unified
+ 417              		.thumb
+ 418              		.thumb_func
+ 420              	UsageFault_Handler:
+ 421              	.LFB5:
+  93:fault.c       **** 	}
+  94:fault.c       **** }
+  95:fault.c       **** 
+  96:fault.c       **** void UsageFault_Handler(void) {
+ 422              		.loc 1 96 31 view -0
+ 423              		.cfi_startproc
+ 424              		@ args = 0, pretend = 0, frame = 24
+ 425              		@ frame_needed = 0, uses_anonymous_args = 0
+ 426 0000 30B5     		push	{r4, r5, lr}
+ 427              		.cfi_def_cfa_offset 12
+ 428              		.cfi_offset 4, -12
+ 429              		.cfi_offset 5, -8
+ 430              		.cfi_offset 14, -4
+ 431 0002 87B0     		sub	sp, sp, #28
+ 432              		.cfi_def_cfa_offset 40
+  97:fault.c       **** 	int i;
+ 433              		.loc 1 97 2 view .LVU108
+  98:fault.c       **** 	int offset[6] = { 9, 8, 3, 2, 1, 0 };
+ 434              		.loc 1 98 2 view .LVU109
+ 435              		.loc 1 98 6 is_stmt 0 view .LVU110
+ 436 0004 6C46     		mov	r4, sp
+ 437 0006 114D     		ldr	r5, .L41
+ 438 0008 0FCD     		ldmia	r5!, {r0, r1, r2, r3}
+ 439 000a 0FC4     		stmia	r4!, {r0, r1, r2, r3}
+ 440 000c 95E80300 		ldm	r5, {r0, r1}
+  99:fault.c       **** 	uint16_t ufsr = SCB_UFSR;
+ 441              		.loc 1 99 11 view .LVU111
+ 442 0010 0F4B     		ldr	r3, .L41+4
+  98:fault.c       **** 	int offset[6] = { 9, 8, 3, 2, 1, 0 };
+ 443              		.loc 1 98 6 view .LVU112
+ 444 0012 84E80300 		stm	r4, {r0, r1}
+ 445              		.loc 1 99 2 is_stmt 1 view .LVU113
+ 446              		.loc 1 99 11 is_stmt 0 view .LVU114
+ 447 0016 5C8D     		ldrh	r4, [r3, #42]
+ 448 0018 A4B2     		uxth	r4, r4
+ 449              	.LVL37:
+ 450              	.L39:
+ARM GAS  /tmp/cc4aJ1h0.s 			page 11
+
+
+ 100:fault.c       **** 
+ 101:fault.c       **** 	while (1) {
+ 451              		.loc 1 101 2 is_stmt 1 view .LVU115
+ 102:fault.c       **** 		flash_leds(5);
+ 452              		.loc 1 102 3 view .LVU116
+ 453 001a 0520     		movs	r0, #5
+ 454 001c FFF7FEFF 		bl	flash_leds
+ 455              	.LVL38:
+ 103:fault.c       **** 
+ 104:fault.c       **** 		for (i = 0; i < 6; ++i) {
+ 456              		.loc 1 104 3 view .LVU117
+ 457              		.loc 1 104 17 discriminator 1 view .LVU118
+ 458 0020 6B46     		mov	r3, sp
+ 459              		.loc 1 104 10 is_stmt 0 view .LVU119
+ 460 0022 0020     		movs	r0, #0
+ 461              	.LVL39:
+ 462              	.L38:
+ 105:fault.c       **** 			if (ufsr & (1 << offset[i])) {
+ 463              		.loc 1 105 4 is_stmt 1 view .LVU120
+ 464              		.loc 1 105 8 is_stmt 0 view .LVU121
+ 465 0024 1A68     		ldr	r2, [r3]
+ 106:fault.c       **** 				flash_leds(i+1);
+ 466              		.loc 1 106 5 view .LVU122
+ 467 0026 0130     		adds	r0, r0, #1
+ 468              	.LVL40:
+ 105:fault.c       **** 			if (ufsr & (1 << offset[i])) {
+ 469              		.loc 1 105 8 view .LVU123
+ 470 0028 44FA02F2 		asr	r2, r4, r2
+ 105:fault.c       **** 			if (ufsr & (1 << offset[i])) {
+ 471              		.loc 1 105 7 view .LVU124
+ 472 002c D207     		lsls	r2, r2, #31
+ 473 002e 08D5     		bpl	.L36
+ 474              		.loc 1 106 5 is_stmt 1 view .LVU125
+ 475 0030 FFF7FEFF 		bl	flash_leds
+ 476              	.LVL41:
+ 107:fault.c       **** 				break;
+ 477              		.loc 1 107 5 view .LVU126
+ 478              	.L37:
+ 108:fault.c       **** 			}
+ 109:fault.c       **** 		}
+ 110:fault.c       **** 
+ 111:fault.c       **** 		delay_30ms();
+ 479              		.loc 1 111 3 view .LVU127
+ 480 0034 FFF7FEFF 		bl	delay_30ms
+ 481              	.LVL42:
+ 112:fault.c       **** 		delay_30ms();
+ 482              		.loc 1 112 3 view .LVU128
+ 483 0038 FFF7FEFF 		bl	delay_30ms
+ 484              	.LVL43:
+ 113:fault.c       **** 		delay_30ms();
+ 485              		.loc 1 113 3 view .LVU129
+ 486 003c FFF7FEFF 		bl	delay_30ms
+ 487              	.LVL44:
+ 101:fault.c       **** 		flash_leds(5);
+ 488              		.loc 1 101 8 view .LVU130
+ 102:fault.c       **** 
+ 489              		.loc 1 102 3 is_stmt 0 view .LVU131
+ARM GAS  /tmp/cc4aJ1h0.s 			page 12
+
+
+ 490 0040 EBE7     		b	.L39
+ 491              	.LVL45:
+ 492              	.L36:
+ 104:fault.c       **** 			if (ufsr & (1 << offset[i])) {
+ 493              		.loc 1 104 17 discriminator 1 view .LVU132
+ 494 0042 0628     		cmp	r0, #6
+ 495 0044 03F10403 		add	r3, r3, #4
+ 104:fault.c       **** 			if (ufsr & (1 << offset[i])) {
+ 496              		.loc 1 104 22 is_stmt 1 discriminator 2 view .LVU133
+ 497              	.LVL46:
+ 104:fault.c       **** 			if (ufsr & (1 << offset[i])) {
+ 498              		.loc 1 104 17 discriminator 1 view .LVU134
+ 499 0048 ECD1     		bne	.L38
+ 500 004a F3E7     		b	.L37
+ 501              	.L42:
+ 502              		.align	2
+ 503              	.L41:
+ 504 004c 2C000000 		.word	.LANCHOR0+44
+ 505 0050 00ED00E0 		.word	-536810240
+ 506              		.cfi_endproc
+ 507              	.LFE5:
+ 509              		.section	.rodata
+ 510              		.align	2
+ 511              		.set	.LANCHOR0,. + 0
+ 512              	.LC0:
+ 513 0000 07000000 		.word	7
+ 514 0004 04000000 		.word	4
+ 515 0008 03000000 		.word	3
+ 516 000c 01000000 		.word	1
+ 517 0010 00000000 		.word	0
+ 518              	.LC1:
+ 519 0014 07000000 		.word	7
+ 520 0018 04000000 		.word	4
+ 521 001c 03000000 		.word	3
+ 522 0020 02000000 		.word	2
+ 523 0024 01000000 		.word	1
+ 524 0028 00000000 		.word	0
+ 525              	.LC2:
+ 526 002c 09000000 		.word	9
+ 527 0030 08000000 		.word	8
+ 528 0034 03000000 		.word	3
+ 529 0038 02000000 		.word	2
+ 530 003c 01000000 		.word	1
+ 531 0040 00000000 		.word	0
+ 532              		.text
+ 533              	.Letext0:
+ 534              		.file 2 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 535              		.file 3 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ARM GAS  /tmp/cc4aJ1h0.s 			page 13
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 fault.c
+     /tmp/cc4aJ1h0.s:19     .text.delay_30ms:00000000 $t
+     /tmp/cc4aJ1h0.s:24     .text.delay_30ms:00000000 delay_30ms
+     /tmp/cc4aJ1h0.s:62     .text.delay_30ms:0000001c $d
+     /tmp/cc4aJ1h0.s:67     .text.flash_leds:00000000 $t
+     /tmp/cc4aJ1h0.s:72     .text.flash_leds:00000000 flash_leds
+     /tmp/cc4aJ1h0.s:153    .text.flash_leds:00000038 $d
+     /tmp/cc4aJ1h0.s:158    .text.HardFault_Handler:00000000 $t
+     /tmp/cc4aJ1h0.s:164    .text.HardFault_Handler:00000000 HardFault_Handler
+     /tmp/cc4aJ1h0.s:226    .text.MemManagement_Handler:00000000 $t
+     /tmp/cc4aJ1h0.s:232    .text.MemManagement_Handler:00000000 MemManagement_Handler
+     /tmp/cc4aJ1h0.s:314    .text.MemManagement_Handler:0000004c $d
+     /tmp/cc4aJ1h0.s:320    .text.BusFault_Handler:00000000 $t
+     /tmp/cc4aJ1h0.s:326    .text.BusFault_Handler:00000000 BusFault_Handler
+     /tmp/cc4aJ1h0.s:408    .text.BusFault_Handler:00000050 $d
+     /tmp/cc4aJ1h0.s:414    .text.UsageFault_Handler:00000000 $t
+     /tmp/cc4aJ1h0.s:420    .text.UsageFault_Handler:00000000 UsageFault_Handler
+     /tmp/cc4aJ1h0.s:504    .text.UsageFault_Handler:0000004c $d
+     /tmp/cc4aJ1h0.s:510    .rodata:00000000 $d
+
+NO UNDEFINED SYMBOLS

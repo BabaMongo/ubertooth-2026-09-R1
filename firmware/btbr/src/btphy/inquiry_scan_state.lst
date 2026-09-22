@@ -1,0 +1,1075 @@
+ARM GAS  /tmp/ccXB8n34.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"inquiry_scan_state.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/btphy/inquiry_scan_state.c"
+  18              		.section	.rodata.str1.4,"aMS",%progbits,1
+  19              		.align	2
+  20              	.LC0:
+  21 0000 696E7120 		.ascii	"inq scan canceled\012\000"
+  21      7363616E 
+  21      2063616E 
+  21      63656C65 
+  21      640A00
+  22 0013 00       		.align	2
+  23              	.LC1:
+  24 0014 696E7175 		.ascii	"inquiry scan timeout\012\000"
+  24      69727920 
+  24      7363616E 
+  24      2074696D 
+  24      656F7574 
+  25              		.section	.text.inquiry_scan_rx_cb,"ax",%progbits
+  26              		.align	1
+  27              		.p2align 2,,3
+  28              		.syntax unified
+  29              		.thumb
+  30              		.thumb_func
+  32              	inquiry_scan_rx_cb:
+  33              	.LVL0:
+  34              	.LFB34:
+   1:src/btphy/inquiry_scan_state.c **** /* Inquiry scan state
+   2:src/btphy/inquiry_scan_state.c ****  *
+   3:src/btphy/inquiry_scan_state.c ****  * Copyright 2020 Etienne Helluy-Lafont, Univ. Lille, CNRS.
+   4:src/btphy/inquiry_scan_state.c ****  *
+   5:src/btphy/inquiry_scan_state.c ****  * This file is part of Project Ubertooth.
+   6:src/btphy/inquiry_scan_state.c ****  *
+   7:src/btphy/inquiry_scan_state.c ****  * This program is free software; you can redistribute it and/or modify
+   8:src/btphy/inquiry_scan_state.c ****  * it under the terms of the GNU General Public License as published by
+   9:src/btphy/inquiry_scan_state.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  10:src/btphy/inquiry_scan_state.c ****  * any later version.
+  11:src/btphy/inquiry_scan_state.c ****  *
+  12:src/btphy/inquiry_scan_state.c ****  * This program is distributed in the hope that it will be useful,
+  13:src/btphy/inquiry_scan_state.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  14:src/btphy/inquiry_scan_state.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  15:src/btphy/inquiry_scan_state.c ****  * GNU General Public License for more details.
+  16:src/btphy/inquiry_scan_state.c ****  *
+ARM GAS  /tmp/ccXB8n34.s 			page 2
+
+
+  17:src/btphy/inquiry_scan_state.c ****  * You should have received a copy of the GNU General Public License
+  18:src/btphy/inquiry_scan_state.c ****  * along with this program; see the file COPYING.  If not, write to
+  19:src/btphy/inquiry_scan_state.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  20:src/btphy/inquiry_scan_state.c ****  * Boston, MA 02110-1301, USA.
+  21:src/btphy/inquiry_scan_state.c ****  */
+  22:src/btphy/inquiry_scan_state.c **** #include <stdlib.h>
+  23:src/btphy/inquiry_scan_state.c **** #include <ubtbr/cfg.h>
+  24:src/btphy/inquiry_scan_state.c **** #include <ubtbr/btctl_intf.h>
+  25:src/btphy/inquiry_scan_state.c **** #include <ubtbr/btphy.h>
+  26:src/btphy/inquiry_scan_state.c **** #include <ubtbr/bb.h>
+  27:src/btphy/inquiry_scan_state.c **** #include <ubtbr/tdma_sched.h>
+  28:src/btphy/inquiry_scan_state.c **** #include <ubtbr/scan_task.h>
+  29:src/btphy/inquiry_scan_state.c **** #include <ubtbr/tx_task.h>
+  30:src/btphy/inquiry_scan_state.c **** 
+  31:src/btphy/inquiry_scan_state.c **** #define INQ_SCAN_MAX_TICKS (CLKN_RATE*60)
+  32:src/btphy/inquiry_scan_state.c **** #define TX_PREPARE_IDX	1  // We will transmit at clkn1_0 = 2
+  33:src/btphy/inquiry_scan_state.c **** 
+  34:src/btphy/inquiry_scan_state.c **** 
+  35:src/btphy/inquiry_scan_state.c **** static struct {
+  36:src/btphy/inquiry_scan_state.c **** 	uint32_t clkn_start;
+  37:src/btphy/inquiry_scan_state.c **** 	bbhdr_t fhs_hdr;
+  38:src/btphy/inquiry_scan_state.c **** 	uint8_t fhs_data[20];
+  39:src/btphy/inquiry_scan_state.c **** } inquiry_scan_state;
+  40:src/btphy/inquiry_scan_state.c **** 
+  41:src/btphy/inquiry_scan_state.c **** static void inquiry_scan_schedule(unsigned delay);
+  42:src/btphy/inquiry_scan_state.c **** 
+  43:src/btphy/inquiry_scan_state.c **** static int inquiry_scan_canceled(void)
+  44:src/btphy/inquiry_scan_state.c **** {
+  45:src/btphy/inquiry_scan_state.c **** 	return btctl_get_state() != BTCTL_STATE_INQUIRY_SCAN;
+  46:src/btphy/inquiry_scan_state.c **** }
+  47:src/btphy/inquiry_scan_state.c **** 
+  48:src/btphy/inquiry_scan_state.c **** static void tx_eir_cb(void *arg)
+  49:src/btphy/inquiry_scan_state.c **** {
+  50:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_schedule(1);
+  51:src/btphy/inquiry_scan_state.c **** }
+  52:src/btphy/inquiry_scan_state.c **** 
+  53:src/btphy/inquiry_scan_state.c **** static void tx_fhs_cb(void *arg)
+  54:src/btphy/inquiry_scan_state.c **** {
+  55:src/btphy/inquiry_scan_state.c **** 	btctl_tx_pkt_t *eir_pkt = btctl_get_eir();
+  56:src/btphy/inquiry_scan_state.c **** 	if (eir_pkt)
+  57:src/btphy/inquiry_scan_state.c **** 	{
+  58:src/btphy/inquiry_scan_state.c **** 		tx_task_schedule(3&(TX_PREPARE_IDX-CUR_SLAVE_SLOT_IDX()),
+  59:src/btphy/inquiry_scan_state.c **** 			tx_eir_cb, NULL,
+  60:src/btphy/inquiry_scan_state.c **** 			&eir_pkt->bb_hdr, eir_pkt->bt_data);
+  61:src/btphy/inquiry_scan_state.c **** 	}
+  62:src/btphy/inquiry_scan_state.c **** 	else
+  63:src/btphy/inquiry_scan_state.c **** 	{
+  64:src/btphy/inquiry_scan_state.c **** 		inquiry_scan_schedule(1);
+  65:src/btphy/inquiry_scan_state.c **** 	}
+  66:src/btphy/inquiry_scan_state.c **** }
+  67:src/btphy/inquiry_scan_state.c **** 
+  68:src/btphy/inquiry_scan_state.c **** static void inquiry_scan_rx_cb(int sw_detected, void *arg)
+  69:src/btphy/inquiry_scan_state.c **** {
+  35              		.loc 1 69 1 view -0
+  36              		.cfi_startproc
+  37              		@ args = 0, pretend = 0, frame = 8
+  38              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  /tmp/ccXB8n34.s 			page 3
+
+
+  39              		.loc 1 69 1 is_stmt 0 view .LVU1
+  40 0000 00B5     		push	{lr}
+  41              		.cfi_def_cfa_offset 4
+  42              		.cfi_offset 14, -4
+  43 0002 85B0     		sub	sp, sp, #20
+  44              		.cfi_def_cfa_offset 24
+  70:src/btphy/inquiry_scan_state.c **** 
+  71:src/btphy/inquiry_scan_state.c **** 	if (inquiry_scan_canceled())
+  45              		.loc 1 71 2 is_stmt 1 view .LVU2
+  46              	.LBB29:
+  47              	.LBI29:
+  43:src/btphy/inquiry_scan_state.c **** {
+  48              		.loc 1 43 12 view .LVU3
+  45:src/btphy/inquiry_scan_state.c **** }
+  49              		.loc 1 45 2 view .LVU4
+  50              	.LBB30:
+  51              	.LBI30:
+  52              		.file 2 "include/ubtbr/btctl_intf.h"
+   1:include/ubtbr/btctl_intf.h **** #ifndef __BTCTL_INTF_H
+   2:include/ubtbr/btctl_intf.h **** #define __BTCTL_INTF_H
+   3:include/ubtbr/btctl_intf.h **** #include <ubtbr/bb_msg.h>
+   4:include/ubtbr/btctl_intf.h **** #include <ubtbr/queue.h>
+   5:include/ubtbr/btctl_intf.h **** #include <ubtbr/system.h>
+   6:include/ubtbr/btctl_intf.h **** #include <ubertooth_interface.h>
+   7:include/ubtbr/btctl_intf.h **** 
+   8:include/ubtbr/btctl_intf.h **** typedef struct btctl_s {
+   9:include/ubtbr/btctl_intf.h **** 	btctl_state_t state;
+  10:include/ubtbr/btctl_intf.h **** 	msg_queue_t rx_q;
+  11:include/ubtbr/btctl_intf.h **** 	msg_queue_t tx_q;
+  12:include/ubtbr/btctl_intf.h **** 	msg_queue_t acl_tx_q;
+  13:include/ubtbr/btctl_intf.h **** 	msg_t *eir_msg;
+  14:include/ubtbr/btctl_intf.h **** 	btctl_tx_pkt_t *eir_pkt;
+  15:include/ubtbr/btctl_intf.h **** } btctl_t;
+  16:include/ubtbr/btctl_intf.h **** 
+  17:include/ubtbr/btctl_intf.h **** extern btctl_t btctl;
+  18:include/ubtbr/btctl_intf.h **** 
+  19:include/ubtbr/btctl_intf.h **** void btctl_init(void);
+  20:include/ubtbr/btctl_intf.h **** int btctl_work(void);
+  21:include/ubtbr/btctl_intf.h **** 
+  22:include/ubtbr/btctl_intf.h **** void btctl_set_state(btctl_state_t state, btctl_reason_t reason);
+  23:include/ubtbr/btctl_intf.h **** 
+  24:include/ubtbr/btctl_intf.h **** static inline btctl_state_t btctl_get_state(void)
+  53              		.loc 2 24 29 view .LVU5
+  54              	.LBB31:
+  25:include/ubtbr/btctl_intf.h **** {
+  26:include/ubtbr/btctl_intf.h **** 	return btctl.state;
+  55              		.loc 2 26 2 view .LVU6
+  56              		.loc 2 26 14 is_stmt 0 view .LVU7
+  57 0004 1F4B     		ldr	r3, .L11
+  58              	.LBE31:
+  59              	.LBE30:
+  60              	.LBE29:
+  69:src/btphy/inquiry_scan_state.c **** 
+  61              		.loc 1 69 1 view .LVU8
+  62 0006 0246     		mov	r2, r0
+  63              		.loc 1 71 5 discriminator 1 view .LVU9
+  64 0008 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ARM GAS  /tmp/ccXB8n34.s 			page 4
+
+
+  65 000a 042B     		cmp	r3, #4
+  66 000c 29D1     		bne	.L8
+  72:src/btphy/inquiry_scan_state.c **** 	{
+  73:src/btphy/inquiry_scan_state.c **** 		cprintf("inq scan canceled\n");
+  74:src/btphy/inquiry_scan_state.c **** 		return;
+  75:src/btphy/inquiry_scan_state.c **** 	}
+  76:src/btphy/inquiry_scan_state.c **** 
+  77:src/btphy/inquiry_scan_state.c **** 	if (sw_detected)
+  67              		.loc 1 77 2 is_stmt 1 view .LVU10
+  68              		.loc 1 77 5 is_stmt 0 view .LVU11
+  69 000e 78B9     		cbnz	r0, .L9
+  78:src/btphy/inquiry_scan_state.c **** 	{
+  79:src/btphy/inquiry_scan_state.c **** 		console_putc('!');
+  80:src/btphy/inquiry_scan_state.c **** 		/* Schedule TX FHS
+  81:src/btphy/inquiry_scan_state.c **** 		 * We're in the scan_wait, in same tick as rx.
+  82:src/btphy/inquiry_scan_state.c **** 		 * we must prepare in next tick to start tx at rx+2 */
+  83:src/btphy/inquiry_scan_state.c **** 			
+  84:src/btphy/inquiry_scan_state.c **** 		/* Write clk27_2 in fhs payload
+  85:src/btphy/inquiry_scan_state.c **** 		 * Will tx at (clkn+2) */
+  86:src/btphy/inquiry_scan_state.c **** 		bbpkt_fhs_finalize_payload(inquiry_scan_state.fhs_data, (btphy.master_clkn+2)>>2);
+  87:src/btphy/inquiry_scan_state.c **** 
+  88:src/btphy/inquiry_scan_state.c **** 		/* Schedule tx FHS */
+  89:src/btphy/inquiry_scan_state.c **** 		tx_task_schedule(3&(TX_PREPARE_IDX-CUR_SLAVE_SLOT_IDX()),
+  90:src/btphy/inquiry_scan_state.c **** 			tx_fhs_cb, NULL,
+  91:src/btphy/inquiry_scan_state.c **** 			&inquiry_scan_state.fhs_hdr, inquiry_scan_state.fhs_data);
+  92:src/btphy/inquiry_scan_state.c **** 	}
+  93:src/btphy/inquiry_scan_state.c **** 	else
+  94:src/btphy/inquiry_scan_state.c **** 	{
+  95:src/btphy/inquiry_scan_state.c **** 		inquiry_scan_schedule(0); // do it again
+  70              		.loc 1 95 3 is_stmt 1 view .LVU12
+  71              	.LVL1:
+  72              	.LBB32:
+  73              	.LBI32:
+  96:src/btphy/inquiry_scan_state.c **** 	}
+  97:src/btphy/inquiry_scan_state.c **** }
+  98:src/btphy/inquiry_scan_state.c **** 
+  99:src/btphy/inquiry_scan_state.c **** static void inquiry_scan_schedule(unsigned delay)
+  74              		.loc 1 99 13 view .LVU13
+  75              	.LBB33:
+ 100:src/btphy/inquiry_scan_state.c **** {
+ 101:src/btphy/inquiry_scan_state.c **** 	if (MASTER_CLKN >= inquiry_scan_state.clkn_start + INQ_SCAN_MAX_TICKS)
+  76              		.loc 1 101 2 view .LVU14
+  77              		.loc 1 101 39 is_stmt 0 view .LVU15
+  78 0010 1D4B     		ldr	r3, .L11+4
+  79              		.loc 1 101 6 view .LVU16
+  80 0012 1E49     		ldr	r1, .L11+8
+  81              	.LVL2:
+  82              		.loc 1 101 51 view .LVU17
+  83 0014 1B68     		ldr	r3, [r3]
+  84              		.loc 1 101 6 view .LVU18
+  85 0016 8968     		ldr	r1, [r1, #8]
+  86              		.loc 1 101 51 view .LVU19
+  87 0018 03F53B33 		add	r3, r3, #191488
+  88 001c 03F50073 		add	r3, r3, #512
+  89              		.loc 1 101 5 view .LVU20
+  90 0020 9942     		cmp	r1, r3
+  91 0022 24D2     		bcs	.L10
+ARM GAS  /tmp/ccXB8n34.s 			page 5
+
+
+ 102:src/btphy/inquiry_scan_state.c **** 	{
+ 103:src/btphy/inquiry_scan_state.c **** 		cprintf("inquiry scan timeout\n");
+ 104:src/btphy/inquiry_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 105:src/btphy/inquiry_scan_state.c **** 		return;
+ 106:src/btphy/inquiry_scan_state.c **** 	}
+ 107:src/btphy/inquiry_scan_state.c **** 	scan_task_schedule(delay, inquiry_scan_rx_cb, NULL);
+  92              		.loc 1 107 2 is_stmt 1 view .LVU21
+  93 0024 1A49     		ldr	r1, .L11+12
+  94              	.LBE33:
+  95              	.LBE32:
+  97:src/btphy/inquiry_scan_state.c **** 
+  96              		.loc 1 97 1 is_stmt 0 view .LVU22
+  97 0026 05B0     		add	sp, sp, #20
+  98              		.cfi_remember_state
+  99              		.cfi_def_cfa_offset 4
+ 100              		@ sp needed
+ 101 0028 5DF804EB 		ldr	lr, [sp], #4
+ 102              		.cfi_restore 14
+ 103              		.cfi_def_cfa_offset 0
+ 104              	.LBB41:
+ 105              	.LBB38:
+ 106              		.loc 1 107 2 view .LVU23
+ 107 002c FFF7FEBF 		b	scan_task_schedule
+ 108              	.LVL3:
+ 109              	.L9:
+ 110              		.cfi_restore_state
+ 111              		.loc 1 107 2 view .LVU24
+ 112              	.LBE38:
+ 113              	.LBE41:
+  79:src/btphy/inquiry_scan_state.c **** 		/* Schedule TX FHS
+ 114              		.loc 1 79 3 is_stmt 1 view .LVU25
+ 115 0030 2120     		movs	r0, #33
+ 116              	.LVL4:
+  79:src/btphy/inquiry_scan_state.c **** 		/* Schedule TX FHS
+ 117              		.loc 1 79 3 is_stmt 0 view .LVU26
+ 118 0032 FFF7FEFF 		bl	console_putc
+ 119              	.LVL5:
+  86:src/btphy/inquiry_scan_state.c **** 
+ 120              		.loc 1 86 3 is_stmt 1 view .LVU27
+  86:src/btphy/inquiry_scan_state.c **** 
+ 121              		.loc 1 86 65 is_stmt 0 view .LVU28
+ 122 0036 174B     		ldr	r3, .L11+16
+  86:src/btphy/inquiry_scan_state.c **** 
+ 123              		.loc 1 86 3 view .LVU29
+ 124 0038 1748     		ldr	r0, .L11+20
+  86:src/btphy/inquiry_scan_state.c **** 
+ 125              		.loc 1 86 77 view .LVU30
+ 126 003a 5968     		ldr	r1, [r3, #4]
+ 127 003c 0231     		adds	r1, r1, #2
+  86:src/btphy/inquiry_scan_state.c **** 
+ 128              		.loc 1 86 3 view .LVU31
+ 129 003e 8908     		lsrs	r1, r1, #2
+ 130 0040 FFF7FEFF 		bl	bbpkt_fhs_finalize_payload
+ 131              	.LVL6:
+  89:src/btphy/inquiry_scan_state.c **** 			tx_fhs_cb, NULL,
+ 132              		.loc 1 89 3 is_stmt 1 view .LVU32
+  89:src/btphy/inquiry_scan_state.c **** 			tx_fhs_cb, NULL,
+ARM GAS  /tmp/ccXB8n34.s 			page 6
+
+
+ 133              		.loc 1 89 21 is_stmt 0 view .LVU33
+ 134 0044 134B     		ldr	r3, .L11+16
+  89:src/btphy/inquiry_scan_state.c **** 			tx_fhs_cb, NULL,
+ 135              		.loc 1 89 3 view .LVU34
+ 136 0046 1448     		ldr	r0, .L11+20
+  89:src/btphy/inquiry_scan_state.c **** 			tx_fhs_cb, NULL,
+ 137              		.loc 1 89 21 view .LVU35
+ 138 0048 9B68     		ldr	r3, [r3, #8]
+  89:src/btphy/inquiry_scan_state.c **** 			tx_fhs_cb, NULL,
+ 139              		.loc 1 89 3 view .LVU36
+ 140 004a 0022     		movs	r2, #0
+  89:src/btphy/inquiry_scan_state.c **** 			tx_fhs_cb, NULL,
+ 141              		.loc 1 89 21 view .LVU37
+ 142 004c C3F1010C 		rsb	ip, r3, #1
+  89:src/btphy/inquiry_scan_state.c **** 			tx_fhs_cb, NULL,
+ 143              		.loc 1 89 3 view .LVU38
+ 144 0050 0090     		str	r0, [sp]
+ 145 0052 031F     		subs	r3, r0, #4
+ 146 0054 1149     		ldr	r1, .L11+24
+ 147 0056 0CF00300 		and	r0, ip, #3
+ 148 005a FFF7FEFF 		bl	tx_task_schedule
+ 149              	.LVL7:
+  97:src/btphy/inquiry_scan_state.c **** 
+ 150              		.loc 1 97 1 view .LVU39
+ 151 005e 05B0     		add	sp, sp, #20
+ 152              		.cfi_remember_state
+ 153              		.cfi_def_cfa_offset 4
+ 154              		@ sp needed
+ 155 0060 00BD     		pop	{pc}
+ 156              	.LVL8:
+ 157              	.L8:
+ 158              		.cfi_restore_state
+ 159              	.LBB42:
+ 160              	.LBI42:
+  68:src/btphy/inquiry_scan_state.c **** {
+ 161              		.loc 1 68 13 is_stmt 1 view .LVU40
+ 162              	.LBB43:
+  73:src/btphy/inquiry_scan_state.c **** 		return;
+ 163              		.loc 1 73 3 view .LVU41
+ 164 0062 0F48     		ldr	r0, .L11+28
+ 165              	.LVL9:
+  73:src/btphy/inquiry_scan_state.c **** 		return;
+ 166              		.loc 1 73 3 is_stmt 0 view .LVU42
+ 167              	.LBE43:
+ 168              	.LBE42:
+  97:src/btphy/inquiry_scan_state.c **** 
+ 169              		.loc 1 97 1 view .LVU43
+ 170 0064 05B0     		add	sp, sp, #20
+ 171              		.cfi_remember_state
+ 172              		.cfi_def_cfa_offset 4
+ 173              		@ sp needed
+ 174 0066 5DF804EB 		ldr	lr, [sp], #4
+ 175              		.cfi_restore 14
+ 176              		.cfi_def_cfa_offset 0
+ 177              	.LBB45:
+ 178              	.LBB44:
+  73:src/btphy/inquiry_scan_state.c **** 		return;
+ARM GAS  /tmp/ccXB8n34.s 			page 7
+
+
+ 179              		.loc 1 73 3 view .LVU44
+ 180 006a FFF7FEBF 		b	cprintf
+ 181              	.LVL10:
+ 182              	.L10:
+ 183              		.cfi_restore_state
+  73:src/btphy/inquiry_scan_state.c **** 		return;
+ 184              		.loc 1 73 3 view .LVU45
+ 185 006e 0390     		str	r0, [sp, #12]
+ 186              	.LBE44:
+ 187              	.LBE45:
+ 188              	.LBB46:
+ 189              	.LBB39:
+ 190              	.LBB34:
+ 191              	.LBI34:
+  99:src/btphy/inquiry_scan_state.c **** {
+ 192              		.loc 1 99 13 is_stmt 1 view .LVU46
+ 193              	.LVL11:
+ 194              	.LBB35:
+ 103:src/btphy/inquiry_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 195              		.loc 1 103 3 view .LVU47
+ 196 0070 0C48     		ldr	r0, .L11+32
+ 197              	.LVL12:
+ 103:src/btphy/inquiry_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 198              		.loc 1 103 3 is_stmt 0 view .LVU48
+ 199 0072 FFF7FEFF 		bl	cprintf
+ 200              	.LVL13:
+ 104:src/btphy/inquiry_scan_state.c **** 		return;
+ 201              		.loc 1 104 3 is_stmt 1 view .LVU49
+ 202 0076 0121     		movs	r1, #1
+ 203 0078 0398     		ldr	r0, [sp, #12]
+ 204              	.LBE35:
+ 205              	.LBE34:
+ 206              	.LBE39:
+ 207              	.LBE46:
+  97:src/btphy/inquiry_scan_state.c **** 
+ 208              		.loc 1 97 1 is_stmt 0 view .LVU50
+ 209 007a 05B0     		add	sp, sp, #20
+ 210              		.cfi_def_cfa_offset 4
+ 211              		@ sp needed
+ 212 007c 5DF804EB 		ldr	lr, [sp], #4
+ 213              		.cfi_restore 14
+ 214              		.cfi_def_cfa_offset 0
+ 215              	.LVL14:
+ 216              	.LBB47:
+ 217              	.LBB40:
+ 218              	.LBB37:
+ 219              	.LBB36:
+ 104:src/btphy/inquiry_scan_state.c **** 		return;
+ 220              		.loc 1 104 3 view .LVU51
+ 221 0080 FFF7FEBF 		b	btctl_set_state
+ 222              	.LVL15:
+ 223              	.L12:
+ 224              		.align	2
+ 225              	.L11:
+ 226 0084 00000000 		.word	btctl
+ 227 0088 00000000 		.word	.LANCHOR0
+ 228 008c 00800040 		.word	1073774592
+ARM GAS  /tmp/ccXB8n34.s 			page 8
+
+
+ 229 0090 00000000 		.word	inquiry_scan_rx_cb
+ 230 0094 00000000 		.word	btphy
+ 231 0098 08000000 		.word	.LANCHOR0+8
+ 232 009c 00000000 		.word	tx_fhs_cb
+ 233 00a0 00000000 		.word	.LC0
+ 234 00a4 14000000 		.word	.LC1
+ 235              	.LBE36:
+ 236              	.LBE37:
+ 237              	.LBE40:
+ 238              	.LBE47:
+ 239              		.cfi_endproc
+ 240              	.LFE34:
+ 242              		.section	.text.tx_eir_cb,"ax",%progbits
+ 243              		.align	1
+ 244              		.p2align 2,,3
+ 245              		.syntax unified
+ 246              		.thumb
+ 247              		.thumb_func
+ 249              	tx_eir_cb:
+ 250              	.LVL16:
+ 251              	.LFB32:
+  49:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_schedule(1);
+ 252              		.loc 1 49 1 is_stmt 1 view -0
+ 253              		.cfi_startproc
+ 254              		@ args = 0, pretend = 0, frame = 0
+ 255              		@ frame_needed = 0, uses_anonymous_args = 0
+  49:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_schedule(1);
+ 256              		.loc 1 49 1 is_stmt 0 view .LVU53
+ 257 0000 08B5     		push	{r3, lr}
+ 258              		.cfi_def_cfa_offset 8
+ 259              		.cfi_offset 3, -8
+ 260              		.cfi_offset 14, -4
+  50:src/btphy/inquiry_scan_state.c **** }
+ 261              		.loc 1 50 2 is_stmt 1 view .LVU54
+ 262              	.LVL17:
+ 263              	.LBB52:
+ 264              	.LBI52:
+  99:src/btphy/inquiry_scan_state.c **** {
+ 265              		.loc 1 99 13 view .LVU55
+ 266              	.LBB53:
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 267              		.loc 1 101 2 view .LVU56
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 268              		.loc 1 101 39 is_stmt 0 view .LVU57
+ 269 0002 0D4B     		ldr	r3, .L16
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 270              		.loc 1 101 6 view .LVU58
+ 271 0004 0D4A     		ldr	r2, .L16+4
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 272              		.loc 1 101 51 view .LVU59
+ 273 0006 1B68     		ldr	r3, [r3]
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 274              		.loc 1 101 6 view .LVU60
+ 275 0008 9268     		ldr	r2, [r2, #8]
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 276              		.loc 1 101 51 view .LVU61
+ 277 000a 03F53B33 		add	r3, r3, #191488
+ARM GAS  /tmp/ccXB8n34.s 			page 9
+
+
+ 278 000e 03F50073 		add	r3, r3, #512
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 279              		.loc 1 101 5 view .LVU62
+ 280 0012 9A42     		cmp	r2, r3
+ 281 0014 06D2     		bcs	.L15
+ 282              		.loc 1 107 2 is_stmt 1 view .LVU63
+ 283              	.LBE53:
+ 284              	.LBE52:
+  51:src/btphy/inquiry_scan_state.c **** 
+ 285              		.loc 1 51 1 is_stmt 0 view .LVU64
+ 286 0016 BDE80840 		pop	{r3, lr}
+ 287              		.cfi_remember_state
+ 288              		.cfi_restore 14
+ 289              		.cfi_restore 3
+ 290              		.cfi_def_cfa_offset 0
+ 291              	.LBB60:
+ 292              	.LBB58:
+ 293              		.loc 1 107 2 view .LVU65
+ 294 001a 0022     		movs	r2, #0
+ 295 001c 0120     		movs	r0, #1
+ 296              	.LVL18:
+ 297              		.loc 1 107 2 view .LVU66
+ 298 001e 0849     		ldr	r1, .L16+8
+ 299 0020 FFF7FEBF 		b	scan_task_schedule
+ 300              	.LVL19:
+ 301              	.L15:
+ 302              		.cfi_restore_state
+ 303              	.LBB54:
+ 304              	.LBI54:
+  99:src/btphy/inquiry_scan_state.c **** {
+ 305              		.loc 1 99 13 is_stmt 1 view .LVU67
+ 306              	.LBB55:
+ 103:src/btphy/inquiry_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 307              		.loc 1 103 3 view .LVU68
+ 308 0024 0748     		ldr	r0, .L16+12
+ 309              	.LVL20:
+ 103:src/btphy/inquiry_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 310              		.loc 1 103 3 is_stmt 0 view .LVU69
+ 311 0026 FFF7FEFF 		bl	cprintf
+ 312              	.LVL21:
+ 104:src/btphy/inquiry_scan_state.c **** 		return;
+ 313              		.loc 1 104 3 is_stmt 1 view .LVU70
+ 314              	.LBE55:
+ 315              	.LBE54:
+ 316              	.LBE58:
+ 317              	.LBE60:
+  51:src/btphy/inquiry_scan_state.c **** 
+ 318              		.loc 1 51 1 is_stmt 0 view .LVU71
+ 319 002a BDE80840 		pop	{r3, lr}
+ 320              		.cfi_restore 14
+ 321              		.cfi_restore 3
+ 322              		.cfi_def_cfa_offset 0
+ 323              	.LBB61:
+ 324              	.LBB59:
+ 325              	.LBB57:
+ 326              	.LBB56:
+ 104:src/btphy/inquiry_scan_state.c **** 		return;
+ARM GAS  /tmp/ccXB8n34.s 			page 10
+
+
+ 327              		.loc 1 104 3 view .LVU72
+ 328 002e 0121     		movs	r1, #1
+ 329 0030 0020     		movs	r0, #0
+ 330 0032 FFF7FEBF 		b	btctl_set_state
+ 331              	.LVL22:
+ 332              	.L17:
+ 333 0036 00BF     		.align	2
+ 334              	.L16:
+ 335 0038 00000000 		.word	.LANCHOR0
+ 336 003c 00800040 		.word	1073774592
+ 337 0040 00000000 		.word	inquiry_scan_rx_cb
+ 338 0044 14000000 		.word	.LC1
+ 339              	.LBE56:
+ 340              	.LBE57:
+ 341              	.LBE59:
+ 342              	.LBE61:
+ 343              		.cfi_endproc
+ 344              	.LFE32:
+ 346              		.section	.text.tx_fhs_cb,"ax",%progbits
+ 347              		.align	1
+ 348              		.p2align 2,,3
+ 349              		.syntax unified
+ 350              		.thumb
+ 351              		.thumb_func
+ 353              	tx_fhs_cb:
+ 354              	.LVL23:
+ 355              	.LFB33:
+  54:src/btphy/inquiry_scan_state.c **** 	btctl_tx_pkt_t *eir_pkt = btctl_get_eir();
+ 356              		.loc 1 54 1 is_stmt 1 view -0
+ 357              		.cfi_startproc
+ 358              		@ args = 0, pretend = 0, frame = 8
+ 359              		@ frame_needed = 0, uses_anonymous_args = 0
+  54:src/btphy/inquiry_scan_state.c **** 	btctl_tx_pkt_t *eir_pkt = btctl_get_eir();
+ 360              		.loc 1 54 1 is_stmt 0 view .LVU74
+ 361 0000 00B5     		push	{lr}
+ 362              		.cfi_def_cfa_offset 4
+ 363              		.cfi_offset 14, -4
+ 364 0002 85B0     		sub	sp, sp, #20
+ 365              		.cfi_def_cfa_offset 24
+  55:src/btphy/inquiry_scan_state.c **** 	if (eir_pkt)
+ 366              		.loc 1 55 2 is_stmt 1 view .LVU75
+ 367              	.LBB72:
+ 368              	.LBI72:
+  27:include/ubtbr/btctl_intf.h **** }
+  28:include/ubtbr/btctl_intf.h **** 
+  29:include/ubtbr/btctl_intf.h **** static inline btctl_tx_pkt_t *btctl_get_eir(void)
+ 369              		.loc 2 29 31 view .LVU76
+ 370              	.LBB73:
+  30:include/ubtbr/btctl_intf.h **** {
+  31:include/ubtbr/btctl_intf.h **** 	return btctl.eir_pkt;
+ 371              		.loc 2 31 2 view .LVU77
+ 372              		.loc 2 31 14 is_stmt 0 view .LVU78
+ 373 0004 184B     		ldr	r3, .L24
+ 374 0006 D3F88030 		ldr	r3, [r3, #128]
+ 375              	.LVL24:
+ 376              		.loc 2 31 14 view .LVU79
+ 377              	.LBE73:
+ARM GAS  /tmp/ccXB8n34.s 			page 11
+
+
+ 378              	.LBE72:
+  56:src/btphy/inquiry_scan_state.c **** 	{
+ 379              		.loc 1 56 2 is_stmt 1 view .LVU80
+  56:src/btphy/inquiry_scan_state.c **** 	{
+ 380              		.loc 1 56 5 is_stmt 0 view .LVU81
+ 381 000a 7BB1     		cbz	r3, .L19
+  58:src/btphy/inquiry_scan_state.c **** 			tx_eir_cb, NULL,
+ 382              		.loc 1 58 3 is_stmt 1 view .LVU82
+  58:src/btphy/inquiry_scan_state.c **** 			tx_eir_cb, NULL,
+ 383              		.loc 1 58 38 is_stmt 0 view .LVU83
+ 384 000c 174A     		ldr	r2, .L24+4
+  60:src/btphy/inquiry_scan_state.c **** 	}
+ 385              		.loc 1 60 29 view .LVU84
+ 386 000e 03F1040C 		add	ip, r3, #4
+  58:src/btphy/inquiry_scan_state.c **** 			tx_eir_cb, NULL,
+ 387              		.loc 1 58 21 view .LVU85
+ 388 0012 9068     		ldr	r0, [r2, #8]
+ 389              	.LVL25:
+  58:src/btphy/inquiry_scan_state.c **** 			tx_eir_cb, NULL,
+ 390              		.loc 1 58 3 view .LVU86
+ 391 0014 1649     		ldr	r1, .L24+8
+  58:src/btphy/inquiry_scan_state.c **** 			tx_eir_cb, NULL,
+ 392              		.loc 1 58 21 view .LVU87
+ 393 0016 C0F10100 		rsb	r0, r0, #1
+  58:src/btphy/inquiry_scan_state.c **** 			tx_eir_cb, NULL,
+ 394              		.loc 1 58 3 view .LVU88
+ 395 001a 0022     		movs	r2, #0
+ 396 001c CDF800C0 		str	ip, [sp]
+ 397 0020 00F00300 		and	r0, r0, #3
+ 398 0024 FFF7FEFF 		bl	tx_task_schedule
+ 399              	.LVL26:
+  66:src/btphy/inquiry_scan_state.c **** 
+ 400              		.loc 1 66 1 view .LVU89
+ 401 0028 05B0     		add	sp, sp, #20
+ 402              		.cfi_remember_state
+ 403              		.cfi_def_cfa_offset 4
+ 404              		@ sp needed
+ 405 002a 00BD     		pop	{pc}
+ 406              	.LVL27:
+ 407              	.L19:
+ 408              		.cfi_restore_state
+ 409              	.LBB74:
+ 410              	.LBI74:
+  53:src/btphy/inquiry_scan_state.c **** {
+ 411              		.loc 1 53 13 is_stmt 1 view .LVU90
+ 412              	.LBB75:
+  64:src/btphy/inquiry_scan_state.c **** 	}
+ 413              		.loc 1 64 3 view .LVU91
+ 414              	.LBB76:
+ 415              	.LBI76:
+  99:src/btphy/inquiry_scan_state.c **** {
+ 416              		.loc 1 99 13 view .LVU92
+ 417              	.LBB77:
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 418              		.loc 1 101 2 view .LVU93
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 419              		.loc 1 101 39 is_stmt 0 view .LVU94
+ARM GAS  /tmp/ccXB8n34.s 			page 12
+
+
+ 420 002c 114A     		ldr	r2, .L24+12
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 421              		.loc 1 101 6 view .LVU95
+ 422 002e 1249     		ldr	r1, .L24+16
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 423              		.loc 1 101 51 view .LVU96
+ 424 0030 1268     		ldr	r2, [r2]
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 425              		.loc 1 101 6 view .LVU97
+ 426 0032 8968     		ldr	r1, [r1, #8]
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 427              		.loc 1 101 51 view .LVU98
+ 428 0034 02F53B32 		add	r2, r2, #191488
+ 429 0038 02F50072 		add	r2, r2, #512
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 430              		.loc 1 101 5 view .LVU99
+ 431 003c 9142     		cmp	r1, r2
+ 432 003e 07D2     		bcs	.L23
+ 433              		.loc 1 107 2 is_stmt 1 view .LVU100
+ 434 0040 1A46     		mov	r2, r3
+ 435 0042 0120     		movs	r0, #1
+ 436              	.LVL28:
+ 437              		.loc 1 107 2 is_stmt 0 view .LVU101
+ 438 0044 0D49     		ldr	r1, .L24+20
+ 439              	.LBE77:
+ 440              	.LBE76:
+ 441              	.LBE75:
+ 442              	.LBE74:
+  66:src/btphy/inquiry_scan_state.c **** 
+ 443              		.loc 1 66 1 view .LVU102
+ 444 0046 05B0     		add	sp, sp, #20
+ 445              		.cfi_remember_state
+ 446              		.cfi_def_cfa_offset 4
+ 447              		@ sp needed
+ 448 0048 5DF804EB 		ldr	lr, [sp], #4
+ 449              		.cfi_restore 14
+ 450              		.cfi_def_cfa_offset 0
+ 451              	.LBB89:
+ 452              	.LBB87:
+ 453              	.LBB85:
+ 454              	.LBB83:
+ 455              		.loc 1 107 2 view .LVU103
+ 456 004c FFF7FEBF 		b	scan_task_schedule
+ 457              	.LVL29:
+ 458              	.L23:
+ 459              		.cfi_restore_state
+ 460              	.LBB78:
+ 461              	.LBB79:
+ 103:src/btphy/inquiry_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 462              		.loc 1 103 3 view .LVU104
+ 463 0050 0B48     		ldr	r0, .L24+24
+ 464              	.LVL30:
+ 103:src/btphy/inquiry_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 465              		.loc 1 103 3 view .LVU105
+ 466 0052 0393     		str	r3, [sp, #12]
+ 467              	.LBE79:
+ 468              	.LBI78:
+ARM GAS  /tmp/ccXB8n34.s 			page 13
+
+
+  99:src/btphy/inquiry_scan_state.c **** {
+ 469              		.loc 1 99 13 is_stmt 1 view .LVU106
+ 470              	.LVL31:
+ 471              	.LBB80:
+ 103:src/btphy/inquiry_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 472              		.loc 1 103 3 view .LVU107
+ 473 0054 FFF7FEFF 		bl	cprintf
+ 474              	.LVL32:
+ 104:src/btphy/inquiry_scan_state.c **** 		return;
+ 475              		.loc 1 104 3 view .LVU108
+ 476 0058 0121     		movs	r1, #1
+ 477 005a 0398     		ldr	r0, [sp, #12]
+ 478              	.LBE80:
+ 479              	.LBE78:
+ 480              	.LBE83:
+ 481              	.LBE85:
+ 482              	.LBE87:
+ 483              	.LBE89:
+  66:src/btphy/inquiry_scan_state.c **** 
+ 484              		.loc 1 66 1 is_stmt 0 view .LVU109
+ 485 005c 05B0     		add	sp, sp, #20
+ 486              		.cfi_def_cfa_offset 4
+ 487              		@ sp needed
+ 488 005e 5DF804EB 		ldr	lr, [sp], #4
+ 489              		.cfi_restore 14
+ 490              		.cfi_def_cfa_offset 0
+ 491              	.LVL33:
+ 492              	.LBB90:
+ 493              	.LBB88:
+ 494              	.LBB86:
+ 495              	.LBB84:
+ 496              	.LBB82:
+ 497              	.LBB81:
+ 104:src/btphy/inquiry_scan_state.c **** 		return;
+ 498              		.loc 1 104 3 view .LVU110
+ 499 0062 FFF7FEBF 		b	btctl_set_state
+ 500              	.LVL34:
+ 501              	.L25:
+ 502 0066 00BF     		.align	2
+ 503              	.L24:
+ 504 0068 00000000 		.word	btctl
+ 505 006c 00000000 		.word	btphy
+ 506 0070 00000000 		.word	tx_eir_cb
+ 507 0074 00000000 		.word	.LANCHOR0
+ 508 0078 00800040 		.word	1073774592
+ 509 007c 00000000 		.word	inquiry_scan_rx_cb
+ 510 0080 14000000 		.word	.LC1
+ 511              	.LBE81:
+ 512              	.LBE82:
+ 513              	.LBE84:
+ 514              	.LBE86:
+ 515              	.LBE88:
+ 516              	.LBE90:
+ 517              		.cfi_endproc
+ 518              	.LFE33:
+ 520              		.section	.text.inquiry_scan_state_setup,"ax",%progbits
+ 521              		.align	1
+ARM GAS  /tmp/ccXB8n34.s 			page 14
+
+
+ 522              		.p2align 2,,3
+ 523              		.global	inquiry_scan_state_setup
+ 524              		.syntax unified
+ 525              		.thumb
+ 526              		.thumb_func
+ 528              	inquiry_scan_state_setup:
+ 529              	.LFB36:
+ 108:src/btphy/inquiry_scan_state.c **** }
+ 109:src/btphy/inquiry_scan_state.c **** 
+ 110:src/btphy/inquiry_scan_state.c **** /*
+ 111:src/btphy/inquiry_scan_state.c ****  * Inquiry slave
+ 112:src/btphy/inquiry_scan_state.c ****  */
+ 113:src/btphy/inquiry_scan_state.c **** void inquiry_scan_state_setup(void)
+ 114:src/btphy/inquiry_scan_state.c **** {
+ 530              		.loc 1 114 1 is_stmt 1 view -0
+ 531              		.cfi_startproc
+ 532              		@ args = 0, pretend = 0, frame = 0
+ 533              		@ frame_needed = 0, uses_anonymous_args = 0
+ 534 0000 30B5     		push	{r4, r5, lr}
+ 535              		.cfi_def_cfa_offset 12
+ 536              		.cfi_offset 4, -12
+ 537              		.cfi_offset 5, -8
+ 538              		.cfi_offset 14, -4
+ 539 0002 87B0     		sub	sp, sp, #28
+ 540              		.cfi_def_cfa_offset 40
+ 115:src/btphy/inquiry_scan_state.c **** 	/* Init only with the lap, DCI(0) is used as UAP */
+ 116:src/btphy/inquiry_scan_state.c **** 	btphy_set_mode(BT_MODE_INQUIRY_SCAN, GIAC, 0);
+ 541              		.loc 1 116 2 view .LVU112
+ 117:src/btphy/inquiry_scan_state.c **** 
+ 118:src/btphy/inquiry_scan_state.c **** 	btctl_set_state(BTCTL_STATE_INQUIRY_SCAN, BTCTL_REASON_SUCCESS);
+ 119:src/btphy/inquiry_scan_state.c **** 
+ 120:src/btphy/inquiry_scan_state.c **** 	/* A simple Header for our fhs */ 
+ 121:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_state.fhs_hdr.lt_addr = 0;
+ 122:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_state.fhs_hdr.type = BB_TYPE_FHS;
+ 123:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_state.fhs_hdr.flags = 0; 		// Depends on devices, some sends BTHDR_FLOW|BTHDR_SEQN, o
+ 542              		.loc 1 123 35 is_stmt 0 view .LVU113
+ 543 0004 0024     		movs	r4, #0
+ 116:src/btphy/inquiry_scan_state.c **** 
+ 544              		.loc 1 116 2 view .LVU114
+ 545 0006 0022     		movs	r2, #0
+ 546 0008 0220     		movs	r0, #2
+ 547 000a 2049     		ldr	r1, .L29
+ 548 000c FFF7FEFF 		bl	btphy_set_mode
+ 549              	.LVL35:
+ 118:src/btphy/inquiry_scan_state.c **** 
+ 550              		.loc 1 118 2 is_stmt 1 view .LVU115
+ 551 0010 0021     		movs	r1, #0
+ 552 0012 0420     		movs	r0, #4
+ 553 0014 FFF7FEFF 		bl	btctl_set_state
+ 554              	.LVL36:
+ 121:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_state.fhs_hdr.type = BB_TYPE_FHS;
+ 555              		.loc 1 121 2 view .LVU116
+ 122:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_state.fhs_hdr.flags = 0; 		// Depends on devices, some sends BTHDR_FLOW|BTHDR_SEQN, o
+ 556              		.loc 1 122 2 view .LVU117
+ 557              	.LBB97:
+ 558              	.LBB98:
+ 559              		.loc 2 31 14 is_stmt 0 view .LVU118
+ARM GAS  /tmp/ccXB8n34.s 			page 15
+
+
+ 560 0018 1D4B     		ldr	r3, .L29+4
+ 561              	.LBE98:
+ 562              	.LBE97:
+ 121:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_state.fhs_hdr.type = BB_TYPE_FHS;
+ 563              		.loc 1 121 37 view .LVU119
+ 564 001a 4FF40071 		mov	r1, #512
+ 124:src/btphy/inquiry_scan_state.c **** 
+ 125:src/btphy/inquiry_scan_state.c **** 	/* Prepare constant part of FHS payload */
+ 126:src/btphy/inquiry_scan_state.c **** 	bbpkt_fhs_prepare_payload(inquiry_scan_state.fhs_data,
+ 565              		.loc 1 126 2 view .LVU120
+ 566 001e D3F88030 		ldr	r3, [r3, #128]
+ 567 0022 1C48     		ldr	r0, .L29+8
+ 568 0024 1B1B     		subs	r3, r3, r4
+ 569 0026 18BF     		it	ne
+ 570 0028 0123     		movne	r3, #1
+ 571 002a CDE90304 		strd	r0, r4, [sp, #12]
+ 121:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_state.fhs_hdr.type = BB_TYPE_FHS;
+ 572              		.loc 1 121 37 view .LVU121
+ 573 002e 1A4D     		ldr	r5, .L29+12
+ 127:src/btphy/inquiry_scan_state.c **** 		btphy.my_sw&0xffffffff,	// parity: low32 bits of master's sw
+ 574              		.loc 1 127 8 view .LVU122
+ 575 0030 1A4A     		ldr	r2, .L29+16
+ 121:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_state.fhs_hdr.type = BB_TYPE_FHS;
+ 576              		.loc 1 121 37 view .LVU123
+ 577 0032 A980     		strh	r1, [r5, #4]	@ movhi
+ 123:src/btphy/inquiry_scan_state.c **** 
+ 578              		.loc 1 123 2 is_stmt 1 view .LVU124
+ 126:src/btphy/inquiry_scan_state.c **** 		btphy.my_sw&0xffffffff,	// parity: low32 bits of master's sw
+ 579              		.loc 1 126 2 view .LVU125
+ 580              	.LBB100:
+ 581              	.LBI97:
+  29:include/ubtbr/btctl_intf.h **** {
+ 582              		.loc 2 29 31 view .LVU126
+ 583              	.LBB99:
+ 584              		.loc 2 31 2 view .LVU127
+ 585              	.LBE99:
+ 586              	.LBE100:
+ 123:src/btphy/inquiry_scan_state.c **** 
+ 587              		.loc 1 123 35 is_stmt 0 view .LVU128
+ 588 0034 AC71     		strb	r4, [r5, #6]
+ 126:src/btphy/inquiry_scan_state.c **** 		btphy.my_sw&0xffffffff,	// parity: low32 bits of master's sw
+ 589              		.loc 1 126 2 view .LVU129
+ 590 0036 0593     		str	r3, [sp, #20]
+ 591 0038 518F     		ldrh	r1, [r2, #58]
+ 592 003a 92F83830 		ldrb	r3, [r2, #56]	@ zero_extendqisi2
+ 593 003e 05F10800 		add	r0, r5, #8
+ 594 0042 CDE90131 		strd	r3, r1, [sp, #4]
+ 595 0046 516B     		ldr	r1, [r2, #52]
+ 596 0048 2346     		mov	r3, r4
+ 597 004a 126C     		ldr	r2, [r2, #64]
+ 598 004c 0091     		str	r1, [sp]
+ 599 004e FFF7FEFF 		bl	bbpkt_fhs_prepare_payload
+ 600              	.LVL37:
+ 128:src/btphy/inquiry_scan_state.c **** 		btphy.my_lap,		// master's bdaddr
+ 129:src/btphy/inquiry_scan_state.c **** 		btphy.my_uap,		// 
+ 130:src/btphy/inquiry_scan_state.c **** 		btphy.my_nap,		// 
+ 131:src/btphy/inquiry_scan_state.c **** 		0x5A020C,		// class: FIXME: make this configurable
+ARM GAS  /tmp/ccXB8n34.s 			page 16
+
+
+ 132:src/btphy/inquiry_scan_state.c **** 		0,			// lt_addr
+ 133:src/btphy/inquiry_scan_state.c **** 		btctl_get_eir() != NULL
+ 134:src/btphy/inquiry_scan_state.c **** 		);
+ 135:src/btphy/inquiry_scan_state.c **** 
+ 136:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_state.clkn_start = MASTER_CLKN+1;
+ 601              		.loc 1 136 2 is_stmt 1 view .LVU130
+ 602              		.loc 1 136 34 is_stmt 0 view .LVU131
+ 603 0052 134B     		ldr	r3, .L29+20
+ 604 0054 9A68     		ldr	r2, [r3, #8]
+ 605              		.loc 1 136 45 view .LVU132
+ 606 0056 511C     		adds	r1, r2, #1
+ 607              		.loc 1 136 32 view .LVU133
+ 608 0058 2960     		str	r1, [r5]
+ 137:src/btphy/inquiry_scan_state.c **** 	inquiry_scan_schedule(1);
+ 609              		.loc 1 137 2 is_stmt 1 view .LVU134
+ 610              	.LVL38:
+ 611              	.LBB101:
+ 612              	.LBI101:
+  99:src/btphy/inquiry_scan_state.c **** {
+ 613              		.loc 1 99 13 view .LVU135
+ 614              	.LBB102:
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 615              		.loc 1 101 2 view .LVU136
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 616              		.loc 1 101 6 is_stmt 0 view .LVU137
+ 617 005a 9B68     		ldr	r3, [r3, #8]
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 618              		.loc 1 101 51 view .LVU138
+ 619 005c 02F53B32 		add	r2, r2, #191488
+ 620 0060 02F20122 		addw	r2, r2, #513
+ 101:src/btphy/inquiry_scan_state.c **** 	{
+ 621              		.loc 1 101 5 view .LVU139
+ 622 0064 9342     		cmp	r3, r2
+ 623 0066 07D2     		bcs	.L28
+ 107:src/btphy/inquiry_scan_state.c **** }
+ 624              		.loc 1 107 2 is_stmt 1 view .LVU140
+ 625 0068 2246     		mov	r2, r4
+ 626 006a 0120     		movs	r0, #1
+ 627 006c 0D49     		ldr	r1, .L29+24
+ 628              	.LBE102:
+ 629              	.LBE101:
+ 138:src/btphy/inquiry_scan_state.c **** }
+ 630              		.loc 1 138 1 is_stmt 0 view .LVU141
+ 631 006e 07B0     		add	sp, sp, #28
+ 632              		.cfi_remember_state
+ 633              		.cfi_def_cfa_offset 12
+ 634              		@ sp needed
+ 635 0070 BDE83040 		pop	{r4, r5, lr}
+ 636              		.cfi_restore 14
+ 637              		.cfi_restore 5
+ 638              		.cfi_restore 4
+ 639              		.cfi_def_cfa_offset 0
+ 640              	.LBB109:
+ 641              	.LBB107:
+ 107:src/btphy/inquiry_scan_state.c **** }
+ 642              		.loc 1 107 2 view .LVU142
+ 643 0074 FFF7FEBF 		b	scan_task_schedule
+ARM GAS  /tmp/ccXB8n34.s 			page 17
+
+
+ 644              	.LVL39:
+ 645              	.L28:
+ 646              		.cfi_restore_state
+ 647              	.LBB103:
+ 648              	.LBI103:
+  99:src/btphy/inquiry_scan_state.c **** {
+ 649              		.loc 1 99 13 is_stmt 1 view .LVU143
+ 650              	.LBB104:
+ 103:src/btphy/inquiry_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 651              		.loc 1 103 3 view .LVU144
+ 652 0078 0B48     		ldr	r0, .L29+28
+ 653 007a FFF7FEFF 		bl	cprintf
+ 654              	.LVL40:
+ 104:src/btphy/inquiry_scan_state.c **** 		return;
+ 655              		.loc 1 104 3 view .LVU145
+ 656 007e 0121     		movs	r1, #1
+ 657 0080 2046     		mov	r0, r4
+ 658              	.LBE104:
+ 659              	.LBE103:
+ 660              	.LBE107:
+ 661              	.LBE109:
+ 662              		.loc 1 138 1 is_stmt 0 view .LVU146
+ 663 0082 07B0     		add	sp, sp, #28
+ 664              		.cfi_def_cfa_offset 12
+ 665              		@ sp needed
+ 666 0084 BDE83040 		pop	{r4, r5, lr}
+ 667              		.cfi_restore 14
+ 668              		.cfi_restore 5
+ 669              		.cfi_restore 4
+ 670              		.cfi_def_cfa_offset 0
+ 671              	.LBB110:
+ 672              	.LBB108:
+ 673              	.LBB106:
+ 674              	.LBB105:
+ 104:src/btphy/inquiry_scan_state.c **** 		return;
+ 675              		.loc 1 104 3 view .LVU147
+ 676 0088 FFF7FEBF 		b	btctl_set_state
+ 677              	.LVL41:
+ 678              	.L30:
+ 679              		.align	2
+ 680              	.L29:
+ 681 008c 338B9E00 		.word	10390323
+ 682 0090 00000000 		.word	btctl
+ 683 0094 0C025A00 		.word	5898764
+ 684 0098 00000000 		.word	.LANCHOR0
+ 685 009c 00000000 		.word	btphy
+ 686 00a0 00800040 		.word	1073774592
+ 687 00a4 00000000 		.word	inquiry_scan_rx_cb
+ 688 00a8 14000000 		.word	.LC1
+ 689              	.LBE105:
+ 690              	.LBE106:
+ 691              	.LBE108:
+ 692              	.LBE110:
+ 693              		.cfi_endproc
+ 694              	.LFE36:
+ 696              		.bss
+ 697              		.align	2
+ARM GAS  /tmp/ccXB8n34.s 			page 18
+
+
+ 698              		.set	.LANCHOR0,. + 0
+ 701              	inquiry_scan_state:
+ 702 0000 00000000 		.space	28
+ 702      00000000 
+ 702      00000000 
+ 702      00000000 
+ 702      00000000 
+ 703              		.text
+ 704              	.Letext0:
+ 705              		.file 3 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 706              		.file 4 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 707              		.file 5 "../../host/libubertooth/src/ubertooth_interface.h"
+ 708              		.file 6 "include/ubtbr/msg.h"
+ 709              		.file 7 "include/ubtbr/queue.h"
+ 710              		.file 8 "include/ubtbr/btphy.h"
+ 711              		.file 9 "include/ubtbr/bb.h"
+ 712              		.file 10 "include/ubtbr/scan_task.h"
+ 713              		.file 11 "include/ubtbr/tx_task.h"
+ 714              		.file 12 "include/ubtbr/console.h"
+ 715              		.file 13 "include/ubtbr/debug.h"
+ARM GAS  /tmp/ccXB8n34.s 			page 19
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 inquiry_scan_state.c
+     /tmp/ccXB8n34.s:19     .rodata.str1.4:00000000 $d
+     /tmp/ccXB8n34.s:26     .text.inquiry_scan_rx_cb:00000000 $t
+     /tmp/ccXB8n34.s:32     .text.inquiry_scan_rx_cb:00000000 inquiry_scan_rx_cb
+     /tmp/ccXB8n34.s:226    .text.inquiry_scan_rx_cb:00000084 $d
+     /tmp/ccXB8n34.s:353    .text.tx_fhs_cb:00000000 tx_fhs_cb
+     /tmp/ccXB8n34.s:243    .text.tx_eir_cb:00000000 $t
+     /tmp/ccXB8n34.s:249    .text.tx_eir_cb:00000000 tx_eir_cb
+     /tmp/ccXB8n34.s:335    .text.tx_eir_cb:00000038 $d
+     /tmp/ccXB8n34.s:347    .text.tx_fhs_cb:00000000 $t
+     /tmp/ccXB8n34.s:504    .text.tx_fhs_cb:00000068 $d
+     /tmp/ccXB8n34.s:521    .text.inquiry_scan_state_setup:00000000 $t
+     /tmp/ccXB8n34.s:528    .text.inquiry_scan_state_setup:00000000 inquiry_scan_state_setup
+     /tmp/ccXB8n34.s:681    .text.inquiry_scan_state_setup:0000008c $d
+     /tmp/ccXB8n34.s:697    .bss:00000000 $d
+     /tmp/ccXB8n34.s:701    .bss:00000000 inquiry_scan_state
+
+UNDEFINED SYMBOLS
+scan_task_schedule
+console_putc
+bbpkt_fhs_finalize_payload
+tx_task_schedule
+cprintf
+btctl_set_state
+btctl
+btphy
+btphy_set_mode
+bbpkt_fhs_prepare_payload

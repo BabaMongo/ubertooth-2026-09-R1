@@ -1,0 +1,899 @@
+ARM GAS  /tmp/cckYP8Hb.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 4
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"ubertooth_dma.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "ubertooth_dma.c"
+  18              		.section	.text.dma_poweron,"ax",%progbits
+  19              		.align	1
+  20              		.global	dma_poweron
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	dma_poweron:
+  26              	.LFB0:
+   1:ubertooth_dma.c **** /*
+   2:ubertooth_dma.c ****  * Copyright 2015 Hannes Ellinger
+   3:ubertooth_dma.c ****  *
+   4:ubertooth_dma.c ****  * This file is part of Project Ubertooth.
+   5:ubertooth_dma.c ****  *
+   6:ubertooth_dma.c ****  * This program is free software; you can redistribute it and/or modify
+   7:ubertooth_dma.c ****  * it under the terms of the GNU General Public License as published by
+   8:ubertooth_dma.c ****  * the Free Software Foundation; either version 2, or (at your option)
+   9:ubertooth_dma.c ****  * any later version.
+  10:ubertooth_dma.c ****  *
+  11:ubertooth_dma.c ****  * This program is distributed in the hope that it will be useful,
+  12:ubertooth_dma.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  13:ubertooth_dma.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  14:ubertooth_dma.c ****  * GNU General Public License for more details.
+  15:ubertooth_dma.c ****  *
+  16:ubertooth_dma.c ****  * You should have received a copy of the GNU General Public License
+  17:ubertooth_dma.c ****  * along with this program; see the file COPYING.  If not, write to
+  18:ubertooth_dma.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  19:ubertooth_dma.c ****  * Boston, MA 02110-1301, USA.
+  20:ubertooth_dma.c ****  */
+  21:ubertooth_dma.c **** 
+  22:ubertooth_dma.c **** #include "ubertooth_dma.h"
+  23:ubertooth_dma.c **** 
+  24:ubertooth_dma.c **** volatile uint8_t rxbuf1[DMA_SIZE];
+  25:ubertooth_dma.c **** volatile uint8_t rxbuf2[DMA_SIZE];
+  26:ubertooth_dma.c **** 
+  27:ubertooth_dma.c **** volatile uint8_t* volatile active_rxbuf;
+  28:ubertooth_dma.c **** volatile uint8_t* volatile idle_rxbuf;
+  29:ubertooth_dma.c **** 
+  30:ubertooth_dma.c **** volatile uint32_t rx_tc;
+  31:ubertooth_dma.c **** volatile uint32_t rx_err;
+  32:ubertooth_dma.c **** 
+ARM GAS  /tmp/cckYP8Hb.s 			page 2
+
+
+  33:ubertooth_dma.c **** /* DMA linked list items */
+  34:ubertooth_dma.c **** typedef struct {
+  35:ubertooth_dma.c **** 	uint32_t src;
+  36:ubertooth_dma.c **** 	uint32_t dest;
+  37:ubertooth_dma.c **** 	uint32_t next_lli;
+  38:ubertooth_dma.c **** 	uint32_t control;
+  39:ubertooth_dma.c **** } dma_lli;
+  40:ubertooth_dma.c **** 
+  41:ubertooth_dma.c **** dma_lli rx_dma_lli1;
+  42:ubertooth_dma.c **** dma_lli rx_dma_lli2;
+  43:ubertooth_dma.c **** 
+  44:ubertooth_dma.c **** dma_lli le_dma_lli[11]; // 11 x 4 bytes
+  45:ubertooth_dma.c **** 
+  46:ubertooth_dma.c **** 
+  47:ubertooth_dma.c **** void dma_poweron(void) {
+  27              		.loc 1 47 24 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31              		@ link register save eliminated.
+  48:ubertooth_dma.c **** 	// refer to UM10360 LPC17xx User Manual Ch 31 Sec 31.6.1, PDF page 616
+  49:ubertooth_dma.c **** 	PCONP |= PCONP_PCGPDMA;
+  32              		.loc 1 49 2 view .LVU1
+  33 0000 164A     		ldr	r2, .L5
+  34 0002 D2F8C430 		ldr	r3, [r2, #196]
+  35              		.loc 1 49 8 is_stmt 0 view .LVU2
+  36 0006 43F00053 		orr	r3, r3, #536870912
+  37 000a C2F8C430 		str	r3, [r2, #196]
+  50:ubertooth_dma.c **** 
+  51:ubertooth_dma.c **** 	// enable DMA interrupts at lowest priority
+  52:ubertooth_dma.c **** 	IPR6 |= IPR6_IP_DMA; // hack, sets it to 31 (lowest)
+  38              		.loc 1 52 2 is_stmt 1 view .LVU3
+  39 000e 4FF0E023 		mov	r3, #-536813568
+  40 0012 D3F81824 		ldr	r2, [r3, #1048]
+  41              		.loc 1 52 7 is_stmt 0 view .LVU4
+  42 0016 42F47802 		orr	r2, r2, #16252928
+  43 001a C3F81824 		str	r2, [r3, #1048]
+  53:ubertooth_dma.c **** 	ISER0 = ISER0_ISE_DMA;
+  44              		.loc 1 53 2 is_stmt 1 view .LVU5
+  45              		.loc 1 53 8 is_stmt 0 view .LVU6
+  46 001e 4FF08062 		mov	r2, #67108864
+  47 0022 C3F80021 		str	r2, [r3, #256]
+  54:ubertooth_dma.c **** 
+  55:ubertooth_dma.c **** 	// disable active channels
+  56:ubertooth_dma.c **** 	DMACC0Config = 0;
+  48              		.loc 1 56 2 is_stmt 1 view .LVU7
+  49              		.loc 1 56 15 is_stmt 0 view .LVU8
+  50 0026 0022     		movs	r2, #0
+  51 0028 0D4B     		ldr	r3, .L5+4
+  52 002a C3F81021 		str	r2, [r3, #272]
+  57:ubertooth_dma.c **** 	DMACC1Config = 0;
+  53              		.loc 1 57 2 is_stmt 1 view .LVU9
+  54              		.loc 1 57 15 is_stmt 0 view .LVU10
+  55 002e C3F83021 		str	r2, [r3, #304]
+  58:ubertooth_dma.c **** 	DMACC2Config = 0;
+  56              		.loc 1 58 2 is_stmt 1 view .LVU11
+  57              		.loc 1 58 15 is_stmt 0 view .LVU12
+ARM GAS  /tmp/cckYP8Hb.s 			page 3
+
+
+  58 0032 C3F85021 		str	r2, [r3, #336]
+  59:ubertooth_dma.c **** 	DMACC3Config = 0;
+  59              		.loc 1 59 2 is_stmt 1 view .LVU13
+  60              		.loc 1 59 15 is_stmt 0 view .LVU14
+  61 0036 C3F87021 		str	r2, [r3, #368]
+  60:ubertooth_dma.c **** 	DMACC4Config = 0;
+  62              		.loc 1 60 2 is_stmt 1 view .LVU15
+  63              		.loc 1 60 15 is_stmt 0 view .LVU16
+  64 003a C3F89021 		str	r2, [r3, #400]
+  61:ubertooth_dma.c **** 	DMACC5Config = 0;
+  65              		.loc 1 61 2 is_stmt 1 view .LVU17
+  66              		.loc 1 61 15 is_stmt 0 view .LVU18
+  67 003e C3F8B021 		str	r2, [r3, #432]
+  62:ubertooth_dma.c **** 	DMACC6Config = 0;
+  68              		.loc 1 62 2 is_stmt 1 view .LVU19
+  69              		.loc 1 62 15 is_stmt 0 view .LVU20
+  70 0042 C3F8D021 		str	r2, [r3, #464]
+  63:ubertooth_dma.c **** 	DMACC7Config = 0;
+  71              		.loc 1 63 2 is_stmt 1 view .LVU21
+  72              		.loc 1 63 15 is_stmt 0 view .LVU22
+  73 0046 C3F8F021 		str	r2, [r3, #496]
+  64:ubertooth_dma.c **** 	DMACIntTCClear = 0xFF;
+  74              		.loc 1 64 2 is_stmt 1 view .LVU23
+  75              		.loc 1 64 17 is_stmt 0 view .LVU24
+  76 004a FF22     		movs	r2, #255
+  77 004c 9A60     		str	r2, [r3, #8]
+  65:ubertooth_dma.c **** 	DMACIntErrClr = 0xFF;
+  78              		.loc 1 65 2 is_stmt 1 view .LVU25
+  79              		.loc 1 65 16 is_stmt 0 view .LVU26
+  80 004e 1A61     		str	r2, [r3, #16]
+  66:ubertooth_dma.c **** 
+  67:ubertooth_dma.c **** 	/* enable DMA globally */
+  68:ubertooth_dma.c **** 	DMACConfig = DMACConfig_E;
+  81              		.loc 1 68 2 is_stmt 1 view .LVU27
+  82              		.loc 1 68 13 is_stmt 0 view .LVU28
+  83 0050 0122     		movs	r2, #1
+  84 0052 1A63     		str	r2, [r3, #48]
+  69:ubertooth_dma.c **** 	while (!(DMACConfig & DMACConfig_E));
+  85              		.loc 1 69 2 is_stmt 1 view .LVU29
+  86              	.L2:
+  87              		.loc 1 69 9 discriminator 1 view .LVU30
+  88              		.loc 1 69 11 is_stmt 0 discriminator 1 view .LVU31
+  89 0054 1A6B     		ldr	r2, [r3, #48]
+  90              		.loc 1 69 9 discriminator 1 view .LVU32
+  91 0056 D207     		lsls	r2, r2, #31
+  92 0058 FCD5     		bpl	.L2
+  70:ubertooth_dma.c **** }
+  93              		.loc 1 70 1 view .LVU33
+  94 005a 7047     		bx	lr
+  95              	.L6:
+  96              		.align	2
+  97              	.L5:
+  98 005c 00C00F40 		.word	1074774016
+  99 0060 00400050 		.word	1342193664
+ 100              		.cfi_endproc
+ 101              	.LFE0:
+ 103              		.section	.text.dma_poweroff,"ax",%progbits
+ARM GAS  /tmp/cckYP8Hb.s 			page 4
+
+
+ 104              		.align	1
+ 105              		.global	dma_poweroff
+ 106              		.syntax unified
+ 107              		.thumb
+ 108              		.thumb_func
+ 110              	dma_poweroff:
+ 111              	.LFB1:
+  71:ubertooth_dma.c **** 
+  72:ubertooth_dma.c **** void dma_poweroff(void) {
+ 112              		.loc 1 72 25 is_stmt 1 view -0
+ 113              		.cfi_startproc
+ 114              		@ args = 0, pretend = 0, frame = 0
+ 115              		@ frame_needed = 0, uses_anonymous_args = 0
+ 116              		@ link register save eliminated.
+  73:ubertooth_dma.c **** 	// Disable the DMA controller by writing 0 to the DMA Enable bit in the DMACConfig
+  74:ubertooth_dma.c **** 	// register.
+  75:ubertooth_dma.c **** 	DMACConfig &= ~DMACConfig_E;
+ 117              		.loc 1 75 2 view .LVU35
+ 118              		.loc 1 75 13 is_stmt 0 view .LVU36
+ 119 0000 0A4B     		ldr	r3, .L10
+ 120 0002 1A6B     		ldr	r2, [r3, #48]
+ 121 0004 22F00102 		bic	r2, r2, #1
+ 122 0008 1A63     		str	r2, [r3, #48]
+  76:ubertooth_dma.c **** 	while (DMACConfig & DMACConfig_E);
+ 123              		.loc 1 76 2 is_stmt 1 view .LVU37
+ 124              	.L8:
+ 125              		.loc 1 76 9 discriminator 1 view .LVU38
+ 126 000a 1A6B     		ldr	r2, [r3, #48]
+ 127 000c D207     		lsls	r2, r2, #31
+ 128 000e FCD4     		bmi	.L8
+  77:ubertooth_dma.c **** 
+  78:ubertooth_dma.c **** 	ICER0 = ICER0_ICE_DMA;
+ 129              		.loc 1 78 2 view .LVU39
+ 130              		.loc 1 78 8 is_stmt 0 view .LVU40
+ 131 0010 4FF0E023 		mov	r3, #-536813568
+ 132 0014 4FF08062 		mov	r2, #67108864
+ 133 0018 C3F88021 		str	r2, [r3, #384]
+  79:ubertooth_dma.c **** 
+  80:ubertooth_dma.c **** 	PCONP &= ~PCONP_PCGPDMA;
+ 134              		.loc 1 80 2 is_stmt 1 view .LVU41
+ 135              		.loc 1 80 8 is_stmt 0 view .LVU42
+ 136 001c 044A     		ldr	r2, .L10+4
+ 137 001e D2F8C430 		ldr	r3, [r2, #196]
+ 138 0022 23F00053 		bic	r3, r3, #536870912
+ 139 0026 C2F8C430 		str	r3, [r2, #196]
+  81:ubertooth_dma.c **** }
+ 140              		.loc 1 81 1 view .LVU43
+ 141 002a 7047     		bx	lr
+ 142              	.L11:
+ 143              		.align	2
+ 144              	.L10:
+ 145 002c 00400050 		.word	1342193664
+ 146 0030 00C00F40 		.word	1074774016
+ 147              		.cfi_endproc
+ 148              	.LFE1:
+ 150              		.section	.text.dma_clear_interrupts,"ax",%progbits
+ 151              		.align	1
+ARM GAS  /tmp/cckYP8Hb.s 			page 5
+
+
+ 152              		.global	dma_clear_interrupts
+ 153              		.syntax unified
+ 154              		.thumb
+ 155              		.thumb_func
+ 157              	dma_clear_interrupts:
+ 158              	.LVL0:
+ 159              	.LFB2:
+  82:ubertooth_dma.c **** 
+  83:ubertooth_dma.c **** void dma_clear_interrupts(unsigned channel) {
+ 160              		.loc 1 83 45 is_stmt 1 view -0
+ 161              		.cfi_startproc
+ 162              		@ args = 0, pretend = 0, frame = 0
+ 163              		@ frame_needed = 0, uses_anonymous_args = 0
+ 164              		@ link register save eliminated.
+ 165              		.loc 1 83 45 is_stmt 0 view .LVU45
+  84:ubertooth_dma.c **** 	DMACIntTCClear = 1 << channel;
+ 166              		.loc 1 84 2 is_stmt 1 view .LVU46
+ 167              		.loc 1 84 21 is_stmt 0 view .LVU47
+ 168 0000 0123     		movs	r3, #1
+ 169 0002 03FA00F0 		lsl	r0, r3, r0
+ 170              	.LVL1:
+ 171              		.loc 1 84 17 view .LVU48
+ 172 0006 024B     		ldr	r3, .L13
+ 173 0008 9860     		str	r0, [r3, #8]
+  85:ubertooth_dma.c **** 	DMACIntErrClr  = 1 << channel;
+ 174              		.loc 1 85 2 is_stmt 1 view .LVU49
+ 175              		.loc 1 85 17 is_stmt 0 view .LVU50
+ 176 000a 1861     		str	r0, [r3, #16]
+  86:ubertooth_dma.c **** }
+ 177              		.loc 1 86 1 view .LVU51
+ 178 000c 7047     		bx	lr
+ 179              	.L14:
+ 180 000e 00BF     		.align	2
+ 181              	.L13:
+ 182 0010 00400050 		.word	1342193664
+ 183              		.cfi_endproc
+ 184              	.LFE2:
+ 186              		.section	.text.dma_init_rx_symbols,"ax",%progbits
+ 187              		.align	1
+ 188              		.global	dma_init_rx_symbols
+ 189              		.syntax unified
+ 190              		.thumb
+ 191              		.thumb_func
+ 193              	dma_init_rx_symbols:
+ 194              	.LFB3:
+  87:ubertooth_dma.c **** 
+  88:ubertooth_dma.c **** void dma_init_rx_symbols(void) {
+ 195              		.loc 1 88 32 is_stmt 1 view -0
+ 196              		.cfi_startproc
+ 197              		@ args = 0, pretend = 0, frame = 0
+ 198              		@ frame_needed = 0, uses_anonymous_args = 0
+ 199 0000 70B5     		push	{r4, r5, r6, lr}
+ 200              		.cfi_def_cfa_offset 16
+ 201              		.cfi_offset 4, -16
+ 202              		.cfi_offset 5, -12
+ 203              		.cfi_offset 6, -8
+ 204              		.cfi_offset 14, -4
+ARM GAS  /tmp/cckYP8Hb.s 			page 6
+
+
+  89:ubertooth_dma.c **** 	dma_clear_interrupts(0);
+ 205              		.loc 1 89 2 view .LVU53
+ 206              	.LVL2:
+ 207              	.LBB8:
+ 208              	.LBI8:
+  83:ubertooth_dma.c **** 	DMACIntTCClear = 1 << channel;
+ 209              		.loc 1 83 6 view .LVU54
+ 210              	.LBB9:
+  84:ubertooth_dma.c **** 	DMACIntErrClr  = 1 << channel;
+ 211              		.loc 1 84 2 view .LVU55
+  84:ubertooth_dma.c **** 	DMACIntErrClr  = 1 << channel;
+ 212              		.loc 1 84 17 is_stmt 0 view .LVU56
+ 213 0002 0123     		movs	r3, #1
+ 214 0004 174A     		ldr	r2, .L16
+ 215              	.LBE9:
+ 216              	.LBE8:
+  90:ubertooth_dma.c **** 
+  91:ubertooth_dma.c **** 	/* DMA linked lists */
+  92:ubertooth_dma.c **** 	rx_dma_lli1.src = (uint32_t)&(DIO_SSP_DR);
+ 217              		.loc 1 92 18 view .LVU57
+ 218 0006 184C     		ldr	r4, .L16+4
+ 219              	.LBB11:
+ 220              	.LBB10:
+  84:ubertooth_dma.c **** 	DMACIntErrClr  = 1 << channel;
+ 221              		.loc 1 84 17 view .LVU58
+ 222 0008 9360     		str	r3, [r2, #8]
+  85:ubertooth_dma.c **** }
+ 223              		.loc 1 85 2 is_stmt 1 view .LVU59
+  85:ubertooth_dma.c **** }
+ 224              		.loc 1 85 17 is_stmt 0 view .LVU60
+ 225 000a 1361     		str	r3, [r2, #16]
+ 226              	.LVL3:
+  85:ubertooth_dma.c **** }
+ 227              		.loc 1 85 17 view .LVU61
+ 228              	.LBE10:
+ 229              	.LBE11:
+ 230              		.loc 1 92 2 is_stmt 1 view .LVU62
+ 231              		.loc 1 92 18 is_stmt 0 view .LVU63
+ 232 000c 174B     		ldr	r3, .L16+8
+  93:ubertooth_dma.c **** 	rx_dma_lli1.dest = (uint32_t)&rxbuf1[0];
+  94:ubertooth_dma.c **** 	rx_dma_lli1.next_lli = (uint32_t)&rx_dma_lli2;
+  95:ubertooth_dma.c **** 	rx_dma_lli1.control = (DMA_SIZE) |
+ 233              		.loc 1 95 22 view .LVU64
+ 234 000e 1848     		ldr	r0, .L16+12
+  92:ubertooth_dma.c **** 	rx_dma_lli1.dest = (uint32_t)&rxbuf1[0];
+ 235              		.loc 1 92 18 view .LVU65
+ 236 0010 1946     		mov	r1, r3
+  94:ubertooth_dma.c **** 	rx_dma_lli1.control = (DMA_SIZE) |
+ 237              		.loc 1 94 25 view .LVU66
+ 238 0012 03F14406 		add	r6, r3, #68
+  92:ubertooth_dma.c **** 	rx_dma_lli1.dest = (uint32_t)&rxbuf1[0];
+ 239              		.loc 1 92 18 view .LVU67
+ 240 0016 41F8104B 		str	r4, [r1], #16
+  93:ubertooth_dma.c **** 	rx_dma_lli1.dest = (uint32_t)&rxbuf1[0];
+ 241              		.loc 1 93 2 is_stmt 1 view .LVU68
+  96:ubertooth_dma.c **** 			(1 << 12) |        /* source burst size = 4 */
+  97:ubertooth_dma.c **** 			(1 << 15) |        /* destination burst size = 4 */
+ARM GAS  /tmp/cckYP8Hb.s 			page 7
+
+
+  98:ubertooth_dma.c **** 			(0 << 18) |        /* source width 8 bits */
+  99:ubertooth_dma.c **** 			(0 << 21) |        /* destination width 8 bits */
+ 100:ubertooth_dma.c **** 			DMACCxControl_DI | /* destination increment */
+ 101:ubertooth_dma.c **** 			DMACCxControl_I;   /* terminal count interrupt enable */
+ 102:ubertooth_dma.c **** 
+ 103:ubertooth_dma.c **** 	rx_dma_lli2.src = (uint32_t)&(DIO_SSP_DR);
+ 104:ubertooth_dma.c **** 	rx_dma_lli2.dest = (uint32_t)&rxbuf2[0];
+ 242              		.loc 1 104 21 is_stmt 0 view .LVU69
+ 243 001a 03F15405 		add	r5, r3, #84
+  95:ubertooth_dma.c **** 			(1 << 12) |        /* source burst size = 4 */
+ 244              		.loc 1 95 22 view .LVU70
+ 245 001e D860     		str	r0, [r3, #12]
+ 105:ubertooth_dma.c **** 	rx_dma_lli2.next_lli = (uint32_t)&rx_dma_lli1;
+ 106:ubertooth_dma.c **** 	rx_dma_lli2.control = (DMA_SIZE) |
+ 246              		.loc 1 106 22 view .LVU71
+ 247 0020 1865     		str	r0, [r3, #80]
+ 105:ubertooth_dma.c **** 	rx_dma_lli2.next_lli = (uint32_t)&rx_dma_lli1;
+ 248              		.loc 1 105 23 view .LVU72
+ 249 0022 C3E91253 		strd	r5, r3, [r3, #72]
+  93:ubertooth_dma.c **** 	rx_dma_lli1.next_lli = (uint32_t)&rx_dma_lli2;
+ 250              		.loc 1 93 19 view .LVU73
+ 251 0026 5960     		str	r1, [r3, #4]
+  94:ubertooth_dma.c **** 	rx_dma_lli1.control = (DMA_SIZE) |
+ 252              		.loc 1 94 2 is_stmt 1 view .LVU74
+  94:ubertooth_dma.c **** 	rx_dma_lli1.control = (DMA_SIZE) |
+ 253              		.loc 1 94 23 is_stmt 0 view .LVU75
+ 254 0028 9E60     		str	r6, [r3, #8]
+  95:ubertooth_dma.c **** 			(1 << 12) |        /* source burst size = 4 */
+ 255              		.loc 1 95 2 is_stmt 1 view .LVU76
+ 103:ubertooth_dma.c **** 	rx_dma_lli2.dest = (uint32_t)&rxbuf2[0];
+ 256              		.loc 1 103 2 view .LVU77
+ 103:ubertooth_dma.c **** 	rx_dma_lli2.dest = (uint32_t)&rxbuf2[0];
+ 257              		.loc 1 103 18 is_stmt 0 view .LVU78
+ 258 002a 5C64     		str	r4, [r3, #68]
+ 104:ubertooth_dma.c **** 	rx_dma_lli2.next_lli = (uint32_t)&rx_dma_lli1;
+ 259              		.loc 1 104 2 is_stmt 1 view .LVU79
+ 260              		.loc 1 106 2 view .LVU80
+ 107:ubertooth_dma.c **** 			(1 << 12) |        /* source burst size = 4 */
+ 108:ubertooth_dma.c **** 			(1 << 15) |        /* destination burst size = 4 */
+ 109:ubertooth_dma.c **** 			(0 << 18) |        /* source width 8 bits */
+ 110:ubertooth_dma.c **** 			(0 << 21) |        /* destination width 8 bits */
+ 111:ubertooth_dma.c **** 			DMACCxControl_DI | /* destination increment */
+ 112:ubertooth_dma.c **** 			DMACCxControl_I;   /* terminal count interrupt enable */
+ 113:ubertooth_dma.c **** 
+ 114:ubertooth_dma.c **** 	/* configure DMA channel 0 */
+ 115:ubertooth_dma.c **** 	DMACC0SrcAddr = rx_dma_lli1.src;
+ 261              		.loc 1 115 2 view .LVU81
+ 262              		.loc 1 115 16 is_stmt 0 view .LVU82
+ 263 002c C2F80041 		str	r4, [r2, #256]
+ 116:ubertooth_dma.c **** 	DMACC0DestAddr = rx_dma_lli1.dest;
+ 264              		.loc 1 116 2 is_stmt 1 view .LVU83
+ 265              		.loc 1 116 17 is_stmt 0 view .LVU84
+ 266 0030 C2F80411 		str	r1, [r2, #260]
+ 117:ubertooth_dma.c **** 	DMACC0LLI = rx_dma_lli1.next_lli;
+ 267              		.loc 1 117 2 is_stmt 1 view .LVU85
+ 268              		.loc 1 117 12 is_stmt 0 view .LVU86
+ 269 0034 C2F80861 		str	r6, [r2, #264]
+ARM GAS  /tmp/cckYP8Hb.s 			page 8
+
+
+ 118:ubertooth_dma.c **** 	DMACC0Control = rx_dma_lli1.control;
+ 270              		.loc 1 118 2 is_stmt 1 view .LVU87
+ 271              		.loc 1 118 16 is_stmt 0 view .LVU88
+ 272 0038 C2F80C01 		str	r0, [r2, #268]
+ 119:ubertooth_dma.c **** 	DMACC0Config = DIO_SSP_SRC
+ 273              		.loc 1 119 2 is_stmt 1 view .LVU89
+ 274              		.loc 1 119 15 is_stmt 0 view .LVU90
+ 275 003c 4DF20600 		movw	r0, #53254
+ 276 0040 C2F81001 		str	r0, [r2, #272]
+ 120:ubertooth_dma.c **** 	               | (0x2 << 11)       /* peripheral to memory */
+ 121:ubertooth_dma.c **** 	               | DMACCxConfig_IE   /* allow error interrupts */
+ 122:ubertooth_dma.c **** 	               | DMACCxConfig_ITC; /* allow terminal count interrupts */
+ 123:ubertooth_dma.c **** 
+ 124:ubertooth_dma.c **** 	rx_tc = 0;
+ 277              		.loc 1 124 2 is_stmt 1 view .LVU91
+ 278              		.loc 1 124 8 is_stmt 0 view .LVU92
+ 279 0044 0020     		movs	r0, #0
+ 280 0046 C3F88800 		str	r0, [r3, #136]
+ 125:ubertooth_dma.c **** 	rx_err = 0;
+ 281              		.loc 1 125 2 is_stmt 1 view .LVU93
+ 282              		.loc 1 125 9 is_stmt 0 view .LVU94
+ 283 004a C3F88C00 		str	r0, [r3, #140]
+ 126:ubertooth_dma.c **** 
+ 127:ubertooth_dma.c **** 	active_rxbuf = &rxbuf1[0];
+ 284              		.loc 1 127 2 is_stmt 1 view .LVU95
+ 285              		.loc 1 127 15 is_stmt 0 view .LVU96
+ 286 004e C3F89010 		str	r1, [r3, #144]
+ 128:ubertooth_dma.c **** 	idle_rxbuf = &rxbuf2[0];
+ 287              		.loc 1 128 2 is_stmt 1 view .LVU97
+ 288              		.loc 1 128 13 is_stmt 0 view .LVU98
+ 289 0052 C3F89450 		str	r5, [r3, #148]
+ 129:ubertooth_dma.c **** 
+ 130:ubertooth_dma.c **** 	// enable channel
+ 131:ubertooth_dma.c **** 	DMACC0Config |= 1;
+ 290              		.loc 1 131 2 is_stmt 1 view .LVU99
+ 291 0056 D2F81031 		ldr	r3, [r2, #272]
+ 292              		.loc 1 131 15 is_stmt 0 view .LVU100
+ 293 005a 43F00103 		orr	r3, r3, #1
+ 294 005e C2F81031 		str	r3, [r2, #272]
+ 132:ubertooth_dma.c **** }
+ 295              		.loc 1 132 1 view .LVU101
+ 296 0062 70BD     		pop	{r4, r5, r6, pc}
+ 297              	.L17:
+ 298              		.align	2
+ 299              	.L16:
+ 300 0064 00400050 		.word	1342193664
+ 301 0068 08000340 		.word	1073938440
+ 302 006c 00000000 		.word	.LANCHOR0
+ 303 0070 32900088 		.word	-2013229006
+ 304              		.cfi_endproc
+ 305              	.LFE3:
+ 307              		.section	.text.dma_init_le,"ax",%progbits
+ 308              		.align	1
+ 309              		.global	dma_init_le
+ 310              		.syntax unified
+ 311              		.thumb
+ 312              		.thumb_func
+ARM GAS  /tmp/cckYP8Hb.s 			page 9
+
+
+ 314              	dma_init_le:
+ 315              	.LFB4:
+ 133:ubertooth_dma.c **** 
+ 134:ubertooth_dma.c **** void dma_init_le(void) {
+ 316              		.loc 1 134 24 is_stmt 1 view -0
+ 317              		.cfi_startproc
+ 318              		@ args = 0, pretend = 0, frame = 0
+ 319              		@ frame_needed = 0, uses_anonymous_args = 0
+ 320 0000 30B5     		push	{r4, r5, lr}
+ 321              		.cfi_def_cfa_offset 12
+ 322              		.cfi_offset 4, -12
+ 323              		.cfi_offset 5, -8
+ 324              		.cfi_offset 14, -4
+ 135:ubertooth_dma.c **** 	int i;
+ 325              		.loc 1 135 2 view .LVU103
+ 136:ubertooth_dma.c **** 
+ 137:ubertooth_dma.c **** 	dma_clear_interrupts(0);
+ 326              		.loc 1 137 2 view .LVU104
+ 327              	.LVL4:
+ 328              	.LBB12:
+ 329              	.LBI12:
+  83:ubertooth_dma.c **** 	DMACIntTCClear = 1 << channel;
+ 330              		.loc 1 83 6 view .LVU105
+ 331              	.LBB13:
+  84:ubertooth_dma.c **** 	DMACIntErrClr  = 1 << channel;
+ 332              		.loc 1 84 2 view .LVU106
+  84:ubertooth_dma.c **** 	DMACIntErrClr  = 1 << channel;
+ 333              		.loc 1 84 17 is_stmt 0 view .LVU107
+ 334 0002 0122     		movs	r2, #1
+ 335 0004 174B     		ldr	r3, .L23
+ 336 0006 1849     		ldr	r1, .L23+4
+ 337 0008 9A60     		str	r2, [r3, #8]
+  85:ubertooth_dma.c **** }
+ 338              		.loc 1 85 2 is_stmt 1 view .LVU108
+  85:ubertooth_dma.c **** }
+ 339              		.loc 1 85 17 is_stmt 0 view .LVU109
+ 340 000a 1A61     		str	r2, [r3, #16]
+ 341              	.LVL5:
+  85:ubertooth_dma.c **** }
+ 342              		.loc 1 85 17 view .LVU110
+ 343              	.LBE13:
+ 344              	.LBE12:
+ 138:ubertooth_dma.c **** 
+ 139:ubertooth_dma.c **** 	for (i = 0; i < 11; ++i) {
+ 345              		.loc 1 139 2 is_stmt 1 view .LVU111
+ 346              		.loc 1 139 16 discriminator 1 view .LVU112
+ 347              	.LBB15:
+ 348              	.LBB14:
+  85:ubertooth_dma.c **** }
+ 349              		.loc 1 85 17 is_stmt 0 view .LVU113
+ 350 000c 0022     		movs	r2, #0
+ 351              	.LBE14:
+ 352              	.LBE15:
+ 140:ubertooth_dma.c **** 		le_dma_lli[i].src = (uint32_t)&(DIO_SSP_DR);
+ 353              		.loc 1 140 21 view .LVU114
+ 354 000e 174D     		ldr	r5, .L23+8
+ 141:ubertooth_dma.c **** 		le_dma_lli[i].dest = (uint32_t)&rxbuf1[4 * i];
+ARM GAS  /tmp/cckYP8Hb.s 			page 10
+
+
+ 142:ubertooth_dma.c **** 		le_dma_lli[i].next_lli = i < 10 ? (uint32_t)&le_dma_lli[i+1] : 0;
+ 143:ubertooth_dma.c **** 		le_dma_lli[i].control = 4 |
+ 355              		.loc 1 143 25 view .LVU115
+ 356 0010 1748     		ldr	r0, .L23+12
+ 357 0012 01F19803 		add	r3, r1, #152
+ 358              	.LVL6:
+ 359              	.L20:
+ 140:ubertooth_dma.c **** 		le_dma_lli[i].src = (uint32_t)&(DIO_SSP_DR);
+ 360              		.loc 1 140 3 is_stmt 1 view .LVU116
+ 142:ubertooth_dma.c **** 		le_dma_lli[i].control = 4 |
+ 361              		.loc 1 142 64 is_stmt 0 discriminator 1 view .LVU117
+ 362 0016 0A2A     		cmp	r2, #10
+ 363 0018 14BF     		ite	ne
+ 364 001a 1C46     		movne	r4, r3
+ 365 001c 0024     		moveq	r4, #0
+ 139:ubertooth_dma.c **** 		le_dma_lli[i].src = (uint32_t)&(DIO_SSP_DR);
+ 366              		.loc 1 139 16 discriminator 1 view .LVU118
+ 367 001e 0132     		adds	r2, r2, #1
+ 368              	.LVL7:
+ 139:ubertooth_dma.c **** 		le_dma_lli[i].src = (uint32_t)&(DIO_SSP_DR);
+ 369              		.loc 1 139 16 discriminator 1 view .LVU119
+ 370 0020 0B2A     		cmp	r2, #11
+ 141:ubertooth_dma.c **** 		le_dma_lli[i].dest = (uint32_t)&rxbuf1[4 * i];
+ 371              		.loc 1 141 22 view .LVU120
+ 372 0022 43E90451 		strd	r5, r1, [r3, #-16]
+ 142:ubertooth_dma.c **** 		le_dma_lli[i].control = 4 |
+ 373              		.loc 1 142 3 is_stmt 1 view .LVU121
+ 374              	.LVL8:
+ 375              		.loc 1 143 25 is_stmt 0 view .LVU122
+ 376 0026 43E90240 		strd	r4, r0, [r3, #-8]
+ 139:ubertooth_dma.c **** 		le_dma_lli[i].src = (uint32_t)&(DIO_SSP_DR);
+ 377              		.loc 1 139 22 is_stmt 1 discriminator 2 view .LVU123
+ 378              	.LVL9:
+ 139:ubertooth_dma.c **** 		le_dma_lli[i].src = (uint32_t)&(DIO_SSP_DR);
+ 379              		.loc 1 139 16 discriminator 1 view .LVU124
+ 380 002a 01F10401 		add	r1, r1, #4
+ 381 002e 03F11003 		add	r3, r3, #16
+ 382 0032 F0D1     		bne	.L20
+ 144:ubertooth_dma.c **** 				(1 << 12) |        /* source burst size = 4 */
+ 145:ubertooth_dma.c **** 				(0 << 15) |        /* destination burst size = 1 */
+ 146:ubertooth_dma.c **** 				(0 << 18) |        /* source width 8 bits */
+ 147:ubertooth_dma.c **** 				(0 << 21) |        /* destination width 8 bits */
+ 148:ubertooth_dma.c **** 				DMACCxControl_DI | /* destination increment */
+ 149:ubertooth_dma.c **** 				DMACCxControl_I;   /* terminal count interrupt enable */
+ 150:ubertooth_dma.c **** 	}
+ 151:ubertooth_dma.c **** 
+ 152:ubertooth_dma.c **** 	/* configure DMA channel 0 */
+ 153:ubertooth_dma.c **** 	DMACC0SrcAddr = le_dma_lli[0].src;
+ 383              		.loc 1 153 2 view .LVU125
+ 384              		.loc 1 153 31 is_stmt 0 view .LVU126
+ 385 0034 0F4A     		ldr	r2, .L23+16
+ 386              	.LVL10:
+ 387              		.loc 1 153 16 view .LVU127
+ 388 0036 0B4B     		ldr	r3, .L23
+ 389              		.loc 1 153 31 view .LVU128
+ 390 0038 D2F89810 		ldr	r1, [r2, #152]
+ 391              		.loc 1 153 16 view .LVU129
+ARM GAS  /tmp/cckYP8Hb.s 			page 11
+
+
+ 392 003c C3F80011 		str	r1, [r3, #256]
+ 154:ubertooth_dma.c **** 	DMACC0DestAddr = le_dma_lli[0].dest;
+ 393              		.loc 1 154 2 is_stmt 1 view .LVU130
+ 394              		.loc 1 154 32 is_stmt 0 view .LVU131
+ 395 0040 D2F89C10 		ldr	r1, [r2, #156]
+ 396              		.loc 1 154 17 view .LVU132
+ 397 0044 C3F80411 		str	r1, [r3, #260]
+ 155:ubertooth_dma.c **** 	DMACC0LLI = le_dma_lli[0].next_lli;
+ 398              		.loc 1 155 2 is_stmt 1 view .LVU133
+ 399              		.loc 1 155 27 is_stmt 0 view .LVU134
+ 400 0048 D2F8A010 		ldr	r1, [r2, #160]
+ 401              		.loc 1 155 12 view .LVU135
+ 402 004c C3F80811 		str	r1, [r3, #264]
+ 156:ubertooth_dma.c **** 	DMACC0Control = le_dma_lli[0].control;
+ 403              		.loc 1 156 2 is_stmt 1 view .LVU136
+ 404              		.loc 1 156 31 is_stmt 0 view .LVU137
+ 405 0050 D2F8A420 		ldr	r2, [r2, #164]
+ 406              		.loc 1 156 16 view .LVU138
+ 407 0054 C3F80C21 		str	r2, [r3, #268]
+ 157:ubertooth_dma.c **** 	DMACC0Config =
+ 408              		.loc 1 157 2 is_stmt 1 view .LVU139
+ 409              		.loc 1 157 15 is_stmt 0 view .LVU140
+ 410 0058 4DF20602 		movw	r2, #53254
+ 411 005c C3F81021 		str	r2, [r3, #272]
+ 158:ubertooth_dma.c **** 			DIO_SSP_SRC |
+ 159:ubertooth_dma.c **** 			(0x2 << 11) |     /* peripheral to memory */
+ 160:ubertooth_dma.c **** 			DMACCxConfig_IE | /* allow error interrupts */
+ 161:ubertooth_dma.c **** 			DMACCxConfig_ITC; /* allow terminal count interrupts */
+ 162:ubertooth_dma.c **** }
+ 412              		.loc 1 162 1 view .LVU141
+ 413 0060 30BD     		pop	{r4, r5, pc}
+ 414              	.L24:
+ 415 0062 00BF     		.align	2
+ 416              	.L23:
+ 417 0064 00400050 		.word	1342193664
+ 418 0068 10000000 		.word	.LANCHOR0+16
+ 419 006c 08000340 		.word	1073938440
+ 420 0070 04100088 		.word	-2013261820
+ 421 0074 00000000 		.word	.LANCHOR0
+ 422              		.cfi_endproc
+ 423              	.LFE4:
+ 425              		.section	.text.dio_ssp_start,"ax",%progbits
+ 426              		.align	1
+ 427              		.global	dio_ssp_start
+ 428              		.syntax unified
+ 429              		.thumb
+ 430              		.thumb_func
+ 432              	dio_ssp_start:
+ 433              	.LFB5:
+ 163:ubertooth_dma.c **** 
+ 164:ubertooth_dma.c **** void dio_ssp_start()
+ 165:ubertooth_dma.c **** {
+ 434              		.loc 1 165 1 is_stmt 1 view -0
+ 435              		.cfi_startproc
+ 436              		@ args = 0, pretend = 0, frame = 0
+ 437              		@ frame_needed = 0, uses_anonymous_args = 0
+ 438              		@ link register save eliminated.
+ARM GAS  /tmp/cckYP8Hb.s 			page 12
+
+
+ 166:ubertooth_dma.c **** 	/* make sure the (active low) slave select signal is not active */
+ 167:ubertooth_dma.c **** 	DIO_SSEL_SET;
+ 439              		.loc 1 167 2 view .LVU143
+ 440 0000 4FF08050 		mov	r0, #268435456
+ 441 0004 0A49     		ldr	r1, .L26
+ 168:ubertooth_dma.c **** 
+ 169:ubertooth_dma.c **** 	/* enable rx DMA on DIO_SSP */
+ 170:ubertooth_dma.c **** 	DIO_SSP_DMACR |= SSPDMACR_RXDMAE;
+ 442              		.loc 1 170 2 is_stmt 0 view .LVU144
+ 443 0006 0B4B     		ldr	r3, .L26+4
+ 167:ubertooth_dma.c **** 
+ 444              		.loc 1 167 2 view .LVU145
+ 445 0008 C1F89800 		str	r0, [r1, #152]
+ 446              		.loc 1 170 2 is_stmt 1 view .LVU146
+ 447 000c 5A6A     		ldr	r2, [r3, #36]
+ 448              		.loc 1 170 16 is_stmt 0 view .LVU147
+ 449 000e 42F00102 		orr	r2, r2, #1
+ 450 0012 5A62     		str	r2, [r3, #36]
+ 171:ubertooth_dma.c **** 	DIO_SSP_CR1 |= SSPCR1_SSE;
+ 451              		.loc 1 171 2 is_stmt 1 view .LVU148
+ 452 0014 5A68     		ldr	r2, [r3, #4]
+ 453              		.loc 1 171 14 is_stmt 0 view .LVU149
+ 454 0016 42F00202 		orr	r2, r2, #2
+ 455 001a 5A60     		str	r2, [r3, #4]
+ 172:ubertooth_dma.c **** 
+ 173:ubertooth_dma.c **** 	// enable channel
+ 174:ubertooth_dma.c **** 	DMACC0Config |= 1;
+ 456              		.loc 1 174 2 is_stmt 1 view .LVU150
+ 457 001c 064A     		ldr	r2, .L26+8
+ 458 001e D2F81031 		ldr	r3, [r2, #272]
+ 459              		.loc 1 174 15 is_stmt 0 view .LVU151
+ 460 0022 43F00103 		orr	r3, r3, #1
+ 461 0026 C2F81031 		str	r3, [r2, #272]
+ 175:ubertooth_dma.c **** 
+ 176:ubertooth_dma.c **** 	/* activate slave select pin */
+ 177:ubertooth_dma.c **** 	DIO_SSEL_CLR;
+ 462              		.loc 1 177 2 is_stmt 1 view .LVU152
+ 463 002a C1F89C00 		str	r0, [r1, #156]
+ 178:ubertooth_dma.c **** }
+ 464              		.loc 1 178 1 is_stmt 0 view .LVU153
+ 465 002e 7047     		bx	lr
+ 466              	.L27:
+ 467              		.align	2
+ 468              	.L26:
+ 469 0030 00C00920 		.word	537509888
+ 470 0034 00000340 		.word	1073938432
+ 471 0038 00400050 		.word	1342193664
+ 472              		.cfi_endproc
+ 473              	.LFE5:
+ 475              		.section	.text.dio_ssp_stop,"ax",%progbits
+ 476              		.align	1
+ 477              		.global	dio_ssp_stop
+ 478              		.syntax unified
+ 479              		.thumb
+ 480              		.thumb_func
+ 482              	dio_ssp_stop:
+ 483              	.LFB6:
+ARM GAS  /tmp/cckYP8Hb.s 			page 13
+
+
+ 179:ubertooth_dma.c **** 
+ 180:ubertooth_dma.c **** void dio_ssp_stop()
+ 181:ubertooth_dma.c **** {
+ 484              		.loc 1 181 1 is_stmt 1 view -0
+ 485              		.cfi_startproc
+ 486              		@ args = 0, pretend = 0, frame = 0
+ 487              		@ frame_needed = 0, uses_anonymous_args = 0
+ 488              		@ link register save eliminated.
+ 182:ubertooth_dma.c **** 	// disable CC2400's output (active low)
+ 183:ubertooth_dma.c **** 	DIO_SSEL_SET;
+ 489              		.loc 1 183 2 view .LVU155
+ 490 0000 4FF08052 		mov	r2, #268435456
+ 491 0004 094B     		ldr	r3, .L29
+ 492 0006 C3F89820 		str	r2, [r3, #152]
+ 184:ubertooth_dma.c **** 
+ 185:ubertooth_dma.c **** 	// disable DMA on SSP; disable SSP ; disable DMA channel
+ 186:ubertooth_dma.c **** 	DIO_SSP_DMACR &= ~SSPDMACR_RXDMAE;
+ 493              		.loc 1 186 2 view .LVU156
+ 494              		.loc 1 186 16 is_stmt 0 view .LVU157
+ 495 000a 094B     		ldr	r3, .L29+4
+ 496 000c 5A6A     		ldr	r2, [r3, #36]
+ 497 000e 22F00102 		bic	r2, r2, #1
+ 498 0012 5A62     		str	r2, [r3, #36]
+ 187:ubertooth_dma.c **** 	DIO_SSP_CR1 &= ~SSPCR1_SSE;
+ 499              		.loc 1 187 2 is_stmt 1 view .LVU158
+ 500              		.loc 1 187 14 is_stmt 0 view .LVU159
+ 501 0014 5A68     		ldr	r2, [r3, #4]
+ 502 0016 22F00202 		bic	r2, r2, #2
+ 503 001a 5A60     		str	r2, [r3, #4]
+ 188:ubertooth_dma.c **** 	DMACC0Config = 0;
+ 504              		.loc 1 188 2 is_stmt 1 view .LVU160
+ 505              		.loc 1 188 15 is_stmt 0 view .LVU161
+ 506 001c 0022     		movs	r2, #0
+ 507 001e 054B     		ldr	r3, .L29+8
+ 508 0020 C3F81021 		str	r2, [r3, #272]
+ 189:ubertooth_dma.c **** 	dma_clear_interrupts(0);
+ 509              		.loc 1 189 2 is_stmt 1 view .LVU162
+ 510              	.LVL11:
+ 511              	.LBB16:
+ 512              	.LBI16:
+  83:ubertooth_dma.c **** 	DMACIntTCClear = 1 << channel;
+ 513              		.loc 1 83 6 view .LVU163
+ 514              	.LBB17:
+  84:ubertooth_dma.c **** 	DMACIntErrClr  = 1 << channel;
+ 515              		.loc 1 84 2 view .LVU164
+  84:ubertooth_dma.c **** 	DMACIntErrClr  = 1 << channel;
+ 516              		.loc 1 84 17 is_stmt 0 view .LVU165
+ 517 0024 0122     		movs	r2, #1
+ 518 0026 9A60     		str	r2, [r3, #8]
+  85:ubertooth_dma.c **** }
+ 519              		.loc 1 85 2 is_stmt 1 view .LVU166
+  85:ubertooth_dma.c **** }
+ 520              		.loc 1 85 17 is_stmt 0 view .LVU167
+ 521 0028 1A61     		str	r2, [r3, #16]
+ 522              	.LVL12:
+  85:ubertooth_dma.c **** }
+ 523              		.loc 1 85 17 view .LVU168
+ARM GAS  /tmp/cckYP8Hb.s 			page 14
+
+
+ 524              	.LBE17:
+ 525              	.LBE16:
+ 190:ubertooth_dma.c **** 
+ 191:ubertooth_dma.c **** 	// TODO flush SSP
+ 192:ubertooth_dma.c **** 	/*
+ 193:ubertooth_dma.c **** 	while (SSP1SR & SSPSR_RNE) {
+ 194:ubertooth_dma.c **** 		u8 tmp = (u8)DIO_SSP_DR;
+ 195:ubertooth_dma.c **** 	}
+ 196:ubertooth_dma.c **** 	*/
+ 197:ubertooth_dma.c **** }
+ 526              		.loc 1 197 1 view .LVU169
+ 527 002a 7047     		bx	lr
+ 528              	.L30:
+ 529              		.align	2
+ 530              	.L29:
+ 531 002c 00C00920 		.word	537509888
+ 532 0030 00000340 		.word	1073938432
+ 533 0034 00400050 		.word	1342193664
+ 534              		.cfi_endproc
+ 535              	.LFE6:
+ 537              		.global	le_dma_lli
+ 538              		.global	rx_dma_lli2
+ 539              		.global	rx_dma_lli1
+ 540              		.global	rx_err
+ 541              		.global	rx_tc
+ 542              		.global	idle_rxbuf
+ 543              		.global	active_rxbuf
+ 544              		.global	rxbuf2
+ 545              		.global	rxbuf1
+ 546              		.bss
+ 547              		.align	2
+ 548              		.set	.LANCHOR0,. + 0
+ 551              	rx_dma_lli1:
+ 552 0000 00000000 		.space	16
+ 552      00000000 
+ 552      00000000 
+ 552      00000000 
+ 555              	rxbuf1:
+ 556 0010 00000000 		.space	50
+ 556      00000000 
+ 556      00000000 
+ 556      00000000 
+ 556      00000000 
+ 557 0042 0000     		.space	2
+ 560              	rx_dma_lli2:
+ 561 0044 00000000 		.space	16
+ 561      00000000 
+ 561      00000000 
+ 561      00000000 
+ 564              	rxbuf2:
+ 565 0054 00000000 		.space	50
+ 565      00000000 
+ 565      00000000 
+ 565      00000000 
+ 565      00000000 
+ 566 0086 0000     		.space	2
+ 569              	rx_tc:
+ARM GAS  /tmp/cckYP8Hb.s 			page 15
+
+
+ 570 0088 00000000 		.space	4
+ 573              	rx_err:
+ 574 008c 00000000 		.space	4
+ 577              	active_rxbuf:
+ 578 0090 00000000 		.space	4
+ 581              	idle_rxbuf:
+ 582 0094 00000000 		.space	4
+ 585              	le_dma_lli:
+ 586 0098 00000000 		.space	176
+ 586      00000000 
+ 586      00000000 
+ 586      00000000 
+ 586      00000000 
+ 587              		.text
+ 588              	.Letext0:
+ 589              		.file 2 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 590              		.file 3 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 591              		.file 4 "ubertooth_dma.h"
+ARM GAS  /tmp/cckYP8Hb.s 			page 16
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 ubertooth_dma.c
+     /tmp/cckYP8Hb.s:19     .text.dma_poweron:00000000 $t
+     /tmp/cckYP8Hb.s:25     .text.dma_poweron:00000000 dma_poweron
+     /tmp/cckYP8Hb.s:98     .text.dma_poweron:0000005c $d
+     /tmp/cckYP8Hb.s:104    .text.dma_poweroff:00000000 $t
+     /tmp/cckYP8Hb.s:110    .text.dma_poweroff:00000000 dma_poweroff
+     /tmp/cckYP8Hb.s:145    .text.dma_poweroff:0000002c $d
+     /tmp/cckYP8Hb.s:151    .text.dma_clear_interrupts:00000000 $t
+     /tmp/cckYP8Hb.s:157    .text.dma_clear_interrupts:00000000 dma_clear_interrupts
+     /tmp/cckYP8Hb.s:182    .text.dma_clear_interrupts:00000010 $d
+     /tmp/cckYP8Hb.s:187    .text.dma_init_rx_symbols:00000000 $t
+     /tmp/cckYP8Hb.s:193    .text.dma_init_rx_symbols:00000000 dma_init_rx_symbols
+     /tmp/cckYP8Hb.s:300    .text.dma_init_rx_symbols:00000064 $d
+     /tmp/cckYP8Hb.s:308    .text.dma_init_le:00000000 $t
+     /tmp/cckYP8Hb.s:314    .text.dma_init_le:00000000 dma_init_le
+     /tmp/cckYP8Hb.s:417    .text.dma_init_le:00000064 $d
+     /tmp/cckYP8Hb.s:426    .text.dio_ssp_start:00000000 $t
+     /tmp/cckYP8Hb.s:432    .text.dio_ssp_start:00000000 dio_ssp_start
+     /tmp/cckYP8Hb.s:469    .text.dio_ssp_start:00000030 $d
+     /tmp/cckYP8Hb.s:476    .text.dio_ssp_stop:00000000 $t
+     /tmp/cckYP8Hb.s:482    .text.dio_ssp_stop:00000000 dio_ssp_stop
+     /tmp/cckYP8Hb.s:531    .text.dio_ssp_stop:0000002c $d
+     /tmp/cckYP8Hb.s:585    .bss:00000098 le_dma_lli
+     /tmp/cckYP8Hb.s:560    .bss:00000044 rx_dma_lli2
+     /tmp/cckYP8Hb.s:551    .bss:00000000 rx_dma_lli1
+     /tmp/cckYP8Hb.s:573    .bss:0000008c rx_err
+     /tmp/cckYP8Hb.s:569    .bss:00000088 rx_tc
+     /tmp/cckYP8Hb.s:581    .bss:00000094 idle_rxbuf
+     /tmp/cckYP8Hb.s:577    .bss:00000090 active_rxbuf
+     /tmp/cckYP8Hb.s:564    .bss:00000054 rxbuf2
+     /tmp/cckYP8Hb.s:555    .bss:00000010 rxbuf1
+     /tmp/cckYP8Hb.s:547    .bss:00000000 $d
+
+NO UNDEFINED SYMBOLS

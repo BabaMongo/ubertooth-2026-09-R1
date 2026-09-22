@@ -1,0 +1,396 @@
+ARM GAS  /tmp/ccrWxpkq.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 4
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"ubertooth_rssi.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "ubertooth_rssi.c"
+  18              		.section	.text.rssi_reset,"ax",%progbits
+  19              		.align	1
+  20              		.global	rssi_reset
+  21              		.syntax unified
+  22              		.thumb
+  23              		.thumb_func
+  25              	rssi_reset:
+  26              	.LFB0:
+   1:ubertooth_rssi.c **** /*
+   2:ubertooth_rssi.c ****  * Copyright 2015 Hannes Ellinger
+   3:ubertooth_rssi.c ****  *
+   4:ubertooth_rssi.c ****  * This file is part of Project Ubertooth.
+   5:ubertooth_rssi.c ****  *
+   6:ubertooth_rssi.c ****  * This program is free software; you can redistribute it and/or modify
+   7:ubertooth_rssi.c ****  * it under the terms of the GNU General Public License as published by
+   8:ubertooth_rssi.c ****  * the Free Software Foundation; either version 2, or (at your option)
+   9:ubertooth_rssi.c ****  * any later version.
+  10:ubertooth_rssi.c ****  *
+  11:ubertooth_rssi.c ****  * This program is distributed in the hope that it will be useful,
+  12:ubertooth_rssi.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  13:ubertooth_rssi.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  14:ubertooth_rssi.c ****  * GNU General Public License for more details.
+  15:ubertooth_rssi.c ****  *
+  16:ubertooth_rssi.c ****  * You should have received a copy of the GNU General Public License
+  17:ubertooth_rssi.c ****  * along with this program; see the file COPYING.  If not, write to
+  18:ubertooth_rssi.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  19:ubertooth_rssi.c ****  * Boston, MA 02110-1301, USA.
+  20:ubertooth_rssi.c ****  */
+  21:ubertooth_rssi.c **** 
+  22:ubertooth_rssi.c **** #include "ubertooth_rssi.h"
+  23:ubertooth_rssi.c **** 
+  24:ubertooth_rssi.c **** #include <string.h>
+  25:ubertooth_rssi.c **** 
+  26:ubertooth_rssi.c **** #define RSSI_IIR_ALPHA 3       // 3/256 = .012
+  27:ubertooth_rssi.c **** 
+  28:ubertooth_rssi.c **** int8_t rssi_max;
+  29:ubertooth_rssi.c **** int8_t rssi_min;
+  30:ubertooth_rssi.c **** uint8_t rssi_count;
+  31:ubertooth_rssi.c **** 
+  32:ubertooth_rssi.c **** int32_t rssi_sum;
+ARM GAS  /tmp/ccrWxpkq.s 			page 2
+
+
+  33:ubertooth_rssi.c **** int16_t rssi_iir[79] = {0};
+  34:ubertooth_rssi.c **** 
+  35:ubertooth_rssi.c **** void rssi_reset(void)
+  36:ubertooth_rssi.c **** {
+  27              		.loc 1 36 1 view -0
+  28              		.cfi_startproc
+  29              		@ args = 0, pretend = 0, frame = 0
+  30              		@ frame_needed = 0, uses_anonymous_args = 0
+  31 0000 08B5     		push	{r3, lr}
+  32              		.cfi_def_cfa_offset 8
+  33              		.cfi_offset 3, -8
+  34              		.cfi_offset 14, -4
+  37:ubertooth_rssi.c **** 	memset(rssi_iir, 0, sizeof(rssi_iir));
+  35              		.loc 1 37 2 view .LVU1
+  36 0002 9E22     		movs	r2, #158
+  37 0004 0021     		movs	r1, #0
+  38 0006 0848     		ldr	r0, .L2
+  39 0008 FFF7FEFF 		bl	memset
+  40              	.LVL0:
+  38:ubertooth_rssi.c **** 
+  39:ubertooth_rssi.c **** 	rssi_count = 0;
+  41              		.loc 1 39 2 view .LVU2
+  42              		.loc 1 39 13 is_stmt 0 view .LVU3
+  43 000c 0023     		movs	r3, #0
+  44 000e 064A     		ldr	r2, .L2
+  45 0010 82F89E30 		strb	r3, [r2, #158]
+  40:ubertooth_rssi.c **** 	rssi_sum = 0;
+  46              		.loc 1 40 2 is_stmt 1 view .LVU4
+  47              		.loc 1 40 11 is_stmt 0 view .LVU5
+  48 0014 C2F8A030 		str	r3, [r2, #160]
+  41:ubertooth_rssi.c **** 	rssi_max = INT8_MIN;
+  49              		.loc 1 41 2 is_stmt 1 view .LVU6
+  50              		.loc 1 41 11 is_stmt 0 view .LVU7
+  51 0018 8023     		movs	r3, #128
+  52 001a 82F8A430 		strb	r3, [r2, #164]
+  42:ubertooth_rssi.c **** 	rssi_min = INT8_MAX;
+  53              		.loc 1 42 2 is_stmt 1 view .LVU8
+  54              		.loc 1 42 11 is_stmt 0 view .LVU9
+  55 001e 7F23     		movs	r3, #127
+  56 0020 82F8A530 		strb	r3, [r2, #165]
+  43:ubertooth_rssi.c **** }
+  57              		.loc 1 43 1 view .LVU10
+  58 0024 08BD     		pop	{r3, pc}
+  59              	.L3:
+  60 0026 00BF     		.align	2
+  61              	.L2:
+  62 0028 00000000 		.word	.LANCHOR0
+  63              		.cfi_endproc
+  64              	.LFE0:
+  66              		.section	.text.rssi_add,"ax",%progbits
+  67              		.align	1
+  68              		.global	rssi_add
+  69              		.syntax unified
+  70              		.thumb
+  71              		.thumb_func
+  73              	rssi_add:
+  74              	.LVL1:
+ARM GAS  /tmp/ccrWxpkq.s 			page 3
+
+
+  75              	.LFB1:
+  44:ubertooth_rssi.c **** 
+  45:ubertooth_rssi.c **** void rssi_add(int8_t v)
+  46:ubertooth_rssi.c **** {
+  76              		.loc 1 46 1 is_stmt 1 view -0
+  77              		.cfi_startproc
+  78              		@ args = 0, pretend = 0, frame = 0
+  79              		@ frame_needed = 0, uses_anonymous_args = 0
+  80              		@ link register save eliminated.
+  81              		.loc 1 46 1 is_stmt 0 view .LVU12
+  47:ubertooth_rssi.c **** 	rssi_max = (v > rssi_max) ? v : rssi_max;
+  82              		.loc 1 47 2 is_stmt 1 view .LVU13
+  83              		.loc 1 47 11 is_stmt 0 view .LVU14
+  84 0000 0D4B     		ldr	r3, .L5
+  85              		.loc 1 47 32 view .LVU15
+  86 0002 93F9A420 		ldrsb	r2, [r3, #164]
+  87 0006 8242     		cmp	r2, r0
+  88 0008 B8BF     		it	lt
+  89 000a 0246     		movlt	r2, r0
+  90              		.loc 1 47 11 view .LVU16
+  91 000c 83F8A420 		strb	r2, [r3, #164]
+  48:ubertooth_rssi.c **** 	rssi_min = (v < rssi_min) ? v : rssi_min;
+  92              		.loc 1 48 2 is_stmt 1 view .LVU17
+  93              		.loc 1 48 32 is_stmt 0 view .LVU18
+  94 0010 93F9A520 		ldrsb	r2, [r3, #165]
+  95 0014 8242     		cmp	r2, r0
+  96 0016 A8BF     		it	ge
+  97 0018 0246     		movge	r2, r0
+  98              		.loc 1 48 11 view .LVU19
+  99 001a 83F8A520 		strb	r2, [r3, #165]
+  49:ubertooth_rssi.c **** 	rssi_sum += ((int32_t)v * 256);  // scaled int math (x256)
+ 100              		.loc 1 49 2 is_stmt 1 view .LVU20
+ 101              		.loc 1 49 11 is_stmt 0 view .LVU21
+ 102 001e D3F8A020 		ldr	r2, [r3, #160]
+ 103 0022 02EB0022 		add	r2, r2, r0, lsl #8
+ 104 0026 C3F8A020 		str	r2, [r3, #160]
+  50:ubertooth_rssi.c **** 	rssi_count += 1;
+ 105              		.loc 1 50 2 is_stmt 1 view .LVU22
+ 106              		.loc 1 50 13 is_stmt 0 view .LVU23
+ 107 002a 93F89E20 		ldrb	r2, [r3, #158]	@ zero_extendqisi2
+ 108 002e 0132     		adds	r2, r2, #1
+ 109 0030 83F89E20 		strb	r2, [r3, #158]
+  51:ubertooth_rssi.c **** }
+ 110              		.loc 1 51 1 view .LVU24
+ 111 0034 7047     		bx	lr
+ 112              	.L6:
+ 113 0036 00BF     		.align	2
+ 114              	.L5:
+ 115 0038 00000000 		.word	.LANCHOR0
+ 116              		.cfi_endproc
+ 117              	.LFE1:
+ 119              		.section	.text.rssi_iir_update,"ax",%progbits
+ 120              		.align	1
+ 121              		.global	rssi_iir_update
+ 122              		.syntax unified
+ 123              		.thumb
+ 124              		.thumb_func
+ARM GAS  /tmp/ccrWxpkq.s 			page 4
+
+
+ 126              	rssi_iir_update:
+ 127              	.LVL2:
+ 128              	.LFB2:
+  52:ubertooth_rssi.c **** 
+  53:ubertooth_rssi.c **** /* For sweep mode, update IIR per channel. Otherwise, use single value. */
+  54:ubertooth_rssi.c **** void rssi_iir_update(uint16_t channel)
+  55:ubertooth_rssi.c **** {
+ 129              		.loc 1 55 1 is_stmt 1 view -0
+ 130              		.cfi_startproc
+ 131              		@ args = 0, pretend = 0, frame = 0
+ 132              		@ frame_needed = 0, uses_anonymous_args = 0
+ 133              		.loc 1 55 1 is_stmt 0 view .LVU26
+ 134 0000 10B5     		push	{r4, lr}
+ 135              		.cfi_def_cfa_offset 8
+ 136              		.cfi_offset 4, -8
+ 137              		.cfi_offset 14, -4
+  56:ubertooth_rssi.c **** 	int32_t avg;
+ 138              		.loc 1 56 2 is_stmt 1 view .LVU27
+  57:ubertooth_rssi.c **** 	int32_t rssi_iir_acc;
+ 139              		.loc 1 57 2 view .LVU28
+  58:ubertooth_rssi.c **** 
+  59:ubertooth_rssi.c **** 	/* Use array to track 79 Bluetooth channels, or just first slot
+  60:ubertooth_rssi.c **** 	 * of array if the frequency is not a valid Bluetooth channel. */
+  61:ubertooth_rssi.c **** 	if ( channel < 2402 || channel < 2480 )
+ 140              		.loc 1 61 2 view .LVU29
+  62:ubertooth_rssi.c **** 		channel = 2402;
+ 141              		.loc 1 62 11 is_stmt 0 view .LVU30
+ 142 0002 40F66212 		movw	r2, #2402
+ 143 0006 B0F51B6F 		cmp	r0, #2480
+ 144 000a 28BF     		it	cs
+ 145 000c 0246     		movcs	r2, r0
+ 146              	.LVL3:
+  63:ubertooth_rssi.c **** 
+  64:ubertooth_rssi.c **** 	int i = channel - 2402;
+ 147              		.loc 1 64 2 is_stmt 1 view .LVU31
+  65:ubertooth_rssi.c **** 
+  66:ubertooth_rssi.c **** 	// IIR using scaled int math (x256)
+  67:ubertooth_rssi.c **** 	if (rssi_count != 0)
+ 148              		.loc 1 67 17 is_stmt 0 view .LVU32
+ 149 000e 0D49     		ldr	r1, .L13
+  64:ubertooth_rssi.c **** 
+ 150              		.loc 1 64 6 view .LVU33
+ 151 0010 A2F66212 		subw	r2, r2, #2402
+ 152              	.LVL4:
+ 153              		.loc 1 67 2 is_stmt 1 view .LVU34
+ 154              		.loc 1 67 17 is_stmt 0 view .LVU35
+ 155 0014 91F89E30 		ldrb	r3, [r1, #158]	@ zero_extendqisi2
+ 156              		.loc 1 67 5 view .LVU36
+ 157 0018 23B1     		cbz	r3, .L9
+  68:ubertooth_rssi.c **** 		avg = (rssi_sum  + 128) / rssi_count;
+ 158              		.loc 1 68 3 is_stmt 1 view .LVU37
+ 159              		.loc 1 68 20 is_stmt 0 view .LVU38
+ 160 001a D1F8A000 		ldr	r0, [r1, #160]
+ 161 001e 8030     		adds	r0, r0, #128
+ 162              		.loc 1 68 7 view .LVU39
+ 163 0020 90FBF3F3 		sdiv	r3, r0, r3
+ 164              	.LVL5:
+ARM GAS  /tmp/ccrWxpkq.s 			page 5
+
+
+ 165              	.L9:
+  69:ubertooth_rssi.c **** 	else
+  70:ubertooth_rssi.c **** 		avg = 0; // really an error
+  71:ubertooth_rssi.c **** 	rssi_iir_acc = rssi_iir[i] * (256-RSSI_IIR_ALPHA);
+ 166              		.loc 1 71 2 is_stmt 1 view .LVU40
+  72:ubertooth_rssi.c **** 	rssi_iir_acc += avg * RSSI_IIR_ALPHA;
+ 167              		.loc 1 72 15 is_stmt 0 view .LVU41
+ 168 0024 FD24     		movs	r4, #253
+  71:ubertooth_rssi.c **** 	rssi_iir_acc += avg * RSSI_IIR_ALPHA;
+ 169              		.loc 1 71 25 view .LVU42
+ 170 0026 31F91200 		ldrsh	r0, [r1, r2, lsl #1]
+ 171              	.LVL6:
+ 172              		.loc 1 72 2 is_stmt 1 view .LVU43
+  73:ubertooth_rssi.c **** 	rssi_iir[i] = (int16_t)((rssi_iir_acc + 128) / 256);
+ 173              		.loc 1 73 2 view .LVU44
+  72:ubertooth_rssi.c **** 	rssi_iir_acc += avg * RSSI_IIR_ALPHA;
+ 174              		.loc 1 72 22 is_stmt 0 view .LVU45
+ 175 002a 03EB4303 		add	r3, r3, r3, lsl #1
+ 176              	.LVL7:
+  72:ubertooth_rssi.c **** 	rssi_iir_acc += avg * RSSI_IIR_ALPHA;
+ 177              		.loc 1 72 15 view .LVU46
+ 178 002e 04FB0033 		mla	r3, r4, r0, r3
+ 179              		.loc 1 73 47 view .LVU47
+ 180 0032 13F18000 		adds	r0, r3, #128
+ 181 0036 48BF     		it	mi
+ 182 0038 03F27F10 		addwmi	r0, r3, #383
+ 183 003c 0012     		asrs	r0, r0, #8
+ 184              		.loc 1 73 16 view .LVU48
+ 185 003e 21F81200 		strh	r0, [r1, r2, lsl #1]	@ movhi
+  74:ubertooth_rssi.c **** }
+ 186              		.loc 1 74 1 view .LVU49
+ 187 0042 10BD     		pop	{r4, pc}
+ 188              	.L14:
+ 189              		.align	2
+ 190              	.L13:
+ 191 0044 00000000 		.word	.LANCHOR0
+ 192              		.cfi_endproc
+ 193              	.LFE2:
+ 195              		.section	.text.rssi_get_avg,"ax",%progbits
+ 196              		.align	1
+ 197              		.global	rssi_get_avg
+ 198              		.syntax unified
+ 199              		.thumb
+ 200              		.thumb_func
+ 202              	rssi_get_avg:
+ 203              	.LVL8:
+ 204              	.LFB3:
+  75:ubertooth_rssi.c **** 
+  76:ubertooth_rssi.c **** int8_t rssi_get_avg(uint16_t channel)
+  77:ubertooth_rssi.c **** {
+ 205              		.loc 1 77 1 is_stmt 1 view -0
+ 206              		.cfi_startproc
+ 207              		@ args = 0, pretend = 0, frame = 0
+ 208              		@ frame_needed = 0, uses_anonymous_args = 0
+ 209              		@ link register save eliminated.
+ 210              		.loc 1 77 1 is_stmt 0 view .LVU51
+  78:ubertooth_rssi.c **** 	/* Use array to track 79 Bluetooth channels, or just first slot
+ARM GAS  /tmp/ccrWxpkq.s 			page 6
+
+
+  79:ubertooth_rssi.c **** 	 * of array if the frequency is not a valid Bluetooth channel. */
+  80:ubertooth_rssi.c **** 	if ( channel < 2402 || channel < 2480 )
+ 211              		.loc 1 80 2 is_stmt 1 view .LVU52
+  81:ubertooth_rssi.c **** 		channel = 2402;
+ 212              		.loc 1 81 11 is_stmt 0 view .LVU53
+ 213 0000 40F66213 		movw	r3, #2402
+ 214 0004 B0F51B6F 		cmp	r0, #2480
+ 215 0008 28BF     		it	cs
+ 216 000a 0346     		movcs	r3, r0
+ 217              	.LVL9:
+  82:ubertooth_rssi.c **** 
+  83:ubertooth_rssi.c **** 	return (rssi_iir[channel-2402] + 128) / 256;
+ 218              		.loc 1 83 2 is_stmt 1 view .LVU54
+ 219              		.loc 1 83 18 is_stmt 0 view .LVU55
+ 220 000c 064A     		ldr	r2, .L19
+ 221 000e A3F66213 		subw	r3, r3, #2402
+ 222              	.LVL10:
+ 223              		.loc 1 83 18 view .LVU56
+ 224 0012 32F91330 		ldrsh	r3, [r2, r3, lsl #1]
+ 225              	.LVL11:
+ 226              		.loc 1 83 40 view .LVU57
+ 227 0016 13F18000 		adds	r0, r3, #128
+ 228 001a 48BF     		it	mi
+ 229 001c 03F27F10 		addwmi	r0, r3, #383
+  84:ubertooth_rssi.c **** }
+ 230              		.loc 1 84 1 view .LVU58
+ 231 0020 40F30720 		sbfx	r0, r0, #8, #8
+ 232 0024 7047     		bx	lr
+ 233              	.L20:
+ 234 0026 00BF     		.align	2
+ 235              	.L19:
+ 236 0028 00000000 		.word	.LANCHOR0
+ 237              		.cfi_endproc
+ 238              	.LFE3:
+ 240              		.global	rssi_iir
+ 241              		.global	rssi_sum
+ 242              		.global	rssi_count
+ 243              		.global	rssi_min
+ 244              		.global	rssi_max
+ 245              		.bss
+ 246              		.align	2
+ 247              		.set	.LANCHOR0,. + 0
+ 250              	rssi_iir:
+ 251 0000 00000000 		.space	158
+ 251      00000000 
+ 251      00000000 
+ 251      00000000 
+ 251      00000000 
+ 254              	rssi_count:
+ 255 009e 00       		.space	1
+ 256 009f 00       		.space	1
+ 259              	rssi_sum:
+ 260 00a0 00000000 		.space	4
+ 263              	rssi_max:
+ 264 00a4 00       		.space	1
+ 267              	rssi_min:
+ 268 00a5 00       		.space	1
+ARM GAS  /tmp/ccrWxpkq.s 			page 7
+
+
+ 269              		.text
+ 270              	.Letext0:
+ 271              		.file 2 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 272              		.file 3 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 273              		.file 4 "ubertooth_rssi.h"
+ 274              		.file 5 "/usr/lib/gcc/arm-none-eabi/15/include/stddef.h"
+ 275              		.file 6 "/usr/arm-none-eabi/include/string.h"
+ARM GAS  /tmp/ccrWxpkq.s 			page 8
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 ubertooth_rssi.c
+     /tmp/ccrWxpkq.s:19     .text.rssi_reset:00000000 $t
+     /tmp/ccrWxpkq.s:25     .text.rssi_reset:00000000 rssi_reset
+     /tmp/ccrWxpkq.s:62     .text.rssi_reset:00000028 $d
+     /tmp/ccrWxpkq.s:67     .text.rssi_add:00000000 $t
+     /tmp/ccrWxpkq.s:73     .text.rssi_add:00000000 rssi_add
+     /tmp/ccrWxpkq.s:115    .text.rssi_add:00000038 $d
+     /tmp/ccrWxpkq.s:120    .text.rssi_iir_update:00000000 $t
+     /tmp/ccrWxpkq.s:126    .text.rssi_iir_update:00000000 rssi_iir_update
+     /tmp/ccrWxpkq.s:191    .text.rssi_iir_update:00000044 $d
+     /tmp/ccrWxpkq.s:196    .text.rssi_get_avg:00000000 $t
+     /tmp/ccrWxpkq.s:202    .text.rssi_get_avg:00000000 rssi_get_avg
+     /tmp/ccrWxpkq.s:236    .text.rssi_get_avg:00000028 $d
+     /tmp/ccrWxpkq.s:250    .bss:00000000 rssi_iir
+     /tmp/ccrWxpkq.s:259    .bss:000000a0 rssi_sum
+     /tmp/ccrWxpkq.s:254    .bss:0000009e rssi_count
+     /tmp/ccrWxpkq.s:267    .bss:000000a5 rssi_min
+     /tmp/ccrWxpkq.s:263    .bss:000000a4 rssi_max
+     /tmp/ccrWxpkq.s:246    .bss:00000000 $d
+
+UNDEFINED SYMBOLS
+memset

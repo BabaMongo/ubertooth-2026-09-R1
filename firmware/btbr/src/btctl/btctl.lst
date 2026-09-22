@@ -1,0 +1,3144 @@
+ARM GAS  /tmp/ccYkWmTA.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"btctl.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/btctl/btctl.c"
+  18              		.section	.text.btctl_send_state_resp,"ax",%progbits
+  19              		.align	1
+  20              		.p2align 2,,3
+  21              		.global	btctl_send_state_resp
+  22              		.syntax unified
+  23              		.thumb
+  24              		.thumb_func
+  26              	btctl_send_state_resp:
+  27              	.LVL0:
+  28              	.LFB49:
+   1:src/btctl/btctl.c **** /* Btctl interface
+   2:src/btctl/btctl.c ****  *
+   3:src/btctl/btctl.c ****  * Copyright 2020 Etienne Helluy-Lafont, Univ. Lille, CNRS.
+   4:src/btctl/btctl.c ****  *
+   5:src/btctl/btctl.c ****  * This file is part of Project Ubertooth.
+   6:src/btctl/btctl.c ****  *
+   7:src/btctl/btctl.c ****  * This program is free software; you can redistribute it and/or modify
+   8:src/btctl/btctl.c ****  * it under the terms of the GNU General Public License as published by
+   9:src/btctl/btctl.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  10:src/btctl/btctl.c ****  * any later version.
+  11:src/btctl/btctl.c ****  *
+  12:src/btctl/btctl.c ****  * This program is distributed in the hope that it will be useful,
+  13:src/btctl/btctl.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  14:src/btctl/btctl.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  15:src/btctl/btctl.c ****  * GNU General Public License for more details.
+  16:src/btctl/btctl.c ****  *
+  17:src/btctl/btctl.c ****  * You should have received a copy of the GNU General Public License
+  18:src/btctl/btctl.c ****  * along with this program; see the file COPYING.  If not, write to
+  19:src/btctl/btctl.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  20:src/btctl/btctl.c ****  * Boston, MA 02110-1301, USA.
+  21:src/btctl/btctl.c ****  */
+  22:src/btctl/btctl.c **** #include <stdlib.h>
+  23:src/btctl/btctl.c **** #include <string.h>
+  24:src/btctl/btctl.c **** #include <ubtbr/btctl_intf.h>
+  25:src/btctl/btctl.c **** #include <ubtbr/btphy.h>
+  26:src/btctl/btctl.c **** #include <ubtbr/system.h>
+  27:src/btctl/btctl.c **** #include <ubtbr/rf.h>
+  28:src/btctl/btctl.c **** #include <ubtbr/hop.h>
+  29:src/btctl/btctl.c **** #include <ubtbr/inquiry_state.h>
+  30:src/btctl/btctl.c **** #include <ubtbr/paging_state.h>
+ARM GAS  /tmp/ccYkWmTA.s 			page 2
+
+
+  31:src/btctl/btctl.c **** #include <ubtbr/master_state.h>
+  32:src/btctl/btctl.c **** #include <ubtbr/inquiry_scan_state.h>
+  33:src/btctl/btctl.c **** #include <ubtbr/page_scan_state.h>
+  34:src/btctl/btctl.c **** #include <ubtbr/monitor_state.h>
+  35:src/btctl/btctl.c **** 
+  36:src/btctl/btctl.c **** btctl_t btctl;
+  37:src/btctl/btctl.c **** 
+  38:src/btctl/btctl.c **** static void btctl_flush_acl_tx_queue(void)
+  39:src/btctl/btctl.c **** {
+  40:src/btctl/btctl.c **** 	msg_t *msg;
+  41:src/btctl/btctl.c **** 
+  42:src/btctl/btctl.c **** 	/* Flush the acl tx queue */
+  43:src/btctl/btctl.c **** 	while ((msg = safe_dequeue(&btctl.acl_tx_q)) != NULL)
+  44:src/btctl/btctl.c **** 	{
+  45:src/btctl/btctl.c **** 		msg_free(msg);
+  46:src/btctl/btctl.c **** 	}
+  47:src/btctl/btctl.c **** }
+  48:src/btctl/btctl.c **** 
+  49:src/btctl/btctl.c **** static void btctl_handle_debug_req(msg_t *msg)
+  50:src/btctl/btctl.c **** {
+  51:src/btctl/btctl.c **** 	btctl_hdr_t *hdr = (btctl_hdr_t*)msg->data;
+  52:src/btctl/btctl.c **** 
+  53:src/btctl/btctl.c **** 	cprintf("debug req: %s\n", (char*)hdr->data);
+  54:src/btctl/btctl.c **** }
+  55:src/btctl/btctl.c **** 
+  56:src/btctl/btctl.c **** static void btctl_handle_reset_req(msg_t *msg)
+  57:src/btctl/btctl.c **** {
+  58:src/btctl/btctl.c **** 	reset();
+  59:src/btctl/btctl.c **** }
+  60:src/btctl/btctl.c **** 
+  61:src/btctl/btctl.c **** static void btctl_handle_idle_req(msg_t *msg)
+  62:src/btctl/btctl.c **** {
+  63:src/btctl/btctl.c **** 	uint32_t wait_clkn;
+  64:src/btctl/btctl.c **** 
+  65:src/btctl/btctl.c **** 	/* Cancel everything we can */
+  66:src/btctl/btctl.c **** 	btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_SUCCESS);
+  67:src/btctl/btctl.c **** 
+  68:src/btctl/btctl.c **** 	/* Let some time to tasks to complete (FIXME: wrap)*/
+  69:src/btctl/btctl.c **** 	wait_clkn = MASTER_CLKN+30;
+  70:src/btctl/btctl.c **** 
+  71:src/btctl/btctl.c **** 	while (MASTER_CLKN < wait_clkn)
+  72:src/btctl/btctl.c **** 		usb_work();
+  73:src/btctl/btctl.c **** }
+  74:src/btctl/btctl.c **** 
+  75:src/btctl/btctl.c **** static void btctl_handle_set_freq_off_req(msg_t *msg)
+  76:src/btctl/btctl.c **** {
+  77:src/btctl/btctl.c **** 	btctl_hdr_t *hdr = (btctl_hdr_t*)msg->data;
+  78:src/btctl/btctl.c **** 	btctl_set_reg_req_t *req = (btctl_set_reg_req_t*)hdr->data;
+  79:src/btctl/btctl.c **** 
+  80:src/btctl/btctl.c **** 	btphy_rf_set_freq_off(req->reg&0x3f);
+  81:src/btctl/btctl.c **** }
+  82:src/btctl/btctl.c **** 
+  83:src/btctl/btctl.c **** static void btctl_handle_set_max_ac_errors_req(msg_t *msg)
+  84:src/btctl/btctl.c **** {
+  85:src/btctl/btctl.c **** 	btctl_hdr_t *hdr = (btctl_hdr_t*)msg->data;
+  86:src/btctl/btctl.c **** 	btctl_set_reg_req_t *req = (btctl_set_reg_req_t*)hdr->data;
+  87:src/btctl/btctl.c **** 
+ARM GAS  /tmp/ccYkWmTA.s 			page 3
+
+
+  88:src/btctl/btctl.c **** 	btphy_rf_set_max_ac_errors(req->reg&3);
+  89:src/btctl/btctl.c **** }
+  90:src/btctl/btctl.c **** 
+  91:src/btctl/btctl.c **** static void btctl_handle_set_bdaddr_req(msg_t *msg)
+  92:src/btctl/btctl.c **** {
+  93:src/btctl/btctl.c **** 	btctl_hdr_t *hdr = (btctl_hdr_t*)msg->data;
+  94:src/btctl/btctl.c **** 	btctl_set_bdaddr_req_t *req = (btctl_set_bdaddr_req_t*)hdr->data;
+  95:src/btctl/btctl.c **** 
+  96:src/btctl/btctl.c **** 	btphy_set_bdaddr(req->bdaddr);
+  97:src/btctl/btctl.c **** }
+  98:src/btctl/btctl.c **** 
+  99:src/btctl/btctl.c **** static void btctl_handle_inquiry_req(msg_t *msg)
+ 100:src/btctl/btctl.c **** {
+ 101:src/btctl/btctl.c **** 	inquiry_state_setup();
+ 102:src/btctl/btctl.c **** }
+ 103:src/btctl/btctl.c **** 
+ 104:src/btctl/btctl.c **** static void btctl_handle_paging_req(msg_t *msg)
+ 105:src/btctl/btctl.c **** {
+ 106:src/btctl/btctl.c **** 	btctl_hdr_t *hdr = (btctl_hdr_t*)msg->data;
+ 107:src/btctl/btctl.c **** 	btctl_paging_req_t *req = (btctl_paging_req_t*)hdr->data;
+ 108:src/btctl/btctl.c **** 	uint32_t lap = req->bdaddr & 0xffffff;
+ 109:src/btctl/btctl.c **** 	uint8_t uap = (req->bdaddr >> 24) & 0xff;
+ 110:src/btctl/btctl.c **** 
+ 111:src/btctl/btctl.c **** 	btctl_flush_acl_tx_queue();
+ 112:src/btctl/btctl.c **** 
+ 113:src/btctl/btctl.c **** 	/* Start paging */
+ 114:src/btctl/btctl.c **** 	paging_state_setup(lap, uap);
+ 115:src/btctl/btctl.c **** }
+ 116:src/btctl/btctl.c **** 
+ 117:src/btctl/btctl.c **** static void btctl_handle_monitor_req(msg_t *msg)
+ 118:src/btctl/btctl.c **** {
+ 119:src/btctl/btctl.c **** 	btctl_hdr_t *hdr = (btctl_hdr_t*)msg->data;
+ 120:src/btctl/btctl.c **** 	btctl_paging_req_t *req = (btctl_paging_req_t*)hdr->data;
+ 121:src/btctl/btctl.c **** 
+ 122:src/btctl/btctl.c **** 	/* Start paging monitor */
+ 123:src/btctl/btctl.c **** 	monitor1_state_setup(req->bdaddr);
+ 124:src/btctl/btctl.c **** }
+ 125:src/btctl/btctl.c **** 
+ 126:src/btctl/btctl.c **** static void btctl_handle_tx_acl_req(msg_t *msg)
+ 127:src/btctl/btctl.c **** {
+ 128:src/btctl/btctl.c **** 	btctl_acl_tx_enqueue(msg);
+ 129:src/btctl/btctl.c **** }
+ 130:src/btctl/btctl.c **** 
+ 131:src/btctl/btctl.c **** static void btctl_handle_inquiry_scan_req(msg_t *msg)
+ 132:src/btctl/btctl.c **** {
+ 133:src/btctl/btctl.c **** 	inquiry_scan_state_setup();
+ 134:src/btctl/btctl.c **** }
+ 135:src/btctl/btctl.c **** 
+ 136:src/btctl/btctl.c **** static void btctl_handle_page_scan_req(msg_t *msg)
+ 137:src/btctl/btctl.c **** {
+ 138:src/btctl/btctl.c **** 	btctl_flush_acl_tx_queue();
+ 139:src/btctl/btctl.c **** 	page_scan_state_setup();
+ 140:src/btctl/btctl.c **** }
+ 141:src/btctl/btctl.c **** 
+ 142:src/btctl/btctl.c **** static void btctl_handle_set_afh_req(msg_t *msg)
+ 143:src/btctl/btctl.c **** {
+ 144:src/btctl/btctl.c **** 	static uint8_t afh_buf[11];
+ARM GAS  /tmp/ccYkWmTA.s 			page 4
+
+
+ 145:src/btctl/btctl.c **** 	uint32_t flags = irq_save_disable();
+ 146:src/btctl/btctl.c **** 	btctl_hdr_t *hdr = (btctl_hdr_t*)msg->data;
+ 147:src/btctl/btctl.c **** 	btctl_set_afh_req_t *req = (btctl_set_afh_req_t*)hdr->data;
+ 148:src/btctl/btctl.c **** 
+ 149:src/btctl/btctl.c **** 	afh_buf[0] = req->mode;
+ 150:src/btctl/btctl.c **** 	memcpy(afh_buf+1, req->map, 10);
+ 151:src/btctl/btctl.c **** 	//hop_set_afh_map(req->map);
+ 152:src/btctl/btctl.c **** 	btphy_timer_add(req->instant, (btphy_timer_fn_t)hop_cfg_afh, afh_buf, 0);
+ 153:src/btctl/btctl.c **** 	irq_restore(flags);
+ 154:src/btctl/btctl.c **** }
+ 155:src/btctl/btctl.c **** 
+ 156:src/btctl/btctl.c **** static void btctl_handle_set_eir_req(msg_t *msg)
+ 157:src/btctl/btctl.c **** {
+ 158:src/btctl/btctl.c **** 	btctl_hdr_t *h = (btctl_hdr_t*)msg->data;
+ 159:src/btctl/btctl.c **** 
+ 160:src/btctl/btctl.c **** 	if (btctl.state != BTCTL_STATE_STANDBY)
+ 161:src/btctl/btctl.c **** 	{
+ 162:src/btctl/btctl.c **** 		cprintf("Cannot change eir_msg now\n");
+ 163:src/btctl/btctl.c **** 		msg_free(msg);
+ 164:src/btctl/btctl.c **** 		return;
+ 165:src/btctl/btctl.c **** 	}
+ 166:src/btctl/btctl.c **** 	if (btctl.eir_msg)
+ 167:src/btctl/btctl.c **** 	{
+ 168:src/btctl/btctl.c **** 		msg_free(btctl.eir_msg);
+ 169:src/btctl/btctl.c **** 	}
+ 170:src/btctl/btctl.c **** 	cprintf("EIR updated\n");
+ 171:src/btctl/btctl.c **** 	btctl.eir_msg = msg;
+ 172:src/btctl/btctl.c **** 	btctl.eir_pkt = (btctl_tx_pkt_t *)h->data;
+ 173:src/btctl/btctl.c **** }
+ 174:src/btctl/btctl.c **** 
+ 175:src/btctl/btctl.c **** static void btctl_handle_msg(msg_t *msg)
+ 176:src/btctl/btctl.c **** {
+ 177:src/btctl/btctl.c **** 	btctl_hdr_t *hdr = (btctl_hdr_t*)msg->data;
+ 178:src/btctl/btctl.c **** 
+ 179:src/btctl/btctl.c **** 	switch(hdr->type)
+ 180:src/btctl/btctl.c **** 	{
+ 181:src/btctl/btctl.c **** 	case BTCTL_DEBUG:
+ 182:src/btctl/btctl.c **** 		btctl_handle_debug_req(msg);
+ 183:src/btctl/btctl.c **** 		break;
+ 184:src/btctl/btctl.c **** 	case BTCTL_RESET_REQ:
+ 185:src/btctl/btctl.c **** 		btctl_handle_reset_req(msg);
+ 186:src/btctl/btctl.c **** 		break;
+ 187:src/btctl/btctl.c **** 	case BTCTL_IDLE_REQ:
+ 188:src/btctl/btctl.c **** 		btctl_handle_idle_req(msg);
+ 189:src/btctl/btctl.c **** 		break;
+ 190:src/btctl/btctl.c **** 	case BTCTL_SET_FREQ_OFF_REQ:
+ 191:src/btctl/btctl.c **** 		btctl_handle_set_freq_off_req(msg);
+ 192:src/btctl/btctl.c **** 		break;
+ 193:src/btctl/btctl.c **** 	case BTCTL_SET_MAX_AC_ERRORS_REQ:
+ 194:src/btctl/btctl.c **** 		btctl_handle_set_max_ac_errors_req(msg);
+ 195:src/btctl/btctl.c **** 		break;
+ 196:src/btctl/btctl.c **** 	case BTCTL_SET_BDADDR_REQ:
+ 197:src/btctl/btctl.c **** 		btctl_handle_set_bdaddr_req(msg);
+ 198:src/btctl/btctl.c **** 		break;
+ 199:src/btctl/btctl.c **** 	case BTCTL_INQUIRY_REQ:
+ 200:src/btctl/btctl.c **** 		btctl_handle_inquiry_req(msg);
+ 201:src/btctl/btctl.c **** 		break;
+ARM GAS  /tmp/ccYkWmTA.s 			page 5
+
+
+ 202:src/btctl/btctl.c **** 	case BTCTL_PAGING_REQ:
+ 203:src/btctl/btctl.c **** 		btctl_handle_paging_req(msg);
+ 204:src/btctl/btctl.c **** 		break;
+ 205:src/btctl/btctl.c **** 	case BTCTL_TX_ACL_REQ:
+ 206:src/btctl/btctl.c **** 		btctl_handle_tx_acl_req(msg);
+ 207:src/btctl/btctl.c **** 		// don't free tx messages
+ 208:src/btctl/btctl.c **** 		goto end_nofree;
+ 209:src/btctl/btctl.c **** 	case BTCTL_INQUIRY_SCAN_REQ:
+ 210:src/btctl/btctl.c **** 		btctl_handle_inquiry_scan_req(msg);
+ 211:src/btctl/btctl.c **** 		break;
+ 212:src/btctl/btctl.c **** 	case BTCTL_PAGE_SCAN_REQ:
+ 213:src/btctl/btctl.c **** 		btctl_handle_page_scan_req(msg);
+ 214:src/btctl/btctl.c **** 		break;
+ 215:src/btctl/btctl.c **** 	case BTCTL_MONITOR_REQ:
+ 216:src/btctl/btctl.c **** 		btctl_handle_monitor_req(msg);
+ 217:src/btctl/btctl.c **** 		break;
+ 218:src/btctl/btctl.c **** 	case BTCTL_SET_EIR_REQ:
+ 219:src/btctl/btctl.c **** 		btctl_handle_set_eir_req(msg);
+ 220:src/btctl/btctl.c **** 		// don't free the eir message
+ 221:src/btctl/btctl.c **** 		goto end_nofree;
+ 222:src/btctl/btctl.c **** 	case BTCTL_SET_AFH_REQ:
+ 223:src/btctl/btctl.c **** 		btctl_handle_set_afh_req(msg);
+ 224:src/btctl/btctl.c **** 		break;
+ 225:src/btctl/btctl.c **** 	default:
+ 226:src/btctl/btctl.c **** 		cprintf("Invalid message type %d\n", hdr->type);
+ 227:src/btctl/btctl.c **** 		break;
+ 228:src/btctl/btctl.c **** 	}
+ 229:src/btctl/btctl.c **** 	btctl_mem_free(msg);
+ 230:src/btctl/btctl.c **** end_nofree:
+ 231:src/btctl/btctl.c **** 	return;
+ 232:src/btctl/btctl.c **** }
+ 233:src/btctl/btctl.c **** 
+ 234:src/btctl/btctl.c **** int btctl_work(void)
+ 235:src/btctl/btctl.c **** {
+ 236:src/btctl/btctl.c **** 	msg_t *msg = btctl_rx_dequeue();
+ 237:src/btctl/btctl.c **** 
+ 238:src/btctl/btctl.c **** 	if (msg == NULL)
+ 239:src/btctl/btctl.c **** 		return 0;
+ 240:src/btctl/btctl.c **** 
+ 241:src/btctl/btctl.c **** 	btctl_handle_msg(msg);
+ 242:src/btctl/btctl.c **** 
+ 243:src/btctl/btctl.c **** 	return 1;
+ 244:src/btctl/btctl.c **** }
+ 245:src/btctl/btctl.c **** 
+ 246:src/btctl/btctl.c **** void btctl_send_state_resp(btctl_state_t state, btctl_reason_t reason)
+ 247:src/btctl/btctl.c **** {
+  29              		.loc 1 247 1 view -0
+  30              		.cfi_startproc
+  31              		@ args = 0, pretend = 0, frame = 0
+  32              		@ frame_needed = 0, uses_anonymous_args = 0
+  33              		.loc 1 247 1 is_stmt 0 view .LVU1
+  34 0000 38B5     		push	{r3, r4, r5, lr}
+  35              		.cfi_def_cfa_offset 16
+  36              		.cfi_offset 3, -16
+  37              		.cfi_offset 4, -12
+  38              		.cfi_offset 5, -8
+  39              		.cfi_offset 14, -4
+ARM GAS  /tmp/ccYkWmTA.s 			page 6
+
+
+ 248:src/btctl/btctl.c **** 	msg_t *msg = btctl_msg_alloc(BTCTL_STATE_RESP);
+  40              		.loc 1 248 2 is_stmt 1 view .LVU2
+  41              	.LVL1:
+  42              	.LBB154:
+  43              	.LBI154:
+  44              		.file 2 "include/ubtbr/btctl_intf.h"
+   1:include/ubtbr/btctl_intf.h **** #ifndef __BTCTL_INTF_H
+   2:include/ubtbr/btctl_intf.h **** #define __BTCTL_INTF_H
+   3:include/ubtbr/btctl_intf.h **** #include <ubtbr/bb_msg.h>
+   4:include/ubtbr/btctl_intf.h **** #include <ubtbr/queue.h>
+   5:include/ubtbr/btctl_intf.h **** #include <ubtbr/system.h>
+   6:include/ubtbr/btctl_intf.h **** #include <ubertooth_interface.h>
+   7:include/ubtbr/btctl_intf.h **** 
+   8:include/ubtbr/btctl_intf.h **** typedef struct btctl_s {
+   9:include/ubtbr/btctl_intf.h **** 	btctl_state_t state;
+  10:include/ubtbr/btctl_intf.h **** 	msg_queue_t rx_q;
+  11:include/ubtbr/btctl_intf.h **** 	msg_queue_t tx_q;
+  12:include/ubtbr/btctl_intf.h **** 	msg_queue_t acl_tx_q;
+  13:include/ubtbr/btctl_intf.h **** 	msg_t *eir_msg;
+  14:include/ubtbr/btctl_intf.h **** 	btctl_tx_pkt_t *eir_pkt;
+  15:include/ubtbr/btctl_intf.h **** } btctl_t;
+  16:include/ubtbr/btctl_intf.h **** 
+  17:include/ubtbr/btctl_intf.h **** extern btctl_t btctl;
+  18:include/ubtbr/btctl_intf.h **** 
+  19:include/ubtbr/btctl_intf.h **** void btctl_init(void);
+  20:include/ubtbr/btctl_intf.h **** int btctl_work(void);
+  21:include/ubtbr/btctl_intf.h **** 
+  22:include/ubtbr/btctl_intf.h **** void btctl_set_state(btctl_state_t state, btctl_reason_t reason);
+  23:include/ubtbr/btctl_intf.h **** 
+  24:include/ubtbr/btctl_intf.h **** static inline btctl_state_t btctl_get_state(void)
+  25:include/ubtbr/btctl_intf.h **** {
+  26:include/ubtbr/btctl_intf.h **** 	return btctl.state;
+  27:include/ubtbr/btctl_intf.h **** }
+  28:include/ubtbr/btctl_intf.h **** 
+  29:include/ubtbr/btctl_intf.h **** static inline btctl_tx_pkt_t *btctl_get_eir(void)
+  30:include/ubtbr/btctl_intf.h **** {
+  31:include/ubtbr/btctl_intf.h **** 	return btctl.eir_pkt;
+  32:include/ubtbr/btctl_intf.h **** }
+  33:include/ubtbr/btctl_intf.h **** 
+  34:include/ubtbr/btctl_intf.h **** static inline msg_t *btctl_msg_alloc(unsigned type)
+  45              		.loc 2 34 22 view .LVU3
+  46              	.LBB155:
+  35:include/ubtbr/btctl_intf.h **** {
+  36:include/ubtbr/btctl_intf.h **** 	msg_t *msg;
+  47              		.loc 2 36 2 view .LVU4
+  37:include/ubtbr/btctl_intf.h **** 	btctl_hdr_t *hdr;
+  48              		.loc 2 37 2 view .LVU5
+  38:include/ubtbr/btctl_intf.h **** 
+  39:include/ubtbr/btctl_intf.h **** 	/* maximum size ?*/
+  40:include/ubtbr/btctl_intf.h **** 	msg = msg_alloc(sizeof(btctl_hdr_t)+sizeof(btctl_rx_pkt_t)+MAX_ACL_PACKET_SIZE);
+  49              		.loc 2 40 2 view .LVU6
+  50              	.LBB156:
+  51              	.LBI156:
+  52              		.file 3 "include/ubtbr/msg.h"
+   1:include/ubtbr/msg.h **** #ifndef __DEF_MSG_H
+   2:include/ubtbr/msg.h **** #define __DEF_MSG_H
+   3:include/ubtbr/msg.h **** #include <stdint.h>
+ARM GAS  /tmp/ccYkWmTA.s 			page 7
+
+
+   4:include/ubtbr/msg.h **** 
+   5:include/ubtbr/msg.h **** typedef struct msg_s {
+   6:include/ubtbr/msg.h **** 	uint16_t len;
+   7:include/ubtbr/msg.h **** 	uint16_t data_len;
+   8:include/ubtbr/msg.h **** 	uint8_t *read;
+   9:include/ubtbr/msg.h **** 	uint8_t *write;
+  10:include/ubtbr/msg.h **** 	/* never move head */
+  11:include/ubtbr/msg.h **** 	uint8_t data[0];
+  12:include/ubtbr/msg.h **** } msg_t;
+  13:include/ubtbr/msg.h **** 
+  14:include/ubtbr/msg.h **** /* Allocate a msg_t wigh given room*/
+  15:include/ubtbr/msg.h **** static inline msg_t *msg_alloc(unsigned size)
+  53              		.loc 3 15 22 view .LVU7
+  54              	.LBB157:
+  16:include/ubtbr/msg.h **** {
+  17:include/ubtbr/msg.h **** 	msg_t *msg = (msg_t*)btctl_mem_alloc(sizeof(msg_t)+size);
+  55              		.loc 3 17 2 view .LVU8
+  56              	.LBE157:
+  57              	.LBE156:
+  58              	.LBE155:
+  59              	.LBE154:
+ 247:src/btctl/btctl.c **** 	msg_t *msg = btctl_msg_alloc(BTCTL_STATE_RESP);
+  60              		.loc 1 247 1 is_stmt 0 view .LVU9
+  61 0002 0546     		mov	r5, r0
+  62              	.LBB169:
+  63              	.LBB166:
+  64              	.LBB162:
+  65              	.LBB158:
+  66              		.loc 3 17 23 view .LVU10
+  67 0004 4FF4BA70 		mov	r0, #372
+  68              	.LVL2:
+  69              		.loc 3 17 23 view .LVU11
+  70              	.LBE158:
+  71              	.LBE162:
+  72              	.LBE166:
+  73              	.LBE169:
+ 247:src/btctl/btctl.c **** 	msg_t *msg = btctl_msg_alloc(BTCTL_STATE_RESP);
+  74              		.loc 1 247 1 view .LVU12
+  75 0008 0C46     		mov	r4, r1
+  76              	.LBB170:
+  77              	.LBB167:
+  78              	.LBB163:
+  79              	.LBB159:
+  80              		.loc 3 17 23 view .LVU13
+  81 000a FFF7FEFF 		bl	mem_pool_alloc
+  82              	.LVL3:
+  18:include/ubtbr/msg.h **** 
+  19:include/ubtbr/msg.h **** 	msg->write = msg->data;
+  20:include/ubtbr/msg.h **** 	msg->read = msg->data;
+  21:include/ubtbr/msg.h **** 	msg->data_len = size;
+  83              		.loc 3 21 16 view .LVU14
+  84 000e 4FF4B472 		mov	r2, #360
+  17:include/ubtbr/msg.h **** 
+  85              		.loc 3 17 23 view .LVU15
+  86 0012 0346     		mov	r3, r0
+  87              	.LVL4:
+  19:include/ubtbr/msg.h **** 	msg->read = msg->data;
+ARM GAS  /tmp/ccYkWmTA.s 			page 8
+
+
+  88              		.loc 3 19 2 is_stmt 1 view .LVU16
+  20:include/ubtbr/msg.h **** 	msg->data_len = size;
+  89              		.loc 3 20 2 view .LVU17
+  90              	.LBE159:
+  91              	.LBE163:
+  41:include/ubtbr/btctl_intf.h **** 	hdr = (btctl_hdr_t*) msg_put(msg, sizeof(*hdr));
+  42:include/ubtbr/btctl_intf.h **** 	hdr->type = type;
+  92              		.loc 2 42 12 is_stmt 0 view .LVU18
+  93 0014 2921     		movs	r1, #41
+  94              	.LBB164:
+  95              	.LBB160:
+  19:include/ubtbr/msg.h **** 	msg->read = msg->data;
+  96              		.loc 3 19 15 view .LVU19
+  97 0016 0C30     		adds	r0, r0, #12
+  98              	.LVL5:
+  99              		.loc 3 21 16 view .LVU20
+ 100 0018 5A80     		strh	r2, [r3, #2]	@ movhi
+ 101              	.LBE160:
+ 102              	.LBE164:
+ 103              	.LBE167:
+ 104              	.LBE170:
+ 105              	.LBB171:
+ 106              	.LBB172:
+  22:include/ubtbr/msg.h **** 
+  23:include/ubtbr/msg.h **** 	return msg;
+  24:include/ubtbr/msg.h **** }
+  25:include/ubtbr/msg.h **** 
+  26:include/ubtbr/msg.h **** static inline void msg_free(msg_t *msg)
+  27:include/ubtbr/msg.h **** {
+  28:include/ubtbr/msg.h **** 	btctl_mem_free(msg);
+  29:include/ubtbr/msg.h **** }
+  30:include/ubtbr/msg.h **** 
+  31:include/ubtbr/msg.h **** /* Return number of bytes written in the data buffer. */
+  32:include/ubtbr/msg.h **** static inline int msg_write_len(const msg_t *msg)
+  33:include/ubtbr/msg.h **** {
+  34:include/ubtbr/msg.h **** 	return (int)(msg->write - msg->data);
+  35:include/ubtbr/msg.h **** }
+  36:include/ubtbr/msg.h **** 
+  37:include/ubtbr/msg.h **** /* Return number of bytes we can pull between
+  38:include/ubtbr/msg.h ****  * the data pointer and the end of the buffer. */
+  39:include/ubtbr/msg.h **** static inline int msg_read_avail(const msg_t *msg)
+  40:include/ubtbr/msg.h **** {
+  41:include/ubtbr/msg.h **** 	return (int)(msg->write - msg->read);
+  42:include/ubtbr/msg.h **** }
+  43:include/ubtbr/msg.h **** 
+  44:include/ubtbr/msg.h **** /* Return number of bytes we can put between
+  45:include/ubtbr/msg.h ****  * the tail pointer and the end of the buffer. */
+  46:include/ubtbr/msg.h **** static inline int msg_write_avail(const msg_t *msg)
+  47:include/ubtbr/msg.h **** {
+  48:include/ubtbr/msg.h ****         return msg->data_len - msg_write_len(msg);
+  49:include/ubtbr/msg.h **** }
+  50:include/ubtbr/msg.h **** 
+  51:include/ubtbr/msg.h **** /* Set write pointer.
+  52:include/ubtbr/msg.h ****  * Meant to trim the msg to the end of data written. */
+  53:include/ubtbr/msg.h **** static inline int msg_set_write(msg_t *msg, uint8_t *write)
+  54:include/ubtbr/msg.h **** {
+  55:include/ubtbr/msg.h **** 	if (write < msg->data || write > (msg->data + msg->data_len))
+ARM GAS  /tmp/ccYkWmTA.s 			page 9
+
+
+  56:include/ubtbr/msg.h ****                 return -1;
+  57:include/ubtbr/msg.h ****         msg->write = write;
+  58:include/ubtbr/msg.h **** 
+  59:include/ubtbr/msg.h ****         return 0;
+  60:include/ubtbr/msg.h **** }
+  61:include/ubtbr/msg.h **** 
+  62:include/ubtbr/msg.h **** static inline uint8_t *msg_put(msg_t *msg, unsigned int len)
+  63:include/ubtbr/msg.h **** {
+  64:include/ubtbr/msg.h ****         uint8_t *tmp = msg->write;
+  65:include/ubtbr/msg.h **** 
+  66:include/ubtbr/msg.h ****         if (msg_write_avail(msg) < (int) len)
+  67:include/ubtbr/msg.h **** 		DIE("msg_put: short buf\n");
+  68:include/ubtbr/msg.h ****         msg->write += len;
+ 107              		.loc 3 68 20 view .LVU21
+ 108 001a 03F11202 		add	r2, r3, #18
+ 109              	.LBE172:
+ 110              	.LBE171:
+ 111              	.LBB174:
+ 112              	.LBB168:
+ 113              	.LBB165:
+ 114              	.LBB161:
+  20:include/ubtbr/msg.h **** 	msg->data_len = size;
+ 115              		.loc 3 20 12 view .LVU22
+ 116 001e 5860     		str	r0, [r3, #4]
+  21:include/ubtbr/msg.h **** 
+ 117              		.loc 3 21 2 is_stmt 1 view .LVU23
+  23:include/ubtbr/msg.h **** }
+ 118              		.loc 3 23 2 view .LVU24
+ 119              	.LVL6:
+  23:include/ubtbr/msg.h **** }
+ 120              		.loc 3 23 2 is_stmt 0 view .LVU25
+ 121              	.LBE161:
+ 122              	.LBE165:
+  41:include/ubtbr/btctl_intf.h **** 	hdr->type = type;
+ 123              		.loc 2 41 2 is_stmt 1 view .LVU26
+ 124              		.loc 2 42 2 view .LVU27
+ 125              		.loc 2 42 12 is_stmt 0 view .LVU28
+ 126 0020 1973     		strb	r1, [r3, #12]
+  43:include/ubtbr/btctl_intf.h **** 
+  44:include/ubtbr/btctl_intf.h **** 	return msg;
+ 127              		.loc 2 44 2 is_stmt 1 view .LVU29
+ 128              	.LVL7:
+ 129              		.loc 2 44 2 is_stmt 0 view .LVU30
+ 130              	.LBE168:
+ 131              	.LBE174:
+ 249:src/btctl/btctl.c **** 	btctl_state_resp_t *resp;
+ 132              		.loc 1 249 2 is_stmt 1 view .LVU31
+ 250:src/btctl/btctl.c **** 
+ 251:src/btctl/btctl.c **** 	resp = (btctl_state_resp_t*)msg_put(msg, sizeof(*resp));
+ 133              		.loc 1 251 2 view .LVU32
+ 134              	.LBB175:
+ 135              	.LBI171:
+  62:include/ubtbr/msg.h **** {
+ 136              		.loc 3 62 24 view .LVU33
+ 137              	.LBB173:
+  64:include/ubtbr/msg.h **** 
+ 138              		.loc 3 64 9 view .LVU34
+ARM GAS  /tmp/ccYkWmTA.s 			page 10
+
+
+  66:include/ubtbr/msg.h **** 		DIE("msg_put: short buf\n");
+ 139              		.loc 3 66 9 view .LVU35
+ 140              		.loc 3 68 9 view .LVU36
+ 141              		.loc 3 68 20 is_stmt 0 view .LVU37
+ 142 0022 9A60     		str	r2, [r3, #8]
+  69:include/ubtbr/msg.h **** 
+  70:include/ubtbr/msg.h ****         return tmp;
+ 143              		.loc 3 70 9 is_stmt 1 view .LVU38
+ 144              	.LVL8:
+ 145              		.loc 3 70 9 is_stmt 0 view .LVU39
+ 146              	.LBE173:
+ 147              	.LBE175:
+ 252:src/btctl/btctl.c **** 	resp->state = state;
+ 148              		.loc 1 252 2 is_stmt 1 view .LVU40
+ 149              		.loc 1 252 14 is_stmt 0 view .LVU41
+ 150 0024 1D74     		strb	r5, [r3, #16]
+ 253:src/btctl/btctl.c **** 	resp->reason = reason;
+ 151              		.loc 1 253 2 is_stmt 1 view .LVU42
+ 152              		.loc 1 253 15 is_stmt 0 view .LVU43
+ 153 0026 5C74     		strb	r4, [r3, #17]
+ 254:src/btctl/btctl.c **** 	btctl_tx_enqueue(msg);
+ 154              		.loc 1 254 2 is_stmt 1 view .LVU44
+ 155              	.LVL9:
+ 156              	.LBB176:
+ 157              	.LBI176:
+  45:include/ubtbr/btctl_intf.h **** }
+  46:include/ubtbr/btctl_intf.h **** 
+  47:include/ubtbr/btctl_intf.h **** static inline msg_t *safe_dequeue(msg_queue_t* q)
+  48:include/ubtbr/btctl_intf.h **** {
+  49:include/ubtbr/btctl_intf.h **** 	uint32_t flags = irq_save_disable();
+  50:include/ubtbr/btctl_intf.h **** 	msg_t *msg;
+  51:include/ubtbr/btctl_intf.h **** 
+  52:include/ubtbr/btctl_intf.h **** 	msg = msg_dequeue(q);
+  53:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+  54:include/ubtbr/btctl_intf.h **** 
+  55:include/ubtbr/btctl_intf.h **** 	return msg;
+  56:include/ubtbr/btctl_intf.h **** }
+  57:include/ubtbr/btctl_intf.h **** 
+  58:include/ubtbr/btctl_intf.h **** static inline int safe_enqueue(msg_queue_t *q, msg_t *msg)
+  59:include/ubtbr/btctl_intf.h **** {
+  60:include/ubtbr/btctl_intf.h **** 	uint32_t flags = irq_save_disable();
+  61:include/ubtbr/btctl_intf.h **** 	int rc;
+  62:include/ubtbr/btctl_intf.h **** 
+  63:include/ubtbr/btctl_intf.h **** 	rc = msg_enqueue(q, msg);
+  64:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+  65:include/ubtbr/btctl_intf.h **** 
+  66:include/ubtbr/btctl_intf.h **** 	return rc;
+  67:include/ubtbr/btctl_intf.h **** }
+  68:include/ubtbr/btctl_intf.h **** 
+  69:include/ubtbr/btctl_intf.h **** /* Called by usb driver to retreive next message to send to host */
+  70:include/ubtbr/btctl_intf.h **** static inline msg_t *btctl_tx_dequeue(void)
+  71:include/ubtbr/btctl_intf.h **** {
+  72:include/ubtbr/btctl_intf.h **** 	return safe_dequeue(&btctl.tx_q);
+  73:include/ubtbr/btctl_intf.h **** }
+  74:include/ubtbr/btctl_intf.h **** 
+  75:include/ubtbr/btctl_intf.h **** /* Enqueue a message for host */
+  76:include/ubtbr/btctl_intf.h **** static inline int btctl_tx_enqueue(msg_t *msg)
+ARM GAS  /tmp/ccYkWmTA.s 			page 11
+
+
+ 158              		.loc 2 76 19 view .LVU45
+ 159              	.LBB177:
+  77:include/ubtbr/btctl_intf.h **** {
+  78:include/ubtbr/btctl_intf.h **** 	return safe_enqueue(&btctl.tx_q, msg);
+ 160              		.loc 2 78 2 view .LVU46
+ 161              	.LBB178:
+ 162              	.LBI178:
+  58:include/ubtbr/btctl_intf.h **** {
+ 163              		.loc 2 58 19 view .LVU47
+ 164              	.LBB179:
+  60:include/ubtbr/btctl_intf.h **** 	int rc;
+ 165              		.loc 2 60 2 view .LVU48
+ 166              	.LBB180:
+ 167              	.LBI180:
+ 168              		.file 4 "include/ubtbr/system.h"
+   1:include/ubtbr/system.h **** #ifndef __SYSTEM_H
+   2:include/ubtbr/system.h **** #define __SYSTEM_H
+   3:include/ubtbr/system.h **** #include <stdint.h>
+   4:include/ubtbr/system.h **** 
+   5:include/ubtbr/system.h **** static inline uint32_t irq_save_disable(void)
+ 169              		.loc 4 5 24 view .LVU49
+ 170              	.LBB181:
+   6:include/ubtbr/system.h **** {
+   7:include/ubtbr/system.h **** 	uint32_t primask;
+ 171              		.loc 4 7 2 view .LVU50
+   8:include/ubtbr/system.h **** 
+   9:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 172              		.loc 4 9 2 view .LVU51
+ 173              		.syntax unified
+ 174              	@ 9 "include/ubtbr/system.h" 1
+ 175 0028 EFF31084 			mrs    r4, primask
+ 176 002c 72B6     		cpsid  i
+ 177              	
+ 178              	@ 0 "" 2
+ 179              	.LVL10:
+  10:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+  11:include/ubtbr/system.h **** 	"\tcpsid  i\n"
+  12:include/ubtbr/system.h **** 	: "=r" (primask)
+  13:include/ubtbr/system.h **** 	:
+  14:include/ubtbr/system.h **** 	: "memory");
+  15:include/ubtbr/system.h **** 
+  16:include/ubtbr/system.h **** 	return primask;
+ 180              		.loc 4 16 2 view .LVU52
+ 181              		.loc 4 16 2 is_stmt 0 view .LVU53
+ 182              		.thumb
+ 183              		.syntax unified
+ 184              	.LBE181:
+ 185              	.LBE180:
+  61:include/ubtbr/btctl_intf.h **** 
+ 186              		.loc 2 61 2 is_stmt 1 view .LVU54
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 187              		.loc 2 63 2 view .LVU55
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 188              		.loc 2 63 7 is_stmt 0 view .LVU56
+ 189 002e 0348     		ldr	r0, .L3
+ 190 0030 1946     		mov	r1, r3
+ 191 0032 FFF7FEFF 		bl	msg_enqueue
+ARM GAS  /tmp/ccYkWmTA.s 			page 12
+
+
+ 192              	.LVL11:
+  64:include/ubtbr/btctl_intf.h **** 
+ 193              		.loc 2 64 2 is_stmt 1 view .LVU57
+ 194              	.LBB182:
+ 195              	.LBI182:
+  17:include/ubtbr/system.h **** }
+  18:include/ubtbr/system.h **** 
+  19:include/ubtbr/system.h **** static inline void irq_restore(uint32_t primask)
+ 196              		.loc 4 19 20 view .LVU58
+ 197              	.LBB183:
+  20:include/ubtbr/system.h **** {
+  21:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 198              		.loc 4 21 2 view .LVU59
+ 199              		.syntax unified
+ 200              	@ 21 "include/ubtbr/system.h" 1
+ 201 0036 84F31088 		msr primask, r4
+ 202              	@ 0 "" 2
+ 203              	.LVL12:
+ 204              		.loc 4 21 2 is_stmt 0 view .LVU60
+ 205              		.thumb
+ 206              		.syntax unified
+ 207              	.LBE183:
+ 208              	.LBE182:
+  66:include/ubtbr/btctl_intf.h **** }
+ 209              		.loc 2 66 2 is_stmt 1 view .LVU61
+  66:include/ubtbr/btctl_intf.h **** }
+ 210              		.loc 2 66 2 is_stmt 0 view .LVU62
+ 211              	.LBE179:
+ 212              	.LBE178:
+ 213              	.LBE177:
+ 214              	.LBE176:
+ 255:src/btctl/btctl.c **** }
+ 215              		.loc 1 255 1 view .LVU63
+ 216 003a 38BD     		pop	{r3, r4, r5, pc}
+ 217              	.LVL13:
+ 218              	.L4:
+ 219              		.loc 1 255 1 view .LVU64
+ 220              		.align	2
+ 221              	.L3:
+ 222 003c 2C000000 		.word	.LANCHOR0+44
+ 223              		.cfi_endproc
+ 224              	.LFE49:
+ 226              		.section	.rodata.str1.4,"aMS",%progbits,1
+ 227              		.align	2
+ 228              	.LC0:
+ 229 0000 544F444F 		.ascii	"TODO\000"
+ 229      00
+ 230 0005 000000   		.align	2
+ 231              	.LC1:
+ 232 0008 496E7661 		.ascii	"Invalid\000"
+ 232      6C696400 
+ 233              		.align	2
+ 234              	.LC2:
+ 235 0010 434F4E4E 		.ascii	"CONNECTED\000"
+ 235      45435445 
+ 235      4400
+ 236 001a 0000     		.align	2
+ARM GAS  /tmp/ccYkWmTA.s 			page 13
+
+
+ 237              	.LC3:
+ 238 001c 53746174 		.ascii	"State %s -> %s\012\000"
+ 238      65202573 
+ 238      202D3E20 
+ 238      25730A00 
+ 239              		.align	2
+ 240              	.LC4:
+ 241 002c 4449457C 		.ascii	"DIE|Invalid state transition %s -> %s\012\012\000"
+ 241      496E7661 
+ 241      6C696420 
+ 241      73746174 
+ 241      65207472 
+ 242              		.section	.text.btctl_set_state,"ax",%progbits
+ 243              		.align	1
+ 244              		.p2align 2,,3
+ 245              		.global	btctl_set_state
+ 246              		.syntax unified
+ 247              		.thumb
+ 248              		.thumb_func
+ 250              	btctl_set_state:
+ 251              	.LVL14:
+ 252              	.LFB52:
+ 256:src/btctl/btctl.c **** 
+ 257:src/btctl/btctl.c **** static inline int btctl_state_transition_valid(btctl_state_t cur, btctl_state_t next)
+ 258:src/btctl/btctl.c **** {
+ 259:src/btctl/btctl.c **** 	/* All states can go standby */
+ 260:src/btctl/btctl.c **** 	if (next == BTCTL_STATE_STANDBY)
+ 261:src/btctl/btctl.c **** 		return 1;
+ 262:src/btctl/btctl.c **** 	/* Connected state must come from page/page scan */
+ 263:src/btctl/btctl.c **** 	if (next == BTCTL_STATE_CONNECTED)
+ 264:src/btctl/btctl.c **** 		return cur == BTCTL_STATE_PAGE
+ 265:src/btctl/btctl.c **** 			|| cur == BTCTL_STATE_PAGE_SCAN
+ 266:src/btctl/btctl.c **** 			|| cur == BTCTL_STATE_CONNECTED;
+ 267:src/btctl/btctl.c **** 	/* Others states must come from standby */
+ 268:src/btctl/btctl.c **** 	return cur == BTCTL_STATE_STANDBY;
+ 269:src/btctl/btctl.c **** }
+ 270:src/btctl/btctl.c **** 
+ 271:src/btctl/btctl.c **** static const char* btctl_state_name(btctl_state_t state)
+ 272:src/btctl/btctl.c **** {
+ 273:src/btctl/btctl.c **** 	const char *name;
+ 274:src/btctl/btctl.c **** 	static const char* btctl_state_name_tbl[BTCTL_STATE_COUNT] = {
+ 275:src/btctl/btctl.c **** 		[BTCTL_STATE_STANDBY]	= "STANDBY", 
+ 276:src/btctl/btctl.c **** 		[BTCTL_STATE_INQUIRY]	= "INQUIRY",
+ 277:src/btctl/btctl.c **** 		[BTCTL_STATE_PAGE]	= "PAGE",
+ 278:src/btctl/btctl.c **** 		[BTCTL_STATE_CONNECTED]	= "CONNECTED",
+ 279:src/btctl/btctl.c **** 		[BTCTL_STATE_INQUIRY_SCAN] = "INQUIRY_SCAN",
+ 280:src/btctl/btctl.c **** 		[BTCTL_STATE_PAGE_SCAN] = "PAGE_SCAN"
+ 281:src/btctl/btctl.c **** 	};
+ 282:src/btctl/btctl.c **** 	if (state >= BTCTL_STATE_COUNT)
+ 283:src/btctl/btctl.c **** 		return "Invalid";
+ 284:src/btctl/btctl.c **** 
+ 285:src/btctl/btctl.c **** 	name = btctl_state_name_tbl[state];
+ 286:src/btctl/btctl.c **** 	if (!name)
+ 287:src/btctl/btctl.c **** 		name = "TODO";
+ 288:src/btctl/btctl.c **** 	return name;
+ 289:src/btctl/btctl.c **** }
+ 290:src/btctl/btctl.c **** 
+ARM GAS  /tmp/ccYkWmTA.s 			page 14
+
+
+ 291:src/btctl/btctl.c **** void btctl_set_state(btctl_state_t state, btctl_reason_t reason)
+ 292:src/btctl/btctl.c **** {
+ 253              		.loc 1 292 1 is_stmt 1 view -0
+ 254              		.cfi_startproc
+ 255              		@ args = 0, pretend = 0, frame = 8
+ 256              		@ frame_needed = 0, uses_anonymous_args = 0
+ 257              		.loc 1 292 1 is_stmt 0 view .LVU66
+ 258 0000 2DE9F043 		push	{r4, r5, r6, r7, r8, r9, lr}
+ 259              		.cfi_def_cfa_offset 28
+ 260              		.cfi_offset 4, -28
+ 261              		.cfi_offset 5, -24
+ 262              		.cfi_offset 6, -20
+ 263              		.cfi_offset 7, -16
+ 264              		.cfi_offset 8, -12
+ 265              		.cfi_offset 9, -8
+ 266              		.cfi_offset 14, -4
+ 267 0004 83B0     		sub	sp, sp, #12
+ 268              		.cfi_def_cfa_offset 40
+ 293:src/btctl/btctl.c **** 	uint32_t flags = irq_save_disable();
+ 269              		.loc 1 293 2 is_stmt 1 view .LVU67
+ 270              	.LBB218:
+ 271              	.LBI218:
+   5:include/ubtbr/system.h **** {
+ 272              		.loc 4 5 24 view .LVU68
+ 273              	.LBB219:
+   7:include/ubtbr/system.h **** 
+ 274              		.loc 4 7 2 view .LVU69
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 275              		.loc 4 9 2 view .LVU70
+ 276              	.LBE219:
+ 277              	.LBE218:
+ 292:src/btctl/btctl.c **** 	uint32_t flags = irq_save_disable();
+ 278              		.loc 1 292 1 is_stmt 0 view .LVU71
+ 279 0006 0446     		mov	r4, r0
+ 280 0008 8946     		mov	r9, r1
+ 281              	.LBB221:
+ 282              	.LBB220:
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 283              		.loc 4 9 2 view .LVU72
+ 284              		.syntax unified
+ 285              	@ 9 "include/ubtbr/system.h" 1
+ 286 000a EFF31087 			mrs    r7, primask
+ 287 000e 72B6     		cpsid  i
+ 288              	
+ 289              	@ 0 "" 2
+  16:include/ubtbr/system.h **** }
+ 290              		.loc 4 16 2 is_stmt 1 view .LVU73
+ 291              	.LVL15:
+  16:include/ubtbr/system.h **** }
+ 292              		.loc 4 16 2 is_stmt 0 view .LVU74
+ 293              		.thumb
+ 294              		.syntax unified
+ 295              	.LBE220:
+ 296              	.LBE221:
+ 294:src/btctl/btctl.c **** 	btctl_state_t old_state = btctl.state;
+ 297              		.loc 1 294 2 is_stmt 1 view .LVU75
+ 298              		.loc 1 294 16 is_stmt 0 view .LVU76
+ARM GAS  /tmp/ccYkWmTA.s 			page 15
+
+
+ 299 0010 444D     		ldr	r5, .L41
+ 300 0012 2B78     		ldrb	r3, [r5]	@ zero_extendqisi2
+ 301              	.LVL16:
+ 295:src/btctl/btctl.c **** 
+ 296:src/btctl/btctl.c **** #if 1
+ 297:src/btctl/btctl.c **** 	cprintf("State %s -> %s\n",
+ 302              		.loc 1 297 2 is_stmt 1 view .LVU77
+ 303              	.LBB222:
+ 304              	.LBI222:
+ 271:src/btctl/btctl.c **** {
+ 305              		.loc 1 271 20 view .LVU78
+ 306              	.LBB223:
+ 273:src/btctl/btctl.c **** 	static const char* btctl_state_name_tbl[BTCTL_STATE_COUNT] = {
+ 307              		.loc 1 273 2 view .LVU79
+ 274:src/btctl/btctl.c **** 		[BTCTL_STATE_STANDBY]	= "STANDBY", 
+ 308              		.loc 1 274 2 view .LVU80
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 309              		.loc 1 282 2 view .LVU81
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 310              		.loc 1 282 5 is_stmt 0 view .LVU82
+ 311 0014 052B     		cmp	r3, #5
+ 312 0016 55D8     		bhi	.L35
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 313              		.loc 1 285 2 is_stmt 1 view .LVU83
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 314              		.loc 1 285 7 is_stmt 0 view .LVU84
+ 315 0018 434E     		ldr	r6, .L41+4
+ 287:src/btctl/btctl.c **** 	return name;
+ 316              		.loc 1 287 8 view .LVU85
+ 317 001a 444A     		ldr	r2, .L41+8
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 318              		.loc 1 285 7 view .LVU86
+ 319 001c 56F82310 		ldr	r1, [r6, r3, lsl #2]
+ 320              	.LVL17:
+ 286:src/btctl/btctl.c **** 		name = "TODO";
+ 321              		.loc 1 286 2 is_stmt 1 view .LVU87
+ 287:src/btctl/btctl.c **** 	return name;
+ 322              		.loc 1 287 8 is_stmt 0 view .LVU88
+ 323 0020 0029     		cmp	r1, #0
+ 324 0022 08BF     		it	eq
+ 325 0024 1146     		moveq	r1, r2
+ 326              	.LVL18:
+ 287:src/btctl/btctl.c **** 	return name;
+ 327              		.loc 1 287 8 view .LVU89
+ 328              	.LBE223:
+ 329              	.LBE222:
+ 330              	.LBB225:
+ 331              	.LBI225:
+ 271:src/btctl/btctl.c **** {
+ 332              		.loc 1 271 20 is_stmt 1 view .LVU90
+ 333              	.LBB226:
+ 273:src/btctl/btctl.c **** 	static const char* btctl_state_name_tbl[BTCTL_STATE_COUNT] = {
+ 334              		.loc 1 273 2 view .LVU91
+ 274:src/btctl/btctl.c **** 		[BTCTL_STATE_STANDBY]	= "STANDBY", 
+ 335              		.loc 1 274 2 view .LVU92
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 336              		.loc 1 282 2 view .LVU93
+ARM GAS  /tmp/ccYkWmTA.s 			page 16
+
+
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 337              		.loc 1 282 5 is_stmt 0 view .LVU94
+ 338 0026 0528     		cmp	r0, #5
+ 339 0028 24D8     		bhi	.L36
+ 340              	.LVL19:
+ 341              	.L7:
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 342              		.loc 1 285 2 is_stmt 1 view .LVU95
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 343              		.loc 1 285 7 is_stmt 0 view .LVU96
+ 344 002a 56F82420 		ldr	r2, [r6, r4, lsl #2]
+ 345              	.LVL20:
+ 286:src/btctl/btctl.c **** 		name = "TODO";
+ 346              		.loc 1 286 2 is_stmt 1 view .LVU97
+ 286:src/btctl/btctl.c **** 		name = "TODO";
+ 347              		.loc 1 286 2 is_stmt 0 view .LVU98
+ 348              	.LBE226:
+ 349              	.LBE225:
+ 350              		.loc 1 297 2 discriminator 2 view .LVU99
+ 351 002e DFF8FC80 		ldr	r8, .L41+8
+ 352 0032 3F48     		ldr	r0, .L41+12
+ 353              	.LVL21:
+ 354              		.loc 1 297 2 discriminator 2 view .LVU100
+ 355 0034 002A     		cmp	r2, #0
+ 356 0036 08BF     		it	eq
+ 357 0038 4246     		moveq	r2, r8
+ 358 003a 0193     		str	r3, [sp, #4]
+ 359 003c FFF7FEFF 		bl	cprintf
+ 360              	.LVL22:
+ 298:src/btctl/btctl.c **** 		btctl_state_name(btctl.state),
+ 299:src/btctl/btctl.c **** 		btctl_state_name(state));
+ 300:src/btctl/btctl.c **** #endif
+ 301:src/btctl/btctl.c **** 
+ 302:src/btctl/btctl.c **** 	if (!btctl_state_transition_valid(old_state, state))
+ 361              		.loc 1 302 2 is_stmt 1 view .LVU101
+ 362              	.LBB228:
+ 363              	.LBI228:
+ 257:src/btctl/btctl.c **** {
+ 364              		.loc 1 257 19 view .LVU102
+ 365              	.LBB229:
+ 260:src/btctl/btctl.c **** 		return 1;
+ 366              		.loc 1 260 2 view .LVU103
+ 260:src/btctl/btctl.c **** 		return 1;
+ 367              		.loc 1 260 5 is_stmt 0 view .LVU104
+ 368 0040 019B     		ldr	r3, [sp, #4]
+ 369 0042 34B9     		cbnz	r4, .L37
+ 370              	.LVL23:
+ 260:src/btctl/btctl.c **** 		return 1;
+ 371              		.loc 1 260 5 view .LVU105
+ 372              	.LBE229:
+ 373              	.LBE228:
+ 303:src/btctl/btctl.c **** 	{
+ 304:src/btctl/btctl.c **** 		irq_restore(flags);
+ 305:src/btctl/btctl.c **** 		DIE("Invalid state transition %s -> %s\n",
+ 306:src/btctl/btctl.c **** 			btctl_state_name(old_state),
+ 307:src/btctl/btctl.c **** 			btctl_state_name(state));
+ 308:src/btctl/btctl.c **** 	}
+ARM GAS  /tmp/ccYkWmTA.s 			page 17
+
+
+ 309:src/btctl/btctl.c **** 	btctl.state = state;
+ 374              		.loc 1 309 2 is_stmt 1 view .LVU106
+ 375              		.loc 1 309 14 is_stmt 0 view .LVU107
+ 376 0044 2C70     		strb	r4, [r5]
+ 310:src/btctl/btctl.c **** 	irq_restore(flags);
+ 377              		.loc 1 310 2 is_stmt 1 view .LVU108
+ 378              	.LVL24:
+ 379              	.LBB234:
+ 380              	.LBI234:
+  19:include/ubtbr/system.h **** {
+ 381              		.loc 4 19 20 view .LVU109
+ 382              	.LBB235:
+ 383              		.loc 4 21 2 view .LVU110
+ 384              		.syntax unified
+ 385              	@ 21 "include/ubtbr/system.h" 1
+ 386 0046 87F31088 		msr primask, r7
+ 387              	@ 0 "" 2
+ 388              	.LVL25:
+ 389              		.loc 4 21 2 is_stmt 0 view .LVU111
+ 390              		.thumb
+ 391              		.syntax unified
+ 392              	.LBE235:
+ 393              	.LBE234:
+ 311:src/btctl/btctl.c **** 	if (!(old_state == BTCTL_STATE_STANDBY && state == BTCTL_STATE_STANDBY))
+ 394              		.loc 1 311 2 is_stmt 1 view .LVU112
+ 395              		.loc 1 311 5 is_stmt 0 view .LVU113
+ 396 004a F3B9     		cbnz	r3, .L22
+ 312:src/btctl/btctl.c **** 		btctl_send_state_resp(state, reason);
+ 313:src/btctl/btctl.c **** }
+ 397              		.loc 1 313 1 view .LVU114
+ 398 004c 03B0     		add	sp, sp, #12
+ 399              		.cfi_remember_state
+ 400              		.cfi_def_cfa_offset 28
+ 401              		@ sp needed
+ 402 004e BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
+ 403              	.LVL26:
+ 404              	.L37:
+ 405              		.cfi_restore_state
+ 406              	.LBB237:
+ 407              	.LBB230:
+ 263:src/btctl/btctl.c **** 		return cur == BTCTL_STATE_PAGE
+ 408              		.loc 1 263 2 is_stmt 1 view .LVU115
+ 263:src/btctl/btctl.c **** 		return cur == BTCTL_STATE_PAGE
+ 409              		.loc 1 263 5 is_stmt 0 view .LVU116
+ 410 0052 032C     		cmp	r4, #3
+ 411 0054 3BD0     		beq	.L38
+ 268:src/btctl/btctl.c **** }
+ 412              		.loc 1 268 2 is_stmt 1 view .LVU117
+ 413              	.LVL27:
+ 268:src/btctl/btctl.c **** }
+ 414              		.loc 1 268 2 is_stmt 0 view .LVU118
+ 415              	.LBE230:
+ 416              	.LBE237:
+ 302:src/btctl/btctl.c **** 	{
+ 417              		.loc 1 302 5 discriminator 1 view .LVU119
+ 418 0056 ABB1     		cbz	r3, .L17
+ 304:src/btctl/btctl.c **** 		DIE("Invalid state transition %s -> %s\n",
+ARM GAS  /tmp/ccYkWmTA.s 			page 18
+
+
+ 419              		.loc 1 304 3 is_stmt 1 view .LVU120
+ 420              	.LVL28:
+ 421              	.LBB238:
+ 422              	.LBI238:
+  19:include/ubtbr/system.h **** {
+ 423              		.loc 4 19 20 view .LVU121
+ 424              	.LBB239:
+ 425              		.loc 4 21 2 view .LVU122
+ 426              		.syntax unified
+ 427              	@ 21 "include/ubtbr/system.h" 1
+ 428 0058 87F31088 		msr primask, r7
+ 429              	@ 0 "" 2
+ 430              	.LVL29:
+ 431              		.loc 4 21 2 is_stmt 0 view .LVU123
+ 432              		.thumb
+ 433              		.syntax unified
+ 434              	.LBE239:
+ 435              	.LBE238:
+ 305:src/btctl/btctl.c **** 			btctl_state_name(old_state),
+ 436              		.loc 1 305 3 is_stmt 1 view .LVU124
+ 437              	.LBB243:
+ 438              	.LBI243:
+ 271:src/btctl/btctl.c **** {
+ 439              		.loc 1 271 20 view .LVU125
+ 440              	.LBB244:
+ 273:src/btctl/btctl.c **** 	static const char* btctl_state_name_tbl[BTCTL_STATE_COUNT] = {
+ 441              		.loc 1 273 2 view .LVU126
+ 274:src/btctl/btctl.c **** 		[BTCTL_STATE_STANDBY]	= "STANDBY", 
+ 442              		.loc 1 274 2 view .LVU127
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 443              		.loc 1 282 2 view .LVU128
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 444              		.loc 1 282 5 is_stmt 0 view .LVU129
+ 445 005c 052B     		cmp	r3, #5
+ 446 005e 55D8     		bhi	.L28
+ 447              	.LVL30:
+ 448              	.L19:
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 449              		.loc 1 285 2 is_stmt 1 view .LVU130
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 450              		.loc 1 285 7 is_stmt 0 view .LVU131
+ 451 0060 56F82310 		ldr	r1, [r6, r3, lsl #2]
+ 452              	.LVL31:
+ 286:src/btctl/btctl.c **** 		name = "TODO";
+ 453              		.loc 1 286 2 is_stmt 1 view .LVU132
+ 287:src/btctl/btctl.c **** 	return name;
+ 454              		.loc 1 287 8 is_stmt 0 view .LVU133
+ 455 0064 314B     		ldr	r3, .L41+8
+ 456 0066 0029     		cmp	r1, #0
+ 457 0068 08BF     		it	eq
+ 458 006a 1946     		moveq	r1, r3
+ 459              	.LVL32:
+ 287:src/btctl/btctl.c **** 	return name;
+ 460              		.loc 1 287 8 view .LVU134
+ 461              	.LBE244:
+ 462              	.LBE243:
+ 463              	.LBB250:
+ARM GAS  /tmp/ccYkWmTA.s 			page 19
+
+
+ 464              	.LBI250:
+ 271:src/btctl/btctl.c **** {
+ 465              		.loc 1 271 20 is_stmt 1 view .LVU135
+ 466              	.LBB251:
+ 273:src/btctl/btctl.c **** 	static const char* btctl_state_name_tbl[BTCTL_STATE_COUNT] = {
+ 467              		.loc 1 273 2 view .LVU136
+ 274:src/btctl/btctl.c **** 		[BTCTL_STATE_STANDBY]	= "STANDBY", 
+ 468              		.loc 1 274 2 view .LVU137
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 469              		.loc 1 282 2 view .LVU138
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 470              		.loc 1 282 5 is_stmt 0 view .LVU139
+ 471 006c 052C     		cmp	r4, #5
+ 472 006e 4ED9     		bls	.L20
+ 283:src/btctl/btctl.c **** 
+ 473              		.loc 1 283 10 view .LVU140
+ 474 0070 304A     		ldr	r2, .L41+16
+ 475 0072 46E0     		b	.L8
+ 476              	.LVL33:
+ 477              	.L36:
+ 283:src/btctl/btctl.c **** 
+ 478              		.loc 1 283 10 view .LVU141
+ 479              	.LBE251:
+ 480              	.LBE250:
+ 297:src/btctl/btctl.c **** 		btctl_state_name(btctl.state),
+ 481              		.loc 1 297 2 discriminator 2 view .LVU142
+ 482 0074 2F4A     		ldr	r2, .L41+16
+ 483 0076 2E48     		ldr	r0, .L41+12
+ 484              	.LVL34:
+ 297:src/btctl/btctl.c **** 		btctl_state_name(btctl.state),
+ 485              		.loc 1 297 2 discriminator 2 view .LVU143
+ 486 0078 0193     		str	r3, [sp, #4]
+ 487 007a FFF7FEFF 		bl	cprintf
+ 488              	.LVL35:
+ 302:src/btctl/btctl.c **** 	{
+ 489              		.loc 1 302 2 is_stmt 1 view .LVU144
+ 490              	.LBB256:
+ 257:src/btctl/btctl.c **** {
+ 491              		.loc 1 257 19 view .LVU145
+ 492              	.LBB231:
+ 260:src/btctl/btctl.c **** 		return 1;
+ 493              		.loc 1 260 2 view .LVU146
+ 263:src/btctl/btctl.c **** 		return cur == BTCTL_STATE_PAGE
+ 494              		.loc 1 263 2 view .LVU147
+ 268:src/btctl/btctl.c **** }
+ 495              		.loc 1 268 2 view .LVU148
+ 268:src/btctl/btctl.c **** }
+ 496              		.loc 1 268 2 is_stmt 0 view .LVU149
+ 497              	.LBE231:
+ 498              	.LBE256:
+ 302:src/btctl/btctl.c **** 	{
+ 499              		.loc 1 302 5 discriminator 1 view .LVU150
+ 500 007e 019B     		ldr	r3, [sp, #4]
+ 501 0080 002B     		cmp	r3, #0
+ 502 0082 4BD1     		bne	.L39
+ 503              	.L17:
+ 309:src/btctl/btctl.c **** 	irq_restore(flags);
+ARM GAS  /tmp/ccYkWmTA.s 			page 20
+
+
+ 504              		.loc 1 309 2 is_stmt 1 view .LVU151
+ 309:src/btctl/btctl.c **** 	irq_restore(flags);
+ 505              		.loc 1 309 14 is_stmt 0 view .LVU152
+ 506 0084 2C70     		strb	r4, [r5]
+ 310:src/btctl/btctl.c **** 	if (!(old_state == BTCTL_STATE_STANDBY && state == BTCTL_STATE_STANDBY))
+ 507              		.loc 1 310 2 is_stmt 1 view .LVU153
+ 508              	.LVL36:
+ 509              	.LBB257:
+  19:include/ubtbr/system.h **** {
+ 510              		.loc 4 19 20 view .LVU154
+ 511              	.LBB236:
+ 512              		.loc 4 21 2 view .LVU155
+ 513              		.syntax unified
+ 514              	@ 21 "include/ubtbr/system.h" 1
+ 515 0086 87F31088 		msr primask, r7
+ 516              	@ 0 "" 2
+ 517              	.LVL37:
+ 518              		.loc 4 21 2 is_stmt 0 view .LVU156
+ 519              		.thumb
+ 520              		.syntax unified
+ 521              	.LBE236:
+ 522              	.LBE257:
+ 311:src/btctl/btctl.c **** 		btctl_send_state_resp(state, reason);
+ 523              		.loc 1 311 2 is_stmt 1 view .LVU157
+ 524              	.L22:
+ 312:src/btctl/btctl.c **** }
+ 525              		.loc 1 312 3 view .LVU158
+ 526              	.LBB258:
+ 527              	.LBI258:
+ 246:src/btctl/btctl.c **** {
+ 528              		.loc 1 246 6 view .LVU159
+ 529              	.LBB259:
+ 248:src/btctl/btctl.c **** 	btctl_state_resp_t *resp;
+ 530              		.loc 1 248 2 view .LVU160
+ 531              	.LBB260:
+ 532              	.LBI260:
+  34:include/ubtbr/btctl_intf.h **** {
+ 533              		.loc 2 34 22 view .LVU161
+ 534              	.LBB261:
+  36:include/ubtbr/btctl_intf.h **** 	btctl_hdr_t *hdr;
+ 535              		.loc 2 36 2 view .LVU162
+  37:include/ubtbr/btctl_intf.h **** 
+ 536              		.loc 2 37 2 view .LVU163
+  40:include/ubtbr/btctl_intf.h **** 	hdr = (btctl_hdr_t*) msg_put(msg, sizeof(*hdr));
+ 537              		.loc 2 40 2 view .LVU164
+ 538              	.LBB262:
+ 539              	.LBI262:
+  15:include/ubtbr/msg.h **** {
+ 540              		.loc 3 15 22 view .LVU165
+ 541              	.LBB263:
+  17:include/ubtbr/msg.h **** 
+ 542              		.loc 3 17 2 view .LVU166
+  17:include/ubtbr/msg.h **** 
+ 543              		.loc 3 17 23 is_stmt 0 view .LVU167
+ 544 008a 4FF4BA70 		mov	r0, #372
+ 545 008e FFF7FEFF 		bl	mem_pool_alloc
+ 546              	.LVL38:
+ARM GAS  /tmp/ccYkWmTA.s 			page 21
+
+
+  21:include/ubtbr/msg.h **** 
+ 547              		.loc 3 21 16 view .LVU168
+ 548 0092 4FF4B473 		mov	r3, #360
+  17:include/ubtbr/msg.h **** 
+ 549              		.loc 3 17 23 view .LVU169
+ 550 0096 0146     		mov	r1, r0
+ 551              	.LVL39:
+  19:include/ubtbr/msg.h **** 	msg->read = msg->data;
+ 552              		.loc 3 19 2 is_stmt 1 view .LVU170
+  20:include/ubtbr/msg.h **** 	msg->data_len = size;
+ 553              		.loc 3 20 2 view .LVU171
+ 554              	.LBE263:
+ 555              	.LBE262:
+  42:include/ubtbr/btctl_intf.h **** 
+ 556              		.loc 2 42 12 is_stmt 0 view .LVU172
+ 557 0098 2922     		movs	r2, #41
+ 558              	.LBB266:
+ 559              	.LBB264:
+  19:include/ubtbr/msg.h **** 	msg->read = msg->data;
+ 560              		.loc 3 19 15 view .LVU173
+ 561 009a 0C30     		adds	r0, r0, #12
+ 562              	.LVL40:
+  21:include/ubtbr/msg.h **** 
+ 563              		.loc 3 21 16 view .LVU174
+ 564 009c 4B80     		strh	r3, [r1, #2]	@ movhi
+ 565              	.LBE264:
+ 566              	.LBE266:
+ 567              	.LBE261:
+ 568              	.LBE260:
+ 569              	.LBB269:
+ 570              	.LBB270:
+  68:include/ubtbr/msg.h **** 
+ 571              		.loc 3 68 20 view .LVU175
+ 572 009e 01F11203 		add	r3, r1, #18
+ 573              	.LBE270:
+ 574              	.LBE269:
+ 575              	.LBB272:
+ 576              	.LBB268:
+ 577              	.LBB267:
+ 578              	.LBB265:
+  20:include/ubtbr/msg.h **** 	msg->data_len = size;
+ 579              		.loc 3 20 12 view .LVU176
+ 580 00a2 4860     		str	r0, [r1, #4]
+  21:include/ubtbr/msg.h **** 
+ 581              		.loc 3 21 2 is_stmt 1 view .LVU177
+  23:include/ubtbr/msg.h **** }
+ 582              		.loc 3 23 2 view .LVU178
+ 583              	.LVL41:
+  23:include/ubtbr/msg.h **** }
+ 584              		.loc 3 23 2 is_stmt 0 view .LVU179
+ 585              	.LBE265:
+ 586              	.LBE267:
+  41:include/ubtbr/btctl_intf.h **** 	hdr->type = type;
+ 587              		.loc 2 41 2 is_stmt 1 view .LVU180
+  42:include/ubtbr/btctl_intf.h **** 
+ 588              		.loc 2 42 2 view .LVU181
+  42:include/ubtbr/btctl_intf.h **** 
+ARM GAS  /tmp/ccYkWmTA.s 			page 22
+
+
+ 589              		.loc 2 42 12 is_stmt 0 view .LVU182
+ 590 00a4 0A73     		strb	r2, [r1, #12]
+  44:include/ubtbr/btctl_intf.h **** }
+ 591              		.loc 2 44 2 is_stmt 1 view .LVU183
+ 592              	.LVL42:
+  44:include/ubtbr/btctl_intf.h **** }
+ 593              		.loc 2 44 2 is_stmt 0 view .LVU184
+ 594              	.LBE268:
+ 595              	.LBE272:
+ 249:src/btctl/btctl.c **** 
+ 596              		.loc 1 249 2 is_stmt 1 view .LVU185
+ 251:src/btctl/btctl.c **** 	resp->state = state;
+ 597              		.loc 1 251 2 view .LVU186
+ 598              	.LBB273:
+ 599              	.LBI269:
+  62:include/ubtbr/msg.h **** {
+ 600              		.loc 3 62 24 view .LVU187
+ 601              	.LBB271:
+  64:include/ubtbr/msg.h **** 
+ 602              		.loc 3 64 9 view .LVU188
+  66:include/ubtbr/msg.h **** 		DIE("msg_put: short buf\n");
+ 603              		.loc 3 66 9 view .LVU189
+  68:include/ubtbr/msg.h **** 
+ 604              		.loc 3 68 9 view .LVU190
+  68:include/ubtbr/msg.h **** 
+ 605              		.loc 3 68 20 is_stmt 0 view .LVU191
+ 606 00a6 8B60     		str	r3, [r1, #8]
+ 607              		.loc 3 70 9 is_stmt 1 view .LVU192
+ 608              	.LVL43:
+ 609              		.loc 3 70 9 is_stmt 0 view .LVU193
+ 610              	.LBE271:
+ 611              	.LBE273:
+ 252:src/btctl/btctl.c **** 	resp->reason = reason;
+ 612              		.loc 1 252 2 is_stmt 1 view .LVU194
+ 252:src/btctl/btctl.c **** 	resp->reason = reason;
+ 613              		.loc 1 252 14 is_stmt 0 view .LVU195
+ 614 00a8 0C74     		strb	r4, [r1, #16]
+ 253:src/btctl/btctl.c **** 	btctl_tx_enqueue(msg);
+ 615              		.loc 1 253 2 is_stmt 1 view .LVU196
+ 253:src/btctl/btctl.c **** 	btctl_tx_enqueue(msg);
+ 616              		.loc 1 253 15 is_stmt 0 view .LVU197
+ 617 00aa 81F81190 		strb	r9, [r1, #17]
+ 254:src/btctl/btctl.c **** }
+ 618              		.loc 1 254 2 is_stmt 1 view .LVU198
+ 619              	.LVL44:
+ 620              	.LBB274:
+ 621              	.LBI274:
+  76:include/ubtbr/btctl_intf.h **** {
+ 622              		.loc 2 76 19 view .LVU199
+ 623              	.LBB275:
+ 624              		.loc 2 78 2 view .LVU200
+ 625              	.LBB276:
+ 626              	.LBI276:
+  58:include/ubtbr/btctl_intf.h **** {
+ 627              		.loc 2 58 19 view .LVU201
+ 628              	.LBB277:
+  60:include/ubtbr/btctl_intf.h **** 	int rc;
+ARM GAS  /tmp/ccYkWmTA.s 			page 23
+
+
+ 629              		.loc 2 60 2 view .LVU202
+ 630              	.LBB278:
+ 631              	.LBI278:
+   5:include/ubtbr/system.h **** {
+ 632              		.loc 4 5 24 view .LVU203
+ 633              	.LBB279:
+   7:include/ubtbr/system.h **** 
+ 634              		.loc 4 7 2 view .LVU204
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 635              		.loc 4 9 2 view .LVU205
+ 636              		.syntax unified
+ 637              	@ 9 "include/ubtbr/system.h" 1
+ 638 00ae EFF31084 			mrs    r4, primask
+ 639 00b2 72B6     		cpsid  i
+ 640              	
+ 641              	@ 0 "" 2
+ 642              	.LVL45:
+  16:include/ubtbr/system.h **** }
+ 643              		.loc 4 16 2 view .LVU206
+  16:include/ubtbr/system.h **** }
+ 644              		.loc 4 16 2 is_stmt 0 view .LVU207
+ 645              		.thumb
+ 646              		.syntax unified
+ 647              	.LBE279:
+ 648              	.LBE278:
+  61:include/ubtbr/btctl_intf.h **** 
+ 649              		.loc 2 61 2 is_stmt 1 view .LVU208
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 650              		.loc 2 63 2 view .LVU209
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 651              		.loc 2 63 7 is_stmt 0 view .LVU210
+ 652 00b4 2048     		ldr	r0, .L41+20
+ 653 00b6 FFF7FEFF 		bl	msg_enqueue
+ 654              	.LVL46:
+  64:include/ubtbr/btctl_intf.h **** 
+ 655              		.loc 2 64 2 is_stmt 1 view .LVU211
+ 656              	.LBB280:
+ 657              	.LBI280:
+  19:include/ubtbr/system.h **** {
+ 658              		.loc 4 19 20 view .LVU212
+ 659              	.LBB281:
+ 660              		.loc 4 21 2 view .LVU213
+ 661              		.syntax unified
+ 662              	@ 21 "include/ubtbr/system.h" 1
+ 663 00ba 84F31088 		msr primask, r4
+ 664              	@ 0 "" 2
+ 665              	.LVL47:
+ 666              		.loc 4 21 2 is_stmt 0 view .LVU214
+ 667              		.thumb
+ 668              		.syntax unified
+ 669              	.LBE281:
+ 670              	.LBE280:
+  66:include/ubtbr/btctl_intf.h **** }
+ 671              		.loc 2 66 2 is_stmt 1 view .LVU215
+  66:include/ubtbr/btctl_intf.h **** }
+ 672              		.loc 2 66 2 is_stmt 0 view .LVU216
+ 673              	.LBE277:
+ARM GAS  /tmp/ccYkWmTA.s 			page 24
+
+
+ 674              	.LBE276:
+ 675              	.LBE275:
+ 676              	.LBE274:
+ 677              	.LBE259:
+ 678              	.LBE258:
+ 679              		.loc 1 313 1 view .LVU217
+ 680 00be 03B0     		add	sp, sp, #12
+ 681              		.cfi_remember_state
+ 682              		.cfi_def_cfa_offset 28
+ 683              		@ sp needed
+ 684 00c0 BDE8F083 		pop	{r4, r5, r6, r7, r8, r9, pc}
+ 685              	.LVL48:
+ 686              	.L35:
+ 687              		.cfi_restore_state
+ 688              	.LBB282:
+ 271:src/btctl/btctl.c **** {
+ 689              		.loc 1 271 20 is_stmt 1 view .LVU218
+ 690              	.LBB227:
+ 273:src/btctl/btctl.c **** 	static const char* btctl_state_name_tbl[BTCTL_STATE_COUNT] = {
+ 691              		.loc 1 273 2 view .LVU219
+ 274:src/btctl/btctl.c **** 		[BTCTL_STATE_STANDBY]	= "STANDBY", 
+ 692              		.loc 1 274 2 view .LVU220
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 693              		.loc 1 282 2 view .LVU221
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 694              		.loc 1 282 5 is_stmt 0 view .LVU222
+ 695 00c4 0528     		cmp	r0, #5
+ 696 00c6 13D8     		bhi	.L40
+ 697              	.LBE227:
+ 698              	.LBE282:
+ 699              	.LBB283:
+ 700              	.LBB224:
+ 283:src/btctl/btctl.c **** 
+ 701              		.loc 1 283 10 view .LVU223
+ 702 00c8 1A49     		ldr	r1, .L41+16
+ 703              	.LVL49:
+ 283:src/btctl/btctl.c **** 
+ 704              		.loc 1 283 10 view .LVU224
+ 705 00ca 174E     		ldr	r6, .L41+4
+ 706 00cc ADE7     		b	.L7
+ 707              	.LVL50:
+ 708              	.L38:
+ 283:src/btctl/btctl.c **** 
+ 709              		.loc 1 283 10 view .LVU225
+ 710              	.LBE224:
+ 711              	.LBE283:
+ 712              	.LBB284:
+ 713              	.LBB232:
+ 264:src/btctl/btctl.c **** 			|| cur == BTCTL_STATE_PAGE_SCAN
+ 714              		.loc 1 264 3 is_stmt 1 view .LVU226
+ 266:src/btctl/btctl.c **** 	/* Others states must come from standby */
+ 715              		.loc 1 266 4 is_stmt 0 view .LVU227
+ 716 00ce 022B     		cmp	r3, #2
+ 717 00d0 D8D0     		beq	.L17
+ 265:src/btctl/btctl.c **** 			|| cur == BTCTL_STATE_CONNECTED;
+ 718              		.loc 1 265 4 view .LVU228
+ 719 00d2 052B     		cmp	r3, #5
+ARM GAS  /tmp/ccYkWmTA.s 			page 25
+
+
+ 720 00d4 D6D0     		beq	.L17
+ 266:src/btctl/btctl.c **** 	/* Others states must come from standby */
+ 721              		.loc 1 266 4 discriminator 2 view .LVU229
+ 722 00d6 032B     		cmp	r3, #3
+ 723 00d8 D4D0     		beq	.L17
+ 724              	.LVL51:
+ 266:src/btctl/btctl.c **** 	/* Others states must come from standby */
+ 725              		.loc 1 266 4 discriminator 2 view .LVU230
+ 726              	.LBE232:
+ 727              	.LBE284:
+ 304:src/btctl/btctl.c **** 		DIE("Invalid state transition %s -> %s\n",
+ 728              		.loc 1 304 3 is_stmt 1 view .LVU231
+ 729              	.LBB285:
+  19:include/ubtbr/system.h **** {
+ 730              		.loc 4 19 20 view .LVU232
+ 731              	.LBB240:
+ 732              		.loc 4 21 2 view .LVU233
+ 733              		.syntax unified
+ 734              	@ 21 "include/ubtbr/system.h" 1
+ 735 00da 87F31088 		msr primask, r7
+ 736              	@ 0 "" 2
+ 737              	.LVL52:
+ 738              		.loc 4 21 2 is_stmt 0 view .LVU234
+ 739              		.thumb
+ 740              		.syntax unified
+ 741              	.LBE240:
+ 742              	.LBE285:
+ 305:src/btctl/btctl.c **** 			btctl_state_name(old_state),
+ 743              		.loc 1 305 3 is_stmt 1 view .LVU235
+ 744              	.LBB286:
+ 271:src/btctl/btctl.c **** {
+ 745              		.loc 1 271 20 view .LVU236
+ 746              	.LBB245:
+ 273:src/btctl/btctl.c **** 	static const char* btctl_state_name_tbl[BTCTL_STATE_COUNT] = {
+ 747              		.loc 1 273 2 view .LVU237
+ 274:src/btctl/btctl.c **** 		[BTCTL_STATE_STANDBY]	= "STANDBY", 
+ 748              		.loc 1 274 2 view .LVU238
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 749              		.loc 1 282 2 view .LVU239
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 750              		.loc 1 282 5 is_stmt 0 view .LVU240
+ 751 00de 052B     		cmp	r3, #5
+ 752 00e0 12D8     		bhi	.L27
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 753              		.loc 1 285 2 is_stmt 1 view .LVU241
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 754              		.loc 1 285 7 is_stmt 0 view .LVU242
+ 755 00e2 56F82310 		ldr	r1, [r6, r3, lsl #2]
+ 756              	.LVL53:
+ 286:src/btctl/btctl.c **** 		name = "TODO";
+ 757              		.loc 1 286 2 is_stmt 1 view .LVU243
+ 287:src/btctl/btctl.c **** 	return name;
+ 758              		.loc 1 287 8 is_stmt 0 view .LVU244
+ 759 00e6 0029     		cmp	r1, #0
+ 760 00e8 08BF     		it	eq
+ 761 00ea 4146     		moveq	r1, r8
+ 762              	.LVL54:
+ARM GAS  /tmp/ccYkWmTA.s 			page 26
+
+
+ 763              	.L18:
+ 287:src/btctl/btctl.c **** 	return name;
+ 764              		.loc 1 287 8 view .LVU245
+ 765              	.LBE245:
+ 766              	.LBE286:
+ 767              	.LBB287:
+ 768              	.LBB252:
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 769              		.loc 1 285 2 is_stmt 1 view .LVU246
+ 286:src/btctl/btctl.c **** 		name = "TODO";
+ 770              		.loc 1 286 2 view .LVU247
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 771              		.loc 1 285 7 is_stmt 0 view .LVU248
+ 772 00ec 134A     		ldr	r2, .L41+24
+ 773 00ee 08E0     		b	.L8
+ 774              	.LVL55:
+ 775              	.L40:
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 776              		.loc 1 285 7 view .LVU249
+ 777              	.LBE252:
+ 778              	.LBE287:
+ 297:src/btctl/btctl.c **** 		btctl_state_name(btctl.state),
+ 779              		.loc 1 297 2 discriminator 2 view .LVU250
+ 780 00f0 104A     		ldr	r2, .L41+16
+ 781 00f2 0F48     		ldr	r0, .L41+12
+ 782              	.LVL56:
+ 297:src/btctl/btctl.c **** 		btctl_state_name(btctl.state),
+ 783              		.loc 1 297 2 discriminator 2 view .LVU251
+ 784 00f4 1146     		mov	r1, r2
+ 785              	.LVL57:
+ 297:src/btctl/btctl.c **** 		btctl_state_name(btctl.state),
+ 786              		.loc 1 297 2 discriminator 2 view .LVU252
+ 787 00f6 FFF7FEFF 		bl	cprintf
+ 788              	.LVL58:
+ 302:src/btctl/btctl.c **** 	{
+ 789              		.loc 1 302 2 is_stmt 1 view .LVU253
+ 790              	.LBB288:
+ 257:src/btctl/btctl.c **** {
+ 791              		.loc 1 257 19 view .LVU254
+ 792              	.LBB233:
+ 260:src/btctl/btctl.c **** 		return 1;
+ 793              		.loc 1 260 2 view .LVU255
+ 263:src/btctl/btctl.c **** 		return cur == BTCTL_STATE_PAGE
+ 794              		.loc 1 263 2 view .LVU256
+ 268:src/btctl/btctl.c **** }
+ 795              		.loc 1 268 2 view .LVU257
+ 268:src/btctl/btctl.c **** }
+ 796              		.loc 1 268 2 is_stmt 0 view .LVU258
+ 797              	.LBE233:
+ 798              	.LBE288:
+ 304:src/btctl/btctl.c **** 		DIE("Invalid state transition %s -> %s\n",
+ 799              		.loc 1 304 3 is_stmt 1 view .LVU259
+ 800              	.LBB289:
+  19:include/ubtbr/system.h **** {
+ 801              		.loc 4 19 20 view .LVU260
+ 802              	.LBB241:
+ 803              		.loc 4 21 2 view .LVU261
+ARM GAS  /tmp/ccYkWmTA.s 			page 27
+
+
+ 804              		.syntax unified
+ 805              	@ 21 "include/ubtbr/system.h" 1
+ 806 00fa 87F31088 		msr primask, r7
+ 807              	@ 0 "" 2
+ 808              	.LVL59:
+ 809              		.loc 4 21 2 is_stmt 0 view .LVU262
+ 810              		.thumb
+ 811              		.syntax unified
+ 812              	.LBE241:
+ 813              	.LBE289:
+ 305:src/btctl/btctl.c **** 			btctl_state_name(old_state),
+ 814              		.loc 1 305 3 is_stmt 1 view .LVU263
+ 815              	.LBB290:
+ 271:src/btctl/btctl.c **** {
+ 816              		.loc 1 271 20 view .LVU264
+ 817              	.LBB246:
+ 273:src/btctl/btctl.c **** 	static const char* btctl_state_name_tbl[BTCTL_STATE_COUNT] = {
+ 818              		.loc 1 273 2 view .LVU265
+ 274:src/btctl/btctl.c **** 		[BTCTL_STATE_STANDBY]	= "STANDBY", 
+ 819              		.loc 1 274 2 view .LVU266
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 820              		.loc 1 282 2 view .LVU267
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 821              		.loc 1 282 2 is_stmt 0 view .LVU268
+ 822              	.LBE246:
+ 823              	.LBE290:
+ 824              	.LBB291:
+ 271:src/btctl/btctl.c **** {
+ 825              		.loc 1 271 20 is_stmt 1 view .LVU269
+ 826              	.LBB253:
+ 273:src/btctl/btctl.c **** 	static const char* btctl_state_name_tbl[BTCTL_STATE_COUNT] = {
+ 827              		.loc 1 273 2 view .LVU270
+ 274:src/btctl/btctl.c **** 		[BTCTL_STATE_STANDBY]	= "STANDBY", 
+ 828              		.loc 1 274 2 view .LVU271
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 829              		.loc 1 282 2 view .LVU272
+ 830              	.LBE253:
+ 831              	.LBE291:
+ 832              	.LBB292:
+ 833              	.LBB247:
+ 283:src/btctl/btctl.c **** 
+ 834              		.loc 1 283 10 is_stmt 0 view .LVU273
+ 835 00fe 0D49     		ldr	r1, .L41+16
+ 836              	.LBE247:
+ 837              	.LBE292:
+ 838              	.LBB293:
+ 839              	.LBB254:
+ 840 0100 0A46     		mov	r2, r1
+ 841              	.LVL60:
+ 842              	.L8:
+ 283:src/btctl/btctl.c **** 
+ 843              		.loc 1 283 10 view .LVU274
+ 844              	.LBE254:
+ 845              	.LBE293:
+ 305:src/btctl/btctl.c **** 			btctl_state_name(old_state),
+ 846              		.loc 1 305 3 discriminator 2 view .LVU275
+ 847 0102 0F48     		ldr	r0, .L41+28
+ARM GAS  /tmp/ccYkWmTA.s 			page 28
+
+
+ 848 0104 FFF7FEFF 		bl	die
+ 849              	.LVL61:
+ 850              	.L27:
+ 851              	.LBB294:
+ 852              	.LBB248:
+ 283:src/btctl/btctl.c **** 
+ 853              		.loc 1 283 10 view .LVU276
+ 854 0108 0A49     		ldr	r1, .L41+16
+ 855 010a EFE7     		b	.L18
+ 856              	.L28:
+ 283:src/btctl/btctl.c **** 
+ 857              		.loc 1 283 10 view .LVU277
+ 858 010c 0949     		ldr	r1, .L41+16
+ 859              	.LVL62:
+ 860              	.L20:
+ 283:src/btctl/btctl.c **** 
+ 861              		.loc 1 283 10 view .LVU278
+ 862              	.LBE248:
+ 863              	.LBE294:
+ 864              	.LBB295:
+ 865              	.LBB255:
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 866              		.loc 1 285 2 is_stmt 1 view .LVU279
+ 285:src/btctl/btctl.c **** 	if (!name)
+ 867              		.loc 1 285 7 is_stmt 0 view .LVU280
+ 868 010e 56F82420 		ldr	r2, [r6, r4, lsl #2]
+ 869              	.LVL63:
+ 286:src/btctl/btctl.c **** 		name = "TODO";
+ 870              		.loc 1 286 2 is_stmt 1 view .LVU281
+ 287:src/btctl/btctl.c **** 	return name;
+ 871              		.loc 1 287 8 is_stmt 0 view .LVU282
+ 872 0112 064B     		ldr	r3, .L41+8
+ 873 0114 002A     		cmp	r2, #0
+ 874 0116 08BF     		it	eq
+ 875 0118 1A46     		moveq	r2, r3
+ 876              	.LVL64:
+ 287:src/btctl/btctl.c **** 	return name;
+ 877              		.loc 1 287 8 view .LVU283
+ 878 011a F2E7     		b	.L8
+ 879              	.LVL65:
+ 880              	.L39:
+ 287:src/btctl/btctl.c **** 	return name;
+ 881              		.loc 1 287 8 view .LVU284
+ 882              	.LBE255:
+ 883              	.LBE295:
+ 304:src/btctl/btctl.c **** 		DIE("Invalid state transition %s -> %s\n",
+ 884              		.loc 1 304 3 is_stmt 1 view .LVU285
+ 885              	.LBB296:
+  19:include/ubtbr/system.h **** {
+ 886              		.loc 4 19 20 view .LVU286
+ 887              	.LBB242:
+ 888              		.loc 4 21 2 view .LVU287
+ 889              		.syntax unified
+ 890              	@ 21 "include/ubtbr/system.h" 1
+ 891 011c 87F31088 		msr primask, r7
+ 892              	@ 0 "" 2
+ 893              	.LVL66:
+ARM GAS  /tmp/ccYkWmTA.s 			page 29
+
+
+ 894              		.loc 4 21 2 is_stmt 0 view .LVU288
+ 895              		.thumb
+ 896              		.syntax unified
+ 897              	.LBE242:
+ 898              	.LBE296:
+ 305:src/btctl/btctl.c **** 			btctl_state_name(old_state),
+ 899              		.loc 1 305 3 is_stmt 1 view .LVU289
+ 900              	.LBB297:
+ 271:src/btctl/btctl.c **** {
+ 901              		.loc 1 271 20 view .LVU290
+ 902              	.LBB249:
+ 273:src/btctl/btctl.c **** 	static const char* btctl_state_name_tbl[BTCTL_STATE_COUNT] = {
+ 903              		.loc 1 273 2 view .LVU291
+ 274:src/btctl/btctl.c **** 		[BTCTL_STATE_STANDBY]	= "STANDBY", 
+ 904              		.loc 1 274 2 view .LVU292
+ 282:src/btctl/btctl.c **** 		return "Invalid";
+ 905              		.loc 1 282 2 view .LVU293
+ 906 0120 9EE7     		b	.L19
+ 907              	.L42:
+ 908 0122 00BF     		.align	2
+ 909              	.L41:
+ 910 0124 00000000 		.word	.LANCHOR0
+ 911 0128 00000000 		.word	.LANCHOR1
+ 912 012c 00000000 		.word	.LC0
+ 913 0130 1C000000 		.word	.LC3
+ 914 0134 08000000 		.word	.LC1
+ 915 0138 2C000000 		.word	.LANCHOR0+44
+ 916 013c 10000000 		.word	.LC2
+ 917 0140 2C000000 		.word	.LC4
+ 918              	.LBE249:
+ 919              	.LBE297:
+ 920              		.cfi_endproc
+ 921              	.LFE52:
+ 923              		.section	.rodata.str1.4
+ 924              		.align	2
+ 925              	.LC5:
+ 926 0054 64656275 		.ascii	"debug req: %s\012\000"
+ 926      67207265 
+ 926      713A2025 
+ 926      730A00
+ 927 0063 00       		.align	2
+ 928              	.LC6:
+ 929 0064 43616E6E 		.ascii	"Cannot change eir_msg now\012\000"
+ 929      6F742063 
+ 929      68616E67 
+ 929      65206569 
+ 929      725F6D73 
+ 930 007f 00       		.align	2
+ 931              	.LC7:
+ 932 0080 45495220 		.ascii	"EIR updated\012\000"
+ 932      75706461 
+ 932      7465640A 
+ 932      00
+ 933 008d 000000   		.align	2
+ 934              	.LC8:
+ 935 0090 496E7661 		.ascii	"Invalid message type %d\012\000"
+ 935      6C696420 
+ARM GAS  /tmp/ccYkWmTA.s 			page 30
+
+
+ 935      6D657373 
+ 935      61676520 
+ 935      74797065 
+ 936              		.section	.text.btctl_work,"ax",%progbits
+ 937              		.align	1
+ 938              		.p2align 2,,3
+ 939              		.global	btctl_work
+ 940              		.syntax unified
+ 941              		.thumb
+ 942              		.thumb_func
+ 944              	btctl_work:
+ 945              	.LFB48:
+ 235:src/btctl/btctl.c **** 	msg_t *msg = btctl_rx_dequeue();
+ 946              		.loc 1 235 1 view -0
+ 947              		.cfi_startproc
+ 948              		@ args = 0, pretend = 0, frame = 0
+ 949              		@ frame_needed = 0, uses_anonymous_args = 0
+ 950 0000 F8B5     		push	{r3, r4, r5, r6, r7, lr}
+ 951              		.cfi_def_cfa_offset 24
+ 952              		.cfi_offset 3, -24
+ 953              		.cfi_offset 4, -20
+ 954              		.cfi_offset 5, -16
+ 955              		.cfi_offset 6, -12
+ 956              		.cfi_offset 7, -8
+ 957              		.cfi_offset 14, -4
+ 236:src/btctl/btctl.c **** 
+ 958              		.loc 1 236 2 view .LVU295
+ 959              	.LBB371:
+ 960              	.LBI371:
+  79:include/ubtbr/btctl_intf.h **** }
+  80:include/ubtbr/btctl_intf.h **** 
+  81:include/ubtbr/btctl_intf.h **** /* Dequeue a message from host */
+  82:include/ubtbr/btctl_intf.h **** static inline msg_t *btctl_rx_dequeue(void)
+ 961              		.loc 2 82 22 view .LVU296
+ 962              	.LBB372:
+  83:include/ubtbr/btctl_intf.h **** {
+  84:include/ubtbr/btctl_intf.h **** 	return safe_dequeue(&btctl.rx_q);
+ 963              		.loc 2 84 2 view .LVU297
+ 964              	.LVL67:
+ 965              	.LBB373:
+ 966              	.LBI373:
+  47:include/ubtbr/btctl_intf.h **** {
+ 967              		.loc 2 47 22 view .LVU298
+ 968              	.LBB374:
+  49:include/ubtbr/btctl_intf.h **** 	msg_t *msg;
+ 969              		.loc 2 49 2 view .LVU299
+ 970              	.LBB375:
+ 971              	.LBI375:
+   5:include/ubtbr/system.h **** {
+ 972              		.loc 4 5 24 view .LVU300
+ 973              	.LBB376:
+   7:include/ubtbr/system.h **** 
+ 974              		.loc 4 7 2 view .LVU301
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 975              		.loc 4 9 2 view .LVU302
+ 976              		.syntax unified
+ 977              	@ 9 "include/ubtbr/system.h" 1
+ARM GAS  /tmp/ccYkWmTA.s 			page 31
+
+
+ 978 0002 EFF31085 			mrs    r5, primask
+ 979 0006 72B6     		cpsid  i
+ 980              	
+ 981              	@ 0 "" 2
+  16:include/ubtbr/system.h **** }
+ 982              		.loc 4 16 2 view .LVU303
+ 983              	.LVL68:
+  16:include/ubtbr/system.h **** }
+ 984              		.loc 4 16 2 is_stmt 0 view .LVU304
+ 985              		.thumb
+ 986              		.syntax unified
+ 987              	.LBE376:
+ 988              	.LBE375:
+  50:include/ubtbr/btctl_intf.h **** 
+ 989              		.loc 2 50 2 is_stmt 1 view .LVU305
+  52:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 990              		.loc 2 52 2 view .LVU306
+  52:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 991              		.loc 2 52 8 is_stmt 0 view .LVU307
+ 992 0008 5E48     		ldr	r0, .L78
+ 993 000a FFF7FEFF 		bl	msg_dequeue
+ 994              	.LVL69:
+ 995 000e 0446     		mov	r4, r0
+ 996              	.LVL70:
+  53:include/ubtbr/btctl_intf.h **** 
+ 997              		.loc 2 53 2 is_stmt 1 view .LVU308
+ 998              	.LBB377:
+ 999              	.LBI377:
+  19:include/ubtbr/system.h **** {
+ 1000              		.loc 4 19 20 view .LVU309
+ 1001              	.LBB378:
+ 1002              		.loc 4 21 2 view .LVU310
+ 1003              		.syntax unified
+ 1004              	@ 21 "include/ubtbr/system.h" 1
+ 1005 0010 85F31088 		msr primask, r5
+ 1006              	@ 0 "" 2
+ 1007              	.LVL71:
+ 1008              		.loc 4 21 2 is_stmt 0 view .LVU311
+ 1009              		.thumb
+ 1010              		.syntax unified
+ 1011              	.LBE378:
+ 1012              	.LBE377:
+  55:include/ubtbr/btctl_intf.h **** }
+ 1013              		.loc 2 55 2 is_stmt 1 view .LVU312
+  55:include/ubtbr/btctl_intf.h **** }
+ 1014              		.loc 2 55 2 is_stmt 0 view .LVU313
+ 1015              	.LBE374:
+ 1016              	.LBE373:
+ 1017              	.LBE372:
+ 1018              	.LBE371:
+ 238:src/btctl/btctl.c **** 		return 0;
+ 1019              		.loc 1 238 2 is_stmt 1 view .LVU314
+ 238:src/btctl/btctl.c **** 		return 0;
+ 1020              		.loc 1 238 5 is_stmt 0 view .LVU315
+ 1021 0014 E0B1     		cbz	r0, .L43
+ 241:src/btctl/btctl.c **** 
+ 1022              		.loc 1 241 2 is_stmt 1 view .LVU316
+ARM GAS  /tmp/ccYkWmTA.s 			page 32
+
+
+ 1023              	.LVL72:
+ 1024              	.LBB379:
+ 1025              	.LBI379:
+ 175:src/btctl/btctl.c **** {
+ 1026              		.loc 1 175 13 view .LVU317
+ 1027              	.LBB380:
+ 177:src/btctl/btctl.c **** 
+ 1028              		.loc 1 177 2 view .LVU318
+ 179:src/btctl/btctl.c **** 	{
+ 1029              		.loc 1 179 2 view .LVU319
+ 179:src/btctl/btctl.c **** 	{
+ 1030              		.loc 1 179 12 is_stmt 0 view .LVU320
+ 1031 0016 017B     		ldrb	r1, [r0, #12]	@ zero_extendqisi2
+ 179:src/btctl/btctl.c **** 	{
+ 1032              		.loc 1 179 2 view .LVU321
+ 1033 0018 2029     		cmp	r1, #32
+ 1034 001a 12D8     		bhi	.L45
+ 1035 001c DFE801F0 		tbb	[pc, r1]
+ 1036              	.L47:
+ 1037 0020 28       		.byte	(.L60-.L47)/2
+ 1038 0021 11       		.byte	(.L45-.L47)/2
+ 1039 0022 11       		.byte	(.L45-.L47)/2
+ 1040 0023 11       		.byte	(.L45-.L47)/2
+ 1041 0024 11       		.byte	(.L45-.L47)/2
+ 1042 0025 11       		.byte	(.L45-.L47)/2
+ 1043 0026 11       		.byte	(.L45-.L47)/2
+ 1044 0027 11       		.byte	(.L45-.L47)/2
+ 1045 0028 11       		.byte	(.L45-.L47)/2
+ 1046 0029 11       		.byte	(.L45-.L47)/2
+ 1047 002a 11       		.byte	(.L45-.L47)/2
+ 1048 002b 11       		.byte	(.L45-.L47)/2
+ 1049 002c 11       		.byte	(.L45-.L47)/2
+ 1050 002d 11       		.byte	(.L45-.L47)/2
+ 1051 002e 11       		.byte	(.L45-.L47)/2
+ 1052 002f 11       		.byte	(.L45-.L47)/2
+ 1053 0030 11       		.byte	(.L45-.L47)/2
+ 1054 0031 11       		.byte	(.L45-.L47)/2
+ 1055 0032 11       		.byte	(.L45-.L47)/2
+ 1056 0033 11       		.byte	(.L45-.L47)/2
+ 1057 0034 6F       		.byte	(.L59-.L47)/2
+ 1058 0035 5E       		.byte	(.L58-.L47)/2
+ 1059 0036 A4       		.byte	(.L57-.L47)/2
+ 1060 0037 47       		.byte	(.L56-.L47)/2
+ 1061 0038 44       		.byte	(.L55-.L47)/2
+ 1062 0039 2E       		.byte	(.L54-.L47)/2
+ 1063 003a 58       		.byte	(.L53-.L47)/2
+ 1064 003b 72       		.byte	(.L52-.L47)/2
+ 1065 003c 4E       		.byte	(.L51-.L47)/2
+ 1066 003d 1B       		.byte	(.L50-.L47)/2
+ 1067 003e 95       		.byte	(.L49-.L47)/2
+ 1068 003f 7C       		.byte	(.L48-.L47)/2
+ 1069 0040 51       		.byte	(.L46-.L47)/2
+ 1070 0041 00       		.p2align 1
+ 1071              	.L45:
+ 226:src/btctl/btctl.c **** 		break;
+ 1072              		.loc 1 226 3 is_stmt 1 view .LVU322
+ 1073 0042 5148     		ldr	r0, .L78+4
+ARM GAS  /tmp/ccYkWmTA.s 			page 33
+
+
+ 1074              	.LVL73:
+ 226:src/btctl/btctl.c **** 		break;
+ 1075              		.loc 1 226 3 is_stmt 0 view .LVU323
+ 1076 0044 FFF7FEFF 		bl	cprintf
+ 1077              	.LVL74:
+ 227:src/btctl/btctl.c **** 	}
+ 1078              		.loc 1 227 3 is_stmt 1 view .LVU324
+ 1079              	.L61:
+ 229:src/btctl/btctl.c **** end_nofree:
+ 1080              		.loc 1 229 2 view .LVU325
+ 1081 0048 2046     		mov	r0, r4
+ 1082 004a FFF7FEFF 		bl	mem_pool_free
+ 1083              	.LVL75:
+ 1084              	.L66:
+ 229:src/btctl/btctl.c **** end_nofree:
+ 1085              		.loc 1 229 2 is_stmt 0 view .LVU326
+ 1086              	.LBE380:
+ 1087              	.LBE379:
+ 243:src/btctl/btctl.c **** }
+ 1088              		.loc 1 243 9 view .LVU327
+ 1089 004e 0120     		movs	r0, #1
+ 1090              	.LVL76:
+ 1091              	.L43:
+ 244:src/btctl/btctl.c **** 
+ 1092              		.loc 1 244 1 view .LVU328
+ 1093 0050 F8BD     		pop	{r3, r4, r5, r6, r7, pc}
+ 1094              	.LVL77:
+ 1095              	.L67:
+ 1096              	.LBB479:
+ 1097              	.LBB478:
+ 1098              	.LBB381:
+ 1099              	.LBB382:
+ 1100              	.LBB383:
+ 1101              	.LBB384:
+ 1102              	.LBB385:
+ 1103              	.LBB386:
+  28:include/ubtbr/msg.h **** }
+ 1104              		.loc 3 28 2 view .LVU329
+ 1105 0052 FFF7FEFF 		bl	mem_pool_free
+ 1106              	.LVL78:
+ 1107              	.L50:
+  28:include/ubtbr/msg.h **** }
+ 1108              		.loc 3 28 2 view .LVU330
+ 1109              	.LBE386:
+ 1110              	.LBE385:
+  43:src/btctl/btctl.c **** 	{
+ 1111              		.loc 1 43 47 is_stmt 1 view .LVU331
+ 1112              	.LBB388:
+ 1113              	.LBI388:
+  47:include/ubtbr/btctl_intf.h **** {
+ 1114              		.loc 2 47 22 view .LVU332
+ 1115              	.LBB389:
+  49:include/ubtbr/btctl_intf.h **** 	msg_t *msg;
+ 1116              		.loc 2 49 2 view .LVU333
+ 1117              	.LBB390:
+ 1118              	.LBI390:
+   5:include/ubtbr/system.h **** {
+ARM GAS  /tmp/ccYkWmTA.s 			page 34
+
+
+ 1119              		.loc 4 5 24 view .LVU334
+ 1120              	.LBB391:
+   7:include/ubtbr/system.h **** 
+ 1121              		.loc 4 7 2 view .LVU335
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 1122              		.loc 4 9 2 view .LVU336
+ 1123              		.syntax unified
+ 1124              	@ 9 "include/ubtbr/system.h" 1
+ 1125 0056 EFF31085 			mrs    r5, primask
+ 1126 005a 72B6     		cpsid  i
+ 1127              	
+ 1128              	@ 0 "" 2
+  16:include/ubtbr/system.h **** }
+ 1129              		.loc 4 16 2 view .LVU337
+ 1130              	.LVL79:
+  16:include/ubtbr/system.h **** }
+ 1131              		.loc 4 16 2 is_stmt 0 view .LVU338
+ 1132              		.thumb
+ 1133              		.syntax unified
+ 1134              	.LBE391:
+ 1135              	.LBE390:
+  50:include/ubtbr/btctl_intf.h **** 
+ 1136              		.loc 2 50 2 is_stmt 1 view .LVU339
+  52:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 1137              		.loc 2 52 2 view .LVU340
+  52:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 1138              		.loc 2 52 8 is_stmt 0 view .LVU341
+ 1139 005c 4B48     		ldr	r0, .L78+8
+ 1140 005e FFF7FEFF 		bl	msg_dequeue
+ 1141              	.LVL80:
+  53:include/ubtbr/btctl_intf.h **** 
+ 1142              		.loc 2 53 2 is_stmt 1 view .LVU342
+ 1143              	.LBB392:
+ 1144              	.LBI392:
+  19:include/ubtbr/system.h **** {
+ 1145              		.loc 4 19 20 view .LVU343
+ 1146              	.LBB393:
+ 1147              		.loc 4 21 2 view .LVU344
+ 1148              		.syntax unified
+ 1149              	@ 21 "include/ubtbr/system.h" 1
+ 1150 0062 85F31088 		msr primask, r5
+ 1151              	@ 0 "" 2
+ 1152              		.thumb
+ 1153              		.syntax unified
+ 1154              	.LBE393:
+ 1155              	.LBE392:
+ 1156              	.LBE389:
+ 1157              	.LBE388:
+  45:src/btctl/btctl.c **** 	}
+ 1158              		.loc 1 45 3 view .LVU345
+ 1159              	.LVL81:
+ 1160              	.LBB395:
+ 1161              	.LBI385:
+  26:include/ubtbr/msg.h **** {
+ 1162              		.loc 3 26 20 view .LVU346
+ 1163              	.LBB387:
+  28:include/ubtbr/msg.h **** }
+ARM GAS  /tmp/ccYkWmTA.s 			page 35
+
+
+ 1164              		.loc 3 28 2 view .LVU347
+  28:include/ubtbr/msg.h **** }
+ 1165              		.loc 3 28 2 is_stmt 0 view .LVU348
+ 1166              	.LBE387:
+ 1167              	.LBE395:
+ 1168              	.LBB396:
+ 1169              	.LBB394:
+  55:include/ubtbr/btctl_intf.h **** }
+ 1170              		.loc 2 55 2 is_stmt 1 view .LVU349
+  55:include/ubtbr/btctl_intf.h **** }
+ 1171              		.loc 2 55 2 is_stmt 0 view .LVU350
+ 1172              	.LBE394:
+ 1173              	.LBE396:
+  43:src/btctl/btctl.c **** 	{
+ 1174              		.loc 1 43 47 discriminator 1 view .LVU351
+ 1175 0066 0028     		cmp	r0, #0
+ 1176 0068 F3D1     		bne	.L67
+ 1177              	.LBE384:
+ 1178              	.LBE383:
+ 139:src/btctl/btctl.c **** }
+ 1179              		.loc 1 139 2 is_stmt 1 view .LVU352
+ 1180 006a FFF7FEFF 		bl	page_scan_state_setup
+ 1181              	.LVL82:
+ 139:src/btctl/btctl.c **** }
+ 1182              		.loc 1 139 2 is_stmt 0 view .LVU353
+ 1183              	.LBE382:
+ 1184              	.LBE381:
+ 214:src/btctl/btctl.c **** 	case BTCTL_MONITOR_REQ:
+ 1185              		.loc 1 214 3 is_stmt 1 view .LVU354
+ 1186              	.LBB398:
+ 1187              	.LBB397:
+ 140:src/btctl/btctl.c **** 
+ 1188              		.loc 1 140 1 is_stmt 0 view .LVU355
+ 1189 006e EBE7     		b	.L61
+ 1190              	.LVL83:
+ 1191              	.L60:
+ 140:src/btctl/btctl.c **** 
+ 1192              		.loc 1 140 1 view .LVU356
+ 1193              	.LBE397:
+ 1194              	.LBE398:
+ 182:src/btctl/btctl.c **** 		break;
+ 1195              		.loc 1 182 3 is_stmt 1 view .LVU357
+ 1196              	.LBB399:
+ 1197              	.LBI399:
+  49:src/btctl/btctl.c **** {
+ 1198              		.loc 1 49 13 view .LVU358
+ 1199              	.LBB400:
+  51:src/btctl/btctl.c **** 
+ 1200              		.loc 1 51 2 view .LVU359
+  53:src/btctl/btctl.c **** }
+ 1201              		.loc 1 53 2 view .LVU360
+ 1202 0070 4748     		ldr	r0, .L78+12
+ 1203              	.LVL84:
+  53:src/btctl/btctl.c **** }
+ 1204              		.loc 1 53 2 is_stmt 0 view .LVU361
+ 1205 0072 04F11001 		add	r1, r4, #16
+ 1206 0076 FFF7FEFF 		bl	cprintf
+ARM GAS  /tmp/ccYkWmTA.s 			page 36
+
+
+ 1207              	.LVL85:
+  53:src/btctl/btctl.c **** }
+ 1208              		.loc 1 53 2 view .LVU362
+ 1209              	.LBE400:
+ 1210              	.LBE399:
+ 183:src/btctl/btctl.c **** 	case BTCTL_RESET_REQ:
+ 1211              		.loc 1 183 3 is_stmt 1 view .LVU363
+ 1212              	.LBB402:
+ 1213              	.LBB401:
+  54:src/btctl/btctl.c **** 
+ 1214              		.loc 1 54 1 is_stmt 0 view .LVU364
+ 1215 007a E5E7     		b	.L61
+ 1216              	.LVL86:
+ 1217              	.L54:
+  54:src/btctl/btctl.c **** 
+ 1218              		.loc 1 54 1 view .LVU365
+ 1219              	.LBE401:
+ 1220              	.LBE402:
+ 203:src/btctl/btctl.c **** 		break;
+ 1221              		.loc 1 203 3 is_stmt 1 view .LVU366
+ 1222              	.LBB403:
+ 1223              	.LBI403:
+ 104:src/btctl/btctl.c **** {
+ 1224              		.loc 1 104 13 view .LVU367
+ 1225              	.LBB404:
+ 106:src/btctl/btctl.c **** 	btctl_paging_req_t *req = (btctl_paging_req_t*)hdr->data;
+ 1226              		.loc 1 106 2 view .LVU368
+ 107:src/btctl/btctl.c **** 	uint32_t lap = req->bdaddr & 0xffffff;
+ 1227              		.loc 1 107 2 view .LVU369
+ 108:src/btctl/btctl.c **** 	uint8_t uap = (req->bdaddr >> 24) & 0xff;
+ 1228              		.loc 1 108 2 view .LVU370
+ 108:src/btctl/btctl.c **** 	uint8_t uap = (req->bdaddr >> 24) & 0xff;
+ 1229              		.loc 1 108 20 is_stmt 0 view .LVU371
+ 1230 007c 0169     		ldr	r1, [r0, #16]
+ 108:src/btctl/btctl.c **** 	uint8_t uap = (req->bdaddr >> 24) & 0xff;
+ 1231              		.loc 1 108 11 view .LVU372
+ 1232 007e 21F07F46 		bic	r6, r1, #-16777216
+ 1233              	.LVL87:
+ 109:src/btctl/btctl.c **** 
+ 1234              		.loc 1 109 2 is_stmt 1 view .LVU373
+ 109:src/btctl/btctl.c **** 
+ 1235              		.loc 1 109 10 is_stmt 0 view .LVU374
+ 1236 0082 0F0E     		lsrs	r7, r1, #24
+ 1237              	.LVL88:
+ 111:src/btctl/btctl.c **** 
+ 1238              		.loc 1 111 2 is_stmt 1 view .LVU375
+ 1239              	.LBB405:
+ 1240              	.LBI405:
+  38:src/btctl/btctl.c **** {
+ 1241              		.loc 1 38 13 view .LVU376
+ 1242              	.LBB406:
+  40:src/btctl/btctl.c **** 
+ 1243              		.loc 1 40 2 view .LVU377
+  43:src/btctl/btctl.c **** 	{
+ 1244              		.loc 1 43 2 view .LVU378
+  43:src/btctl/btctl.c **** 	{
+ 1245              		.loc 1 43 8 is_stmt 0 view .LVU379
+ARM GAS  /tmp/ccYkWmTA.s 			page 37
+
+
+ 1246 0084 01E0     		b	.L64
+ 1247              	.LVL89:
+ 1248              	.L65:
+ 1249              	.LBB407:
+ 1250              	.LBB408:
+  28:include/ubtbr/msg.h **** }
+ 1251              		.loc 3 28 2 view .LVU380
+ 1252 0086 FFF7FEFF 		bl	mem_pool_free
+ 1253              	.LVL90:
+ 1254              	.L64:
+  28:include/ubtbr/msg.h **** }
+ 1255              		.loc 3 28 2 view .LVU381
+ 1256              	.LBE408:
+ 1257              	.LBE407:
+  43:src/btctl/btctl.c **** 	{
+ 1258              		.loc 1 43 47 is_stmt 1 view .LVU382
+ 1259              	.LBB410:
+ 1260              	.LBI410:
+  47:include/ubtbr/btctl_intf.h **** {
+ 1261              		.loc 2 47 22 view .LVU383
+ 1262              	.LBB411:
+  49:include/ubtbr/btctl_intf.h **** 	msg_t *msg;
+ 1263              		.loc 2 49 2 view .LVU384
+ 1264              	.LBB412:
+ 1265              	.LBI412:
+   5:include/ubtbr/system.h **** {
+ 1266              		.loc 4 5 24 view .LVU385
+ 1267              	.LBB413:
+   7:include/ubtbr/system.h **** 
+ 1268              		.loc 4 7 2 view .LVU386
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 1269              		.loc 4 9 2 view .LVU387
+ 1270              		.syntax unified
+ 1271              	@ 9 "include/ubtbr/system.h" 1
+ 1272 008a EFF31085 			mrs    r5, primask
+ 1273 008e 72B6     		cpsid  i
+ 1274              	
+ 1275              	@ 0 "" 2
+  16:include/ubtbr/system.h **** }
+ 1276              		.loc 4 16 2 view .LVU388
+ 1277              	.LVL91:
+  16:include/ubtbr/system.h **** }
+ 1278              		.loc 4 16 2 is_stmt 0 view .LVU389
+ 1279              		.thumb
+ 1280              		.syntax unified
+ 1281              	.LBE413:
+ 1282              	.LBE412:
+  50:include/ubtbr/btctl_intf.h **** 
+ 1283              		.loc 2 50 2 is_stmt 1 view .LVU390
+  52:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 1284              		.loc 2 52 2 view .LVU391
+  52:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 1285              		.loc 2 52 8 is_stmt 0 view .LVU392
+ 1286 0090 3E48     		ldr	r0, .L78+8
+ 1287 0092 FFF7FEFF 		bl	msg_dequeue
+ 1288              	.LVL92:
+  53:include/ubtbr/btctl_intf.h **** 
+ARM GAS  /tmp/ccYkWmTA.s 			page 38
+
+
+ 1289              		.loc 2 53 2 is_stmt 1 view .LVU393
+ 1290              	.LBB414:
+ 1291              	.LBI414:
+  19:include/ubtbr/system.h **** {
+ 1292              		.loc 4 19 20 view .LVU394
+ 1293              	.LBB415:
+ 1294              		.loc 4 21 2 view .LVU395
+ 1295              		.syntax unified
+ 1296              	@ 21 "include/ubtbr/system.h" 1
+ 1297 0096 85F31088 		msr primask, r5
+ 1298              	@ 0 "" 2
+ 1299              		.thumb
+ 1300              		.syntax unified
+ 1301              	.LBE415:
+ 1302              	.LBE414:
+ 1303              	.LBE411:
+ 1304              	.LBE410:
+  45:src/btctl/btctl.c **** 	}
+ 1305              		.loc 1 45 3 view .LVU396
+ 1306              	.LVL93:
+ 1307              	.LBB417:
+ 1308              	.LBI407:
+  26:include/ubtbr/msg.h **** {
+ 1309              		.loc 3 26 20 view .LVU397
+ 1310              	.LBB409:
+  28:include/ubtbr/msg.h **** }
+ 1311              		.loc 3 28 2 view .LVU398
+  28:include/ubtbr/msg.h **** }
+ 1312              		.loc 3 28 2 is_stmt 0 view .LVU399
+ 1313              	.LBE409:
+ 1314              	.LBE417:
+ 1315              	.LBB418:
+ 1316              	.LBB416:
+  55:include/ubtbr/btctl_intf.h **** }
+ 1317              		.loc 2 55 2 is_stmt 1 view .LVU400
+  55:include/ubtbr/btctl_intf.h **** }
+ 1318              		.loc 2 55 2 is_stmt 0 view .LVU401
+ 1319              	.LBE416:
+ 1320              	.LBE418:
+  43:src/btctl/btctl.c **** 	{
+ 1321              		.loc 1 43 47 discriminator 1 view .LVU402
+ 1322 009a 0028     		cmp	r0, #0
+ 1323 009c F3D1     		bne	.L65
+ 1324              	.LBE406:
+ 1325              	.LBE405:
+ 114:src/btctl/btctl.c **** }
+ 1326              		.loc 1 114 2 is_stmt 1 view .LVU403
+ 1327 009e 3946     		mov	r1, r7
+ 1328 00a0 3046     		mov	r0, r6
+ 1329              	.LVL94:
+ 114:src/btctl/btctl.c **** }
+ 1330              		.loc 1 114 2 is_stmt 0 view .LVU404
+ 1331 00a2 FFF7FEFF 		bl	paging_state_setup
+ 1332              	.LVL95:
+ 114:src/btctl/btctl.c **** }
+ 1333              		.loc 1 114 2 view .LVU405
+ 1334              	.LBE404:
+ARM GAS  /tmp/ccYkWmTA.s 			page 39
+
+
+ 1335              	.LBE403:
+ 204:src/btctl/btctl.c **** 	case BTCTL_TX_ACL_REQ:
+ 1336              		.loc 1 204 3 is_stmt 1 view .LVU406
+ 1337              	.LBB420:
+ 1338              	.LBB419:
+ 115:src/btctl/btctl.c **** 
+ 1339              		.loc 1 115 1 is_stmt 0 view .LVU407
+ 1340 00a6 CFE7     		b	.L61
+ 1341              	.LVL96:
+ 1342              	.L55:
+ 115:src/btctl/btctl.c **** 
+ 1343              		.loc 1 115 1 view .LVU408
+ 1344              	.LBE419:
+ 1345              	.LBE420:
+ 200:src/btctl/btctl.c **** 		break;
+ 1346              		.loc 1 200 3 is_stmt 1 view .LVU409
+ 1347              	.LBB421:
+ 1348              	.LBI421:
+  99:src/btctl/btctl.c **** {
+ 1349              		.loc 1 99 13 view .LVU410
+ 1350              	.LBB422:
+ 101:src/btctl/btctl.c **** }
+ 1351              		.loc 1 101 2 view .LVU411
+ 1352 00a8 FFF7FEFF 		bl	inquiry_state_setup
+ 1353              	.LVL97:
+ 101:src/btctl/btctl.c **** }
+ 1354              		.loc 1 101 2 is_stmt 0 view .LVU412
+ 1355              	.LBE422:
+ 1356              	.LBE421:
+ 201:src/btctl/btctl.c **** 	case BTCTL_PAGING_REQ:
+ 1357              		.loc 1 201 3 is_stmt 1 view .LVU413
+ 1358              	.LBB424:
+ 1359              	.LBB423:
+ 102:src/btctl/btctl.c **** 
+ 1360              		.loc 1 102 1 is_stmt 0 view .LVU414
+ 1361 00ac CCE7     		b	.L61
+ 1362              	.LVL98:
+ 1363              	.L56:
+ 102:src/btctl/btctl.c **** 
+ 1364              		.loc 1 102 1 view .LVU415
+ 1365              	.LBE423:
+ 1366              	.LBE424:
+ 197:src/btctl/btctl.c **** 		break;
+ 1367              		.loc 1 197 3 is_stmt 1 view .LVU416
+ 1368              	.LBB425:
+ 1369              	.LBI425:
+  91:src/btctl/btctl.c **** {
+ 1370              		.loc 1 91 13 view .LVU417
+ 1371              	.LBB426:
+  93:src/btctl/btctl.c **** 	btctl_set_bdaddr_req_t *req = (btctl_set_bdaddr_req_t*)hdr->data;
+ 1372              		.loc 1 93 2 view .LVU418
+  94:src/btctl/btctl.c **** 
+ 1373              		.loc 1 94 2 view .LVU419
+  96:src/btctl/btctl.c **** }
+ 1374              		.loc 1 96 2 view .LVU420
+ 1375 00ae 00F11001 		add	r1, r0, #16
+ 1376 00b2 D1E90001 		ldrd	r0, [r1]
+ARM GAS  /tmp/ccYkWmTA.s 			page 40
+
+
+ 1377              	.LVL99:
+  96:src/btctl/btctl.c **** }
+ 1378              		.loc 1 96 2 is_stmt 0 view .LVU421
+ 1379 00b6 FFF7FEFF 		bl	btphy_set_bdaddr
+ 1380              	.LVL100:
+  96:src/btctl/btctl.c **** }
+ 1381              		.loc 1 96 2 view .LVU422
+ 1382              	.LBE426:
+ 1383              	.LBE425:
+ 198:src/btctl/btctl.c **** 	case BTCTL_INQUIRY_REQ:
+ 1384              		.loc 1 198 3 is_stmt 1 view .LVU423
+ 1385              	.LBB428:
+ 1386              	.LBB427:
+  97:src/btctl/btctl.c **** 
+ 1387              		.loc 1 97 1 is_stmt 0 view .LVU424
+ 1388 00ba C5E7     		b	.L61
+ 1389              	.LVL101:
+ 1390              	.L51:
+  97:src/btctl/btctl.c **** 
+ 1391              		.loc 1 97 1 view .LVU425
+ 1392              	.LBE427:
+ 1393              	.LBE428:
+ 210:src/btctl/btctl.c **** 		break;
+ 1394              		.loc 1 210 3 is_stmt 1 view .LVU426
+ 1395              	.LBB429:
+ 1396              	.LBI429:
+ 131:src/btctl/btctl.c **** {
+ 1397              		.loc 1 131 13 view .LVU427
+ 1398              	.LBB430:
+ 133:src/btctl/btctl.c **** }
+ 1399              		.loc 1 133 2 view .LVU428
+ 1400 00bc FFF7FEFF 		bl	inquiry_scan_state_setup
+ 1401              	.LVL102:
+ 133:src/btctl/btctl.c **** }
+ 1402              		.loc 1 133 2 is_stmt 0 view .LVU429
+ 1403              	.LBE430:
+ 1404              	.LBE429:
+ 211:src/btctl/btctl.c **** 	case BTCTL_PAGE_SCAN_REQ:
+ 1405              		.loc 1 211 3 is_stmt 1 view .LVU430
+ 1406              	.LBB432:
+ 1407              	.LBB431:
+ 134:src/btctl/btctl.c **** 
+ 1408              		.loc 1 134 1 is_stmt 0 view .LVU431
+ 1409 00c0 C2E7     		b	.L61
+ 1410              	.LVL103:
+ 1411              	.L46:
+ 134:src/btctl/btctl.c **** 
+ 1412              		.loc 1 134 1 view .LVU432
+ 1413              	.LBE431:
+ 1414              	.LBE432:
+ 216:src/btctl/btctl.c **** 		break;
+ 1415              		.loc 1 216 3 is_stmt 1 view .LVU433
+ 1416              	.LBB433:
+ 1417              	.LBI433:
+ 117:src/btctl/btctl.c **** {
+ 1418              		.loc 1 117 13 view .LVU434
+ 1419              	.LBB434:
+ARM GAS  /tmp/ccYkWmTA.s 			page 41
+
+
+ 119:src/btctl/btctl.c **** 	btctl_paging_req_t *req = (btctl_paging_req_t*)hdr->data;
+ 1420              		.loc 1 119 2 view .LVU435
+ 120:src/btctl/btctl.c **** 
+ 1421              		.loc 1 120 2 view .LVU436
+ 123:src/btctl/btctl.c **** }
+ 1422              		.loc 1 123 2 view .LVU437
+ 1423 00c2 00F11001 		add	r1, r0, #16
+ 1424 00c6 D1E90001 		ldrd	r0, [r1]
+ 1425              	.LVL104:
+ 123:src/btctl/btctl.c **** }
+ 1426              		.loc 1 123 2 is_stmt 0 view .LVU438
+ 1427 00ca FFF7FEFF 		bl	monitor1_state_setup
+ 1428              	.LVL105:
+ 123:src/btctl/btctl.c **** }
+ 1429              		.loc 1 123 2 view .LVU439
+ 1430              	.LBE434:
+ 1431              	.LBE433:
+ 217:src/btctl/btctl.c **** 	case BTCTL_SET_EIR_REQ:
+ 1432              		.loc 1 217 3 is_stmt 1 view .LVU440
+ 1433              	.LBB436:
+ 1434              	.LBB435:
+ 124:src/btctl/btctl.c **** 
+ 1435              		.loc 1 124 1 is_stmt 0 view .LVU441
+ 1436 00ce BBE7     		b	.L61
+ 1437              	.LVL106:
+ 1438              	.L53:
+ 124:src/btctl/btctl.c **** 
+ 1439              		.loc 1 124 1 view .LVU442
+ 1440              	.LBE435:
+ 1441              	.LBE436:
+ 194:src/btctl/btctl.c **** 		break;
+ 1442              		.loc 1 194 3 is_stmt 1 view .LVU443
+ 1443              	.LBB437:
+ 1444              	.LBI437:
+  83:src/btctl/btctl.c **** {
+ 1445              		.loc 1 83 13 view .LVU444
+ 1446              	.LBB438:
+  85:src/btctl/btctl.c **** 	btctl_set_reg_req_t *req = (btctl_set_reg_req_t*)hdr->data;
+ 1447              		.loc 1 85 2 view .LVU445
+  86:src/btctl/btctl.c **** 
+ 1448              		.loc 1 86 2 view .LVU446
+  88:src/btctl/btctl.c **** }
+ 1449              		.loc 1 88 2 view .LVU447
+  88:src/btctl/btctl.c **** }
+ 1450              		.loc 1 88 37 is_stmt 0 view .LVU448
+ 1451 00d0 008A     		ldrh	r0, [r0, #16]
+ 1452              	.LVL107:
+  88:src/btctl/btctl.c **** }
+ 1453              		.loc 1 88 2 view .LVU449
+ 1454 00d2 00F00300 		and	r0, r0, #3
+ 1455 00d6 FFF7FEFF 		bl	btphy_rf_set_max_ac_errors
+ 1456              	.LVL108:
+  88:src/btctl/btctl.c **** }
+ 1457              		.loc 1 88 2 view .LVU450
+ 1458              	.LBE438:
+ 1459              	.LBE437:
+ 195:src/btctl/btctl.c **** 	case BTCTL_SET_BDADDR_REQ:
+ARM GAS  /tmp/ccYkWmTA.s 			page 42
+
+
+ 1460              		.loc 1 195 3 is_stmt 1 view .LVU451
+ 1461              	.LBB440:
+ 1462              	.LBB439:
+  89:src/btctl/btctl.c **** 
+ 1463              		.loc 1 89 1 is_stmt 0 view .LVU452
+ 1464 00da B5E7     		b	.L61
+ 1465              	.LVL109:
+ 1466              	.L58:
+  89:src/btctl/btctl.c **** 
+ 1467              		.loc 1 89 1 view .LVU453
+ 1468              	.LBE439:
+ 1469              	.LBE440:
+ 188:src/btctl/btctl.c **** 		break;
+ 1470              		.loc 1 188 3 is_stmt 1 view .LVU454
+ 1471              	.LBB441:
+ 1472              	.LBI441:
+  61:src/btctl/btctl.c **** {
+ 1473              		.loc 1 61 13 view .LVU455
+ 1474              	.LBB442:
+  63:src/btctl/btctl.c **** 
+ 1475              		.loc 1 63 2 view .LVU456
+  66:src/btctl/btctl.c **** 
+ 1476              		.loc 1 66 2 view .LVU457
+ 1477 00dc 0021     		movs	r1, #0
+ 1478 00de 0846     		mov	r0, r1
+ 1479              	.LVL110:
+  66:src/btctl/btctl.c **** 
+ 1480              		.loc 1 66 2 is_stmt 0 view .LVU458
+ 1481 00e0 FFF7FEFF 		bl	btctl_set_state
+ 1482              	.LVL111:
+  69:src/btctl/btctl.c **** 
+ 1483              		.loc 1 69 2 is_stmt 1 view .LVU459
+  69:src/btctl/btctl.c **** 
+ 1484              		.loc 1 69 14 is_stmt 0 view .LVU460
+ 1485 00e4 2B4B     		ldr	r3, .L78+16
+ 1486 00e6 9D68     		ldr	r5, [r3, #8]
+ 1487              	.LVL112:
+  71:src/btctl/btctl.c **** 		usb_work();
+ 1488              		.loc 1 71 9 view .LVU461
+ 1489 00e8 9B68     		ldr	r3, [r3, #8]
+  69:src/btctl/btctl.c **** 
+ 1490              		.loc 1 69 12 view .LVU462
+ 1491 00ea 1E35     		adds	r5, r5, #30
+ 1492              	.LVL113:
+  71:src/btctl/btctl.c **** 		usb_work();
+ 1493              		.loc 1 71 2 is_stmt 1 view .LVU463
+  71:src/btctl/btctl.c **** 		usb_work();
+ 1494              		.loc 1 71 21 view .LVU464
+ 1495 00ec 9D42     		cmp	r5, r3
+ 1496 00ee ABD9     		bls	.L61
+ 1497              	.L62:
+  72:src/btctl/btctl.c **** }
+ 1498              		.loc 1 72 3 view .LVU465
+ 1499 00f0 FFF7FEFF 		bl	usb_work
+ 1500              	.LVL114:
+  71:src/btctl/btctl.c **** 		usb_work();
+ 1501              		.loc 1 71 21 view .LVU466
+ARM GAS  /tmp/ccYkWmTA.s 			page 43
+
+
+  71:src/btctl/btctl.c **** 		usb_work();
+ 1502              		.loc 1 71 9 is_stmt 0 view .LVU467
+ 1503 00f4 274B     		ldr	r3, .L78+16
+ 1504 00f6 9B68     		ldr	r3, [r3, #8]
+  71:src/btctl/btctl.c **** 		usb_work();
+ 1505              		.loc 1 71 21 view .LVU468
+ 1506 00f8 9D42     		cmp	r5, r3
+ 1507 00fa F9D8     		bhi	.L62
+ 1508 00fc A4E7     		b	.L61
+ 1509              	.LVL115:
+ 1510              	.L59:
+  71:src/btctl/btctl.c **** 		usb_work();
+ 1511              		.loc 1 71 21 view .LVU469
+ 1512              	.LBE442:
+ 1513              	.LBE441:
+ 185:src/btctl/btctl.c **** 		break;
+ 1514              		.loc 1 185 3 is_stmt 1 view .LVU470
+ 1515              	.LBB443:
+ 1516              	.LBI443:
+  56:src/btctl/btctl.c **** {
+ 1517              		.loc 1 56 13 view .LVU471
+ 1518              	.LBB444:
+  58:src/btctl/btctl.c **** }
+ 1519              		.loc 1 58 2 view .LVU472
+ 1520 00fe FFF7FEFF 		bl	reset
+ 1521              	.LVL116:
+  58:src/btctl/btctl.c **** }
+ 1522              		.loc 1 58 2 is_stmt 0 view .LVU473
+ 1523              	.LBE444:
+ 1524              	.LBE443:
+ 186:src/btctl/btctl.c **** 	case BTCTL_IDLE_REQ:
+ 1525              		.loc 1 186 3 is_stmt 1 view .LVU474
+ 1526              	.LBB446:
+ 1527              	.LBB445:
+  59:src/btctl/btctl.c **** 
+ 1528              		.loc 1 59 1 is_stmt 0 view .LVU475
+ 1529 0102 A1E7     		b	.L61
+ 1530              	.LVL117:
+ 1531              	.L52:
+  59:src/btctl/btctl.c **** 
+ 1532              		.loc 1 59 1 view .LVU476
+ 1533              	.LBE445:
+ 1534              	.LBE446:
+ 206:src/btctl/btctl.c **** 		// don't free tx messages
+ 1535              		.loc 1 206 3 is_stmt 1 view .LVU477
+ 1536              	.LBB447:
+ 1537              	.LBI447:
+ 126:src/btctl/btctl.c **** {
+ 1538              		.loc 1 126 13 view .LVU478
+ 128:src/btctl/btctl.c **** }
+ 1539              		.loc 1 128 2 view .LVU479
+ 1540              	.LBB448:
+ 1541              	.LBI448:
+  85:include/ubtbr/btctl_intf.h **** }
+  86:include/ubtbr/btctl_intf.h **** 
+  87:include/ubtbr/btctl_intf.h **** /* Called by usb driver with last message received from host */
+  88:include/ubtbr/btctl_intf.h **** static inline int btctl_rx_enqueue(msg_t *msg)
+ARM GAS  /tmp/ccYkWmTA.s 			page 44
+
+
+  89:include/ubtbr/btctl_intf.h **** {
+  90:include/ubtbr/btctl_intf.h **** 	return safe_enqueue(&btctl.rx_q, msg);
+  91:include/ubtbr/btctl_intf.h **** }
+  92:include/ubtbr/btctl_intf.h **** 
+  93:include/ubtbr/btctl_intf.h **** /* Called by connected task to retreive next packet to send */
+  94:include/ubtbr/btctl_intf.h **** static inline msg_t *btctl_acl_tx_dequeue(void)
+  95:include/ubtbr/btctl_intf.h **** {
+  96:include/ubtbr/btctl_intf.h **** 	return safe_dequeue(&btctl.acl_tx_q);
+  97:include/ubtbr/btctl_intf.h **** }
+  98:include/ubtbr/btctl_intf.h **** 
+  99:include/ubtbr/btctl_intf.h **** /* Enqueue a packet to send in connected state */
+ 100:include/ubtbr/btctl_intf.h **** static inline int btctl_acl_tx_enqueue(msg_t *msg)
+ 1542              		.loc 2 100 19 view .LVU480
+ 1543              	.LBB449:
+ 101:include/ubtbr/btctl_intf.h **** {
+ 102:include/ubtbr/btctl_intf.h **** 	return safe_enqueue(&btctl.acl_tx_q, msg);
+ 1544              		.loc 2 102 2 view .LVU481
+ 1545              	.LBB450:
+ 1546              	.LBI450:
+  58:include/ubtbr/btctl_intf.h **** {
+ 1547              		.loc 2 58 19 view .LVU482
+ 1548              	.LBB451:
+  60:include/ubtbr/btctl_intf.h **** 	int rc;
+ 1549              		.loc 2 60 2 view .LVU483
+ 1550              	.LBB452:
+ 1551              	.LBI452:
+   5:include/ubtbr/system.h **** {
+ 1552              		.loc 4 5 24 view .LVU484
+ 1553              	.LBB453:
+   7:include/ubtbr/system.h **** 
+ 1554              		.loc 4 7 2 view .LVU485
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 1555              		.loc 4 9 2 view .LVU486
+ 1556              		.syntax unified
+ 1557              	@ 9 "include/ubtbr/system.h" 1
+ 1558 0104 EFF31085 			mrs    r5, primask
+ 1559 0108 72B6     		cpsid  i
+ 1560              	
+ 1561              	@ 0 "" 2
+ 1562              	.LVL118:
+  16:include/ubtbr/system.h **** }
+ 1563              		.loc 4 16 2 view .LVU487
+  16:include/ubtbr/system.h **** }
+ 1564              		.loc 4 16 2 is_stmt 0 view .LVU488
+ 1565              		.thumb
+ 1566              		.syntax unified
+ 1567              	.LBE453:
+ 1568              	.LBE452:
+  61:include/ubtbr/btctl_intf.h **** 
+ 1569              		.loc 2 61 2 is_stmt 1 view .LVU489
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 1570              		.loc 2 63 2 view .LVU490
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 1571              		.loc 2 63 7 is_stmt 0 view .LVU491
+ 1572 010a 2048     		ldr	r0, .L78+8
+ 1573              	.LVL119:
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ARM GAS  /tmp/ccYkWmTA.s 			page 45
+
+
+ 1574              		.loc 2 63 7 view .LVU492
+ 1575 010c 2146     		mov	r1, r4
+ 1576 010e FFF7FEFF 		bl	msg_enqueue
+ 1577              	.LVL120:
+  64:include/ubtbr/btctl_intf.h **** 
+ 1578              		.loc 2 64 2 is_stmt 1 view .LVU493
+ 1579              	.LBB454:
+ 1580              	.LBI454:
+  19:include/ubtbr/system.h **** {
+ 1581              		.loc 4 19 20 view .LVU494
+ 1582              	.LBB455:
+ 1583              		.loc 4 21 2 view .LVU495
+ 1584              		.syntax unified
+ 1585              	@ 21 "include/ubtbr/system.h" 1
+ 1586 0112 85F31088 		msr primask, r5
+ 1587              	@ 0 "" 2
+ 1588              	.LVL121:
+ 1589              		.loc 4 21 2 is_stmt 0 view .LVU496
+ 1590              		.thumb
+ 1591              		.syntax unified
+ 1592              	.LBE455:
+ 1593              	.LBE454:
+  66:include/ubtbr/btctl_intf.h **** }
+ 1594              		.loc 2 66 2 is_stmt 1 view .LVU497
+  66:include/ubtbr/btctl_intf.h **** }
+ 1595              		.loc 2 66 2 is_stmt 0 view .LVU498
+ 1596              	.LBE451:
+ 1597              	.LBE450:
+ 1598              	.LBE449:
+ 1599              	.LBE448:
+ 1600              	.LBE447:
+ 208:src/btctl/btctl.c **** 	case BTCTL_INQUIRY_SCAN_REQ:
+ 1601              		.loc 1 208 3 is_stmt 1 view .LVU499
+ 1602 0116 9AE7     		b	.L66
+ 1603              	.LVL122:
+ 1604              	.L48:
+ 223:src/btctl/btctl.c **** 		break;
+ 1605              		.loc 1 223 3 view .LVU500
+ 1606              	.LBB456:
+ 1607              	.LBI456:
+ 142:src/btctl/btctl.c **** {
+ 1608              		.loc 1 142 13 view .LVU501
+ 1609              	.LBB457:
+ 144:src/btctl/btctl.c **** 	uint32_t flags = irq_save_disable();
+ 1610              		.loc 1 144 2 view .LVU502
+ 145:src/btctl/btctl.c **** 	btctl_hdr_t *hdr = (btctl_hdr_t*)msg->data;
+ 1611              		.loc 1 145 2 view .LVU503
+ 1612              	.LBB458:
+ 1613              	.LBI458:
+   5:include/ubtbr/system.h **** {
+ 1614              		.loc 4 5 24 view .LVU504
+ 1615              	.LBB459:
+   7:include/ubtbr/system.h **** 
+ 1616              		.loc 4 7 2 view .LVU505
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 1617              		.loc 4 9 2 view .LVU506
+ 1618              		.syntax unified
+ARM GAS  /tmp/ccYkWmTA.s 			page 46
+
+
+ 1619              	@ 9 "include/ubtbr/system.h" 1
+ 1620 0118 EFF31083 			mrs    r3, primask
+ 1621 011c 72B6     		cpsid  i
+ 1622              	
+ 1623              	@ 0 "" 2
+  16:include/ubtbr/system.h **** }
+ 1624              		.loc 4 16 2 view .LVU507
+ 1625              		.thumb
+ 1626              		.syntax unified
+ 1627              	.LBE459:
+ 1628              	.LBE458:
+ 149:src/btctl/btctl.c **** 	memcpy(afh_buf+1, req->map, 10);
+ 1629              		.loc 1 149 13 is_stmt 0 view .LVU508
+ 1630 011e 1E4D     		ldr	r5, .L78+20
+ 1631              	.LVL123:
+ 1632              	.LBB461:
+ 1633              	.LBB460:
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 1634              		.loc 4 9 2 view .LVU509
+ 1635 0120 1E46     		mov	r6, r3
+ 1636              	.LVL124:
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 1637              		.loc 4 9 2 view .LVU510
+ 1638              	.LBE460:
+ 1639              	.LBE461:
+ 146:src/btctl/btctl.c **** 	btctl_set_afh_req_t *req = (btctl_set_afh_req_t*)hdr->data;
+ 1640              		.loc 1 146 2 is_stmt 1 view .LVU511
+ 147:src/btctl/btctl.c **** 
+ 1641              		.loc 1 147 2 view .LVU512
+ 149:src/btctl/btctl.c **** 	memcpy(afh_buf+1, req->map, 10);
+ 1642              		.loc 1 149 2 view .LVU513
+ 149:src/btctl/btctl.c **** 	memcpy(afh_buf+1, req->map, 10);
+ 1643              		.loc 1 149 13 is_stmt 0 view .LVU514
+ 1644 0122 037D     		ldrb	r3, [r0, #20]	@ zero_extendqisi2
+ 1645              	.LVL125:
+ 150:src/btctl/btctl.c **** 	//hop_set_afh_map(req->map);
+ 1646              		.loc 1 150 2 view .LVU515
+ 1647 0124 00F11501 		add	r1, r0, #21
+ 1648 0128 0A22     		movs	r2, #10
+ 1649 012a 05F18500 		add	r0, r5, #133
+ 1650              	.LVL126:
+ 149:src/btctl/btctl.c **** 	memcpy(afh_buf+1, req->map, 10);
+ 1651              		.loc 1 149 13 view .LVU516
+ 1652 012e 85F88430 		strb	r3, [r5, #132]
+ 150:src/btctl/btctl.c **** 	//hop_set_afh_map(req->map);
+ 1653              		.loc 1 150 2 is_stmt 1 view .LVU517
+ 1654 0132 FFF7FEFF 		bl	memcpy
+ 1655              	.LVL127:
+ 152:src/btctl/btctl.c **** 	irq_restore(flags);
+ 1656              		.loc 1 152 2 view .LVU518
+ 1657 0136 0023     		movs	r3, #0
+ 1658 0138 1849     		ldr	r1, .L78+24
+ 1659 013a 2069     		ldr	r0, [r4, #16]	@ unaligned
+ 1660 013c 05F18402 		add	r2, r5, #132
+ 1661 0140 FFF7FEFF 		bl	btphy_timer_add
+ 1662              	.LVL128:
+ 153:src/btctl/btctl.c **** }
+ARM GAS  /tmp/ccYkWmTA.s 			page 47
+
+
+ 1663              		.loc 1 153 2 view .LVU519
+ 1664              	.LBB462:
+ 1665              	.LBI462:
+  19:include/ubtbr/system.h **** {
+ 1666              		.loc 4 19 20 view .LVU520
+ 1667              	.LBB463:
+ 1668              		.loc 4 21 2 view .LVU521
+ 1669              		.syntax unified
+ 1670              	@ 21 "include/ubtbr/system.h" 1
+ 1671 0144 86F31088 		msr primask, r6
+ 1672              	@ 0 "" 2
+ 1673              	.LVL129:
+ 1674              		.loc 4 21 2 is_stmt 0 view .LVU522
+ 1675              		.thumb
+ 1676              		.syntax unified
+ 1677              	.LBE463:
+ 1678              	.LBE462:
+ 1679              	.LBE457:
+ 1680              	.LBE456:
+ 224:src/btctl/btctl.c **** 	default:
+ 1681              		.loc 1 224 3 is_stmt 1 view .LVU523
+ 1682              	.LBB465:
+ 1683              	.LBB464:
+ 154:src/btctl/btctl.c **** 
+ 1684              		.loc 1 154 1 is_stmt 0 view .LVU524
+ 1685 0148 7EE7     		b	.L61
+ 1686              	.LVL130:
+ 1687              	.L49:
+ 154:src/btctl/btctl.c **** 
+ 1688              		.loc 1 154 1 view .LVU525
+ 1689              	.LBE464:
+ 1690              	.LBE465:
+ 219:src/btctl/btctl.c **** 		// don't free the eir message
+ 1691              		.loc 1 219 3 is_stmt 1 view .LVU526
+ 1692              	.LBB466:
+ 1693              	.LBI466:
+ 156:src/btctl/btctl.c **** {
+ 1694              		.loc 1 156 13 view .LVU527
+ 1695              	.LBB467:
+ 158:src/btctl/btctl.c **** 
+ 1696              		.loc 1 158 2 view .LVU528
+ 160:src/btctl/btctl.c **** 	{
+ 1697              		.loc 1 160 2 view .LVU529
+ 160:src/btctl/btctl.c **** 	{
+ 1698              		.loc 1 160 11 is_stmt 0 view .LVU530
+ 1699 014a 134D     		ldr	r5, .L78+20
+ 1700              	.LVL131:
+ 160:src/btctl/btctl.c **** 	{
+ 1701              		.loc 1 160 5 view .LVU531
+ 1702 014c 2B78     		ldrb	r3, [r5]	@ zero_extendqisi2
+ 1703 014e 8BB9     		cbnz	r3, .L77
+ 166:src/btctl/btctl.c **** 	{
+ 1704              		.loc 1 166 2 is_stmt 1 view .LVU532
+ 166:src/btctl/btctl.c **** 	{
+ 1705              		.loc 1 166 11 is_stmt 0 view .LVU533
+ 1706 0150 E86F     		ldr	r0, [r5, #124]
+ 1707              	.LVL132:
+ARM GAS  /tmp/ccYkWmTA.s 			page 48
+
+
+ 166:src/btctl/btctl.c **** 	{
+ 1708              		.loc 1 166 5 view .LVU534
+ 1709 0152 08B1     		cbz	r0, .L69
+ 168:src/btctl/btctl.c **** 	}
+ 1710              		.loc 1 168 3 is_stmt 1 view .LVU535
+ 1711              	.LVL133:
+ 1712              	.LBB468:
+ 1713              	.LBI468:
+  26:include/ubtbr/msg.h **** {
+ 1714              		.loc 3 26 20 view .LVU536
+ 1715              	.LBB469:
+  28:include/ubtbr/msg.h **** }
+ 1716              		.loc 3 28 2 view .LVU537
+ 1717 0154 FFF7FEFF 		bl	mem_pool_free
+ 1718              	.LVL134:
+ 1719              	.L69:
+  28:include/ubtbr/msg.h **** }
+ 1720              		.loc 3 28 2 is_stmt 0 view .LVU538
+ 1721              	.LBE469:
+ 1722              	.LBE468:
+ 170:src/btctl/btctl.c **** 	btctl.eir_msg = msg;
+ 1723              		.loc 1 170 2 is_stmt 1 view .LVU539
+ 1724 0158 1148     		ldr	r0, .L78+28
+ 1725 015a FFF7FEFF 		bl	cprintf
+ 1726              	.LVL135:
+ 171:src/btctl/btctl.c **** 	btctl.eir_pkt = (btctl_tx_pkt_t *)h->data;
+ 1727              		.loc 1 171 2 view .LVU540
+ 172:src/btctl/btctl.c **** }
+ 1728              		.loc 1 172 36 is_stmt 0 view .LVU541
+ 1729 015e 04F11003 		add	r3, r4, #16
+ 172:src/btctl/btctl.c **** }
+ 1730              		.loc 1 172 16 view .LVU542
+ 1731 0162 C5E91F43 		strd	r4, r3, [r5, #124]
+ 1732 0166 72E7     		b	.L66
+ 1733              	.LVL136:
+ 1734              	.L57:
+ 172:src/btctl/btctl.c **** }
+ 1735              		.loc 1 172 16 view .LVU543
+ 1736              	.LBE467:
+ 1737              	.LBE466:
+ 191:src/btctl/btctl.c **** 		break;
+ 1738              		.loc 1 191 3 is_stmt 1 view .LVU544
+ 1739              	.LBB473:
+ 1740              	.LBI473:
+  75:src/btctl/btctl.c **** {
+ 1741              		.loc 1 75 13 view .LVU545
+ 1742              	.LBB474:
+  77:src/btctl/btctl.c **** 	btctl_set_reg_req_t *req = (btctl_set_reg_req_t*)hdr->data;
+ 1743              		.loc 1 77 2 view .LVU546
+  78:src/btctl/btctl.c **** 
+ 1744              		.loc 1 78 2 view .LVU547
+  80:src/btctl/btctl.c **** }
+ 1745              		.loc 1 80 2 view .LVU548
+  80:src/btctl/btctl.c **** }
+ 1746              		.loc 1 80 32 is_stmt 0 view .LVU549
+ 1747 0168 008A     		ldrh	r0, [r0, #16]
+ 1748              	.LVL137:
+ARM GAS  /tmp/ccYkWmTA.s 			page 49
+
+
+  80:src/btctl/btctl.c **** }
+ 1749              		.loc 1 80 2 view .LVU550
+ 1750 016a 00F03F00 		and	r0, r0, #63
+ 1751 016e FFF7FEFF 		bl	btphy_rf_set_freq_off
+ 1752              	.LVL138:
+  80:src/btctl/btctl.c **** }
+ 1753              		.loc 1 80 2 view .LVU551
+ 1754              	.LBE474:
+ 1755              	.LBE473:
+ 192:src/btctl/btctl.c **** 	case BTCTL_SET_MAX_AC_ERRORS_REQ:
+ 1756              		.loc 1 192 3 is_stmt 1 view .LVU552
+ 1757              	.LBB476:
+ 1758              	.LBB475:
+  81:src/btctl/btctl.c **** 
+ 1759              		.loc 1 81 1 is_stmt 0 view .LVU553
+ 1760 0172 69E7     		b	.L61
+ 1761              	.LVL139:
+ 1762              	.L77:
+  81:src/btctl/btctl.c **** 
+ 1763              		.loc 1 81 1 view .LVU554
+ 1764              	.LBE475:
+ 1765              	.LBE476:
+ 1766              	.LBB477:
+ 1767              	.LBB472:
+ 162:src/btctl/btctl.c **** 		msg_free(msg);
+ 1768              		.loc 1 162 3 is_stmt 1 view .LVU555
+ 1769 0174 0B48     		ldr	r0, .L78+32
+ 1770              	.LVL140:
+ 162:src/btctl/btctl.c **** 		msg_free(msg);
+ 1771              		.loc 1 162 3 is_stmt 0 view .LVU556
+ 1772 0176 FFF7FEFF 		bl	cprintf
+ 1773              	.LVL141:
+ 163:src/btctl/btctl.c **** 		return;
+ 1774              		.loc 1 163 3 is_stmt 1 view .LVU557
+ 1775              	.LBB470:
+ 1776              	.LBI470:
+  26:include/ubtbr/msg.h **** {
+ 1777              		.loc 3 26 20 view .LVU558
+ 1778              	.LBB471:
+  28:include/ubtbr/msg.h **** }
+ 1779              		.loc 3 28 2 view .LVU559
+ 1780 017a 2046     		mov	r0, r4
+ 1781 017c FFF7FEFF 		bl	mem_pool_free
+ 1782              	.LVL142:
+  28:include/ubtbr/msg.h **** }
+ 1783              		.loc 3 28 2 is_stmt 0 view .LVU560
+ 1784              	.LBE471:
+ 1785              	.LBE470:
+ 164:src/btctl/btctl.c **** 	}
+ 1786              		.loc 1 164 3 is_stmt 1 view .LVU561
+ 1787 0180 65E7     		b	.L66
+ 1788              	.L79:
+ 1789 0182 00BF     		.align	2
+ 1790              	.L78:
+ 1791 0184 04000000 		.word	.LANCHOR0+4
+ 1792 0188 90000000 		.word	.LC8
+ 1793 018c 54000000 		.word	.LANCHOR0+84
+ARM GAS  /tmp/ccYkWmTA.s 			page 50
+
+
+ 1794 0190 54000000 		.word	.LC5
+ 1795 0194 00800040 		.word	1073774592
+ 1796 0198 00000000 		.word	.LANCHOR0
+ 1797 019c 00000000 		.word	hop_cfg_afh
+ 1798 01a0 80000000 		.word	.LC7
+ 1799 01a4 64000000 		.word	.LC6
+ 1800              	.LBE472:
+ 1801              	.LBE477:
+ 1802              	.LBE478:
+ 1803              	.LBE479:
+ 1804              		.cfi_endproc
+ 1805              	.LFE48:
+ 1807              		.section	.text.btctl_init,"ax",%progbits
+ 1808              		.align	1
+ 1809              		.p2align 2,,3
+ 1810              		.global	btctl_init
+ 1811              		.syntax unified
+ 1812              		.thumb
+ 1813              		.thumb_func
+ 1815              	btctl_init:
+ 1816              	.LFB53:
+ 314:src/btctl/btctl.c **** 
+ 315:src/btctl/btctl.c **** void btctl_init(void)
+ 316:src/btctl/btctl.c **** {
+ 1817              		.loc 1 316 1 view -0
+ 1818              		.cfi_startproc
+ 1819              		@ args = 0, pretend = 0, frame = 0
+ 1820              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1821 0000 10B5     		push	{r4, lr}
+ 1822              		.cfi_def_cfa_offset 8
+ 1823              		.cfi_offset 4, -8
+ 1824              		.cfi_offset 14, -4
+ 317:src/btctl/btctl.c **** 	btctl.state = BTCTL_STATE_STANDBY;
+ 1825              		.loc 1 317 2 view .LVU563
+ 1826              		.loc 1 317 14 is_stmt 0 view .LVU564
+ 1827 0002 0023     		movs	r3, #0
+ 1828 0004 084C     		ldr	r4, .L81
+ 318:src/btctl/btctl.c **** 	btctl.eir_msg = NULL;
+ 319:src/btctl/btctl.c **** 	btctl.eir_pkt = NULL;
+ 320:src/btctl/btctl.c **** 	msg_queue_init(&btctl.rx_q);
+ 1829              		.loc 1 320 2 view .LVU565
+ 1830 0006 201D     		adds	r0, r4, #4
+ 318:src/btctl/btctl.c **** 	btctl.eir_msg = NULL;
+ 1831              		.loc 1 318 16 view .LVU566
+ 1832 0008 C4E91F33 		strd	r3, r3, [r4, #124]
+ 317:src/btctl/btctl.c **** 	btctl.state = BTCTL_STATE_STANDBY;
+ 1833              		.loc 1 317 14 view .LVU567
+ 1834 000c 2370     		strb	r3, [r4]
+ 318:src/btctl/btctl.c **** 	btctl.eir_msg = NULL;
+ 1835              		.loc 1 318 2 is_stmt 1 view .LVU568
+ 319:src/btctl/btctl.c **** 	msg_queue_init(&btctl.rx_q);
+ 1836              		.loc 1 319 2 view .LVU569
+ 1837              		.loc 1 320 2 view .LVU570
+ 1838 000e FFF7FEFF 		bl	msg_queue_init
+ 1839              	.LVL143:
+ 321:src/btctl/btctl.c **** 	msg_queue_init(&btctl.tx_q);
+ 1840              		.loc 1 321 2 view .LVU571
+ARM GAS  /tmp/ccYkWmTA.s 			page 51
+
+
+ 1841 0012 04F12C00 		add	r0, r4, #44
+ 1842 0016 FFF7FEFF 		bl	msg_queue_init
+ 1843              	.LVL144:
+ 322:src/btctl/btctl.c **** 	msg_queue_init(&btctl.acl_tx_q);
+ 1844              		.loc 1 322 2 view .LVU572
+ 1845 001a 04F15400 		add	r0, r4, #84
+ 323:src/btctl/btctl.c **** }
+ 1846              		.loc 1 323 1 is_stmt 0 view .LVU573
+ 1847 001e BDE81040 		pop	{r4, lr}
+ 1848              		.cfi_restore 14
+ 1849              		.cfi_restore 4
+ 1850              		.cfi_def_cfa_offset 0
+ 322:src/btctl/btctl.c **** 	msg_queue_init(&btctl.acl_tx_q);
+ 1851              		.loc 1 322 2 view .LVU574
+ 1852 0022 FFF7FEBF 		b	msg_queue_init
+ 1853              	.LVL145:
+ 1854              	.L82:
+ 1855 0026 00BF     		.align	2
+ 1856              	.L81:
+ 1857 0028 00000000 		.word	.LANCHOR0
+ 1858              		.cfi_endproc
+ 1859              	.LFE53:
+ 1861              		.section	.rodata.str1.4
+ 1862 00a9 000000   		.align	2
+ 1863              	.LC9:
+ 1864 00ac 5354414E 		.ascii	"STANDBY\000"
+ 1864      44425900 
+ 1865              		.align	2
+ 1866              	.LC10:
+ 1867 00b4 494E5155 		.ascii	"INQUIRY\000"
+ 1867      49525900 
+ 1868              		.align	2
+ 1869              	.LC11:
+ 1870 00bc 50414745 		.ascii	"PAGE\000"
+ 1870      00
+ 1871 00c1 000000   		.align	2
+ 1872              	.LC12:
+ 1873 00c4 494E5155 		.ascii	"INQUIRY_SCAN\000"
+ 1873      4952595F 
+ 1873      5343414E 
+ 1873      00
+ 1874 00d1 000000   		.align	2
+ 1875              	.LC13:
+ 1876 00d4 50414745 		.ascii	"PAGE_SCAN\000"
+ 1876      5F534341 
+ 1876      4E00
+ 1877              		.global	btctl
+ 1878              		.section	.rodata
+ 1879              		.align	2
+ 1880              		.set	.LANCHOR1,. + 0
+ 1883              	btctl_state_name_tbl.0:
+ 1884 0000 AC000000 		.word	.LC9
+ 1885 0004 B4000000 		.word	.LC10
+ 1886 0008 BC000000 		.word	.LC11
+ 1887 000c 10000000 		.word	.LC2
+ 1888 0010 C4000000 		.word	.LC12
+ 1889 0014 D4000000 		.word	.LC13
+ARM GAS  /tmp/ccYkWmTA.s 			page 52
+
+
+ 1890              		.bss
+ 1891              		.align	2
+ 1892              		.set	.LANCHOR0,. + 0
+ 1895              	btctl:
+ 1896 0000 00000000 		.space	132
+ 1896      00000000 
+ 1896      00000000 
+ 1896      00000000 
+ 1896      00000000 
+ 1899              	afh_buf.1:
+ 1900 0084 00000000 		.space	11
+ 1900      00000000 
+ 1900      000000
+ 1901              		.text
+ 1902              	.Letext0:
+ 1903              		.file 5 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 1904              		.file 6 "/usr/lib/gcc/arm-none-eabi/15/include/stddef.h"
+ 1905              		.file 7 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 1906              		.file 8 "../../host/libubertooth/src/ubertooth_interface.h"
+ 1907              		.file 9 "include/ubtbr/queue.h"
+ 1908              		.file 10 "include/ubtbr/btphy.h"
+ 1909              		.file 11 "include/ubtbr/hop.h"
+ 1910              		.file 12 "include/ubtbr/mem_pool.h"
+ 1911              		.file 13 "/usr/arm-none-eabi/include/string.h"
+ 1912              		.file 14 "include/ubtbr/monitor_state.h"
+ 1913              		.file 15 "include/ubtbr/page_scan_state.h"
+ 1914              		.file 16 "include/ubtbr/inquiry_scan_state.h"
+ 1915              		.file 17 "include/ubtbr/paging_state.h"
+ 1916              		.file 18 "include/ubtbr/inquiry_state.h"
+ 1917              		.file 19 "include/ubtbr/rf.h"
+ 1918              		.file 20 "../common/ubertooth.h"
+ 1919              		.file 21 "include/ubtbr/debug.h"
+ 1920              		.file 22 "include/ubtbr/ubertooth_usb.h"
+ARM GAS  /tmp/ccYkWmTA.s 			page 53
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 btctl.c
+     /tmp/ccYkWmTA.s:19     .text.btctl_send_state_resp:00000000 $t
+     /tmp/ccYkWmTA.s:26     .text.btctl_send_state_resp:00000000 btctl_send_state_resp
+     /tmp/ccYkWmTA.s:222    .text.btctl_send_state_resp:0000003c $d
+     /tmp/ccYkWmTA.s:227    .rodata.str1.4:00000000 $d
+     /tmp/ccYkWmTA.s:243    .text.btctl_set_state:00000000 $t
+     /tmp/ccYkWmTA.s:250    .text.btctl_set_state:00000000 btctl_set_state
+     /tmp/ccYkWmTA.s:910    .text.btctl_set_state:00000124 $d
+     /tmp/ccYkWmTA.s:937    .text.btctl_work:00000000 $t
+     /tmp/ccYkWmTA.s:944    .text.btctl_work:00000000 btctl_work
+     /tmp/ccYkWmTA.s:1037   .text.btctl_work:00000020 $d
+     /tmp/ccYkWmTA.s:1791   .text.btctl_work:00000184 $d
+     /tmp/ccYkWmTA.s:1808   .text.btctl_init:00000000 $t
+     /tmp/ccYkWmTA.s:1815   .text.btctl_init:00000000 btctl_init
+     /tmp/ccYkWmTA.s:1857   .text.btctl_init:00000028 $d
+     /tmp/ccYkWmTA.s:1895   .bss:00000000 btctl
+     /tmp/ccYkWmTA.s:1879   .rodata:00000000 $d
+     /tmp/ccYkWmTA.s:1883   .rodata:00000000 btctl_state_name_tbl.0
+     /tmp/ccYkWmTA.s:1891   .bss:00000000 $d
+     /tmp/ccYkWmTA.s:1899   .bss:00000084 afh_buf.1
+     /tmp/ccYkWmTA.s:1070   .text.btctl_work:00000041 $d
+     /tmp/ccYkWmTA.s:1070   .text.btctl_work:00000042 $t
+
+UNDEFINED SYMBOLS
+mem_pool_alloc
+msg_enqueue
+cprintf
+die
+msg_dequeue
+mem_pool_free
+page_scan_state_setup
+paging_state_setup
+inquiry_state_setup
+btphy_set_bdaddr
+inquiry_scan_state_setup
+monitor1_state_setup
+btphy_rf_set_max_ac_errors
+usb_work
+reset
+memcpy
+btphy_timer_add
+btphy_rf_set_freq_off
+hop_cfg_afh
+msg_queue_init

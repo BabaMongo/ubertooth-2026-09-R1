@@ -1,0 +1,1735 @@
+ARM GAS  /tmp/ccWPuOFR.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"rf.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/btphy/rf.c"
+  18              		.section	.rodata.str1.4,"aMS",%progbits,1
+  19              		.align	2
+  20              	.LC0:
+  21 0000 4449457C 		.ascii	"DIE|No phy int handler\012\000"
+  21      4E6F2070 
+  21      68792069 
+  21      6E742068 
+  21      616E646C 
+  22              		.section	.text.EINT3_IRQHandler,"ax",%progbits
+  23              		.align	1
+  24              		.p2align 2,,3
+  25              		.global	EINT3_IRQHandler
+  26              		.syntax unified
+  27              		.thumb
+  28              		.thumb_func
+  30              	EINT3_IRQHandler:
+  31              	.LFB8:
+   1:src/btphy/rf.c **** /* RF driver
+   2:src/btphy/rf.c ****  *
+   3:src/btphy/rf.c ****  * Copyright 2020 Etienne Helluy-Lafont, Univ. Lille, CNRS.
+   4:src/btphy/rf.c ****  *
+   5:src/btphy/rf.c ****  * This file is part of Project Ubertooth.
+   6:src/btphy/rf.c ****  *
+   7:src/btphy/rf.c ****  * This program is free software; you can redistribute it and/or modify
+   8:src/btphy/rf.c ****  * it under the terms of the GNU General Public License as published by
+   9:src/btphy/rf.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  10:src/btphy/rf.c ****  * any later version.
+  11:src/btphy/rf.c ****  *
+  12:src/btphy/rf.c ****  * This program is distributed in the hope that it will be useful,
+  13:src/btphy/rf.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  14:src/btphy/rf.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  15:src/btphy/rf.c ****  * GNU General Public License for more details.
+  16:src/btphy/rf.c ****  *
+  17:src/btphy/rf.c ****  * You should have received a copy of the GNU General Public License
+  18:src/btphy/rf.c ****  * along with this program; see the file COPYING.  If not, write to
+  19:src/btphy/rf.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  20:src/btphy/rf.c ****  * Boston, MA 02110-1301, USA.
+  21:src/btphy/rf.c ****  */
+  22:src/btphy/rf.c **** #include <ubertooth.h>
+  23:src/btphy/rf.c **** #include <ubtbr/cfg.h>
+ARM GAS  /tmp/ccWPuOFR.s 			page 2
+
+
+  24:src/btphy/rf.c **** #include <ubtbr/debug.h>
+  25:src/btphy/rf.c **** #include <ubtbr/rf.h>
+  26:src/btphy/rf.c **** #include <ubtbr/ubertooth_dma.h>
+  27:src/btphy/rf.c **** #include <ubtbr/system.h>
+  28:src/btphy/rf.c **** 
+  29:src/btphy/rf.c **** volatile rf_state_t rf_state = {0};
+  30:src/btphy/rf.c **** 
+  31:src/btphy/rf.c **** /* Interrupt handler for GIO6 */
+  32:src/btphy/rf.c **** void EINT3_IRQHandler(void)
+  33:src/btphy/rf.c **** {
+  32              		.loc 1 33 1 view -0
+  33              		.cfi_startproc
+  34              		@ args = 0, pretend = 0, frame = 0
+  35              		@ frame_needed = 0, uses_anonymous_args = 0
+  36 0000 10B5     		push	{r4, lr}
+  37              		.cfi_def_cfa_offset 8
+  38              		.cfi_offset 4, -8
+  39              		.cfi_offset 14, -4
+  34:src/btphy/rf.c **** 	/* Clear interrupt */
+  35:src/btphy/rf.c **** 	IO2IntClr |= PIN_GIO6;
+  40              		.loc 1 35 2 view .LVU1
+  41 0002 0949     		ldr	r1, .L5
+  36:src/btphy/rf.c **** 
+  37:src/btphy/rf.c **** 	if (!rf_state.int_handler)
+  42              		.loc 1 37 15 is_stmt 0 view .LVU2
+  43 0004 094A     		ldr	r2, .L5+4
+  35:src/btphy/rf.c **** 
+  44              		.loc 1 35 2 view .LVU3
+  45 0006 D1F8AC30 		ldr	r3, [r1, #172]
+  35:src/btphy/rf.c **** 
+  46              		.loc 1 35 12 view .LVU4
+  47 000a 43F00403 		orr	r3, r3, #4
+  48 000e C1F8AC30 		str	r3, [r1, #172]
+  49              		.loc 1 37 2 is_stmt 1 view .LVU5
+  50              		.loc 1 37 15 is_stmt 0 view .LVU6
+  51 0012 5368     		ldr	r3, [r2, #4]
+  52              		.loc 1 37 5 view .LVU7
+  53 0014 23B1     		cbz	r3, .L4
+  38:src/btphy/rf.c **** 	{
+  39:src/btphy/rf.c **** 		DIE("No phy int handler");
+  40:src/btphy/rf.c **** 	}
+  41:src/btphy/rf.c **** 	rf_state.int_handler(rf_state.int_arg);
+  54              		.loc 1 41 2 is_stmt 1 view .LVU8
+  42:src/btphy/rf.c **** }
+  55              		.loc 1 42 1 is_stmt 0 view .LVU9
+  56 0016 BDE81040 		pop	{r4, lr}
+  57              		.cfi_remember_state
+  58              		.cfi_restore 14
+  59              		.cfi_restore 4
+  60              		.cfi_def_cfa_offset 0
+  41:src/btphy/rf.c **** }
+  61              		.loc 1 41 10 view .LVU10
+  62 001a 5368     		ldr	r3, [r2, #4]
+  41:src/btphy/rf.c **** }
+  63              		.loc 1 41 31 view .LVU11
+  64 001c 9068     		ldr	r0, [r2, #8]
+  41:src/btphy/rf.c **** }
+ARM GAS  /tmp/ccWPuOFR.s 			page 3
+
+
+  65              		.loc 1 41 2 view .LVU12
+  66 001e 1847     		bx	r3	@ indirect register sibling call
+  67              	.LVL0:
+  68              	.L4:
+  69              		.cfi_restore_state
+  39:src/btphy/rf.c **** 	}
+  70              		.loc 1 39 3 is_stmt 1 view .LVU13
+  71 0020 0348     		ldr	r0, .L5+8
+  72 0022 FFF7FEFF 		bl	die
+  73              	.LVL1:
+  74              	.L6:
+  75 0026 00BF     		.align	2
+  76              	.L5:
+  77 0028 00800240 		.word	1073905664
+  78 002c 00000000 		.word	.LANCHOR0
+  79 0030 00000000 		.word	.LC0
+  80              		.cfi_endproc
+  81              	.LFE8:
+  83              		.section	.text.btphy_rf_enable_int,"ax",%progbits
+  84              		.align	1
+  85              		.p2align 2,,3
+  86              		.global	btphy_rf_enable_int
+  87              		.syntax unified
+  88              		.thumb
+  89              		.thumb_func
+  91              	btphy_rf_enable_int:
+  92              	.LVL2:
+  93              	.LFB9:
+  43:src/btphy/rf.c **** 
+  44:src/btphy/rf.c **** void btphy_rf_enable_int(btbr_int_cb_t cb, void*cb_arg, int tx)
+  45:src/btphy/rf.c **** {
+  94              		.loc 1 45 1 view -0
+  95              		.cfi_startproc
+  96              		@ args = 0, pretend = 0, frame = 0
+  97              		@ frame_needed = 0, uses_anonymous_args = 0
+  98              		.loc 1 45 1 is_stmt 0 view .LVU15
+  99 0000 10B5     		push	{r4, lr}
+ 100              		.cfi_def_cfa_offset 8
+ 101              		.cfi_offset 4, -8
+ 102              		.cfi_offset 14, -4
+  46:src/btphy/rf.c **** 	/* clear pending */
+  47:src/btphy/rf.c **** 	ICPR0 = ISER0_ISE_EINT3;
+ 103              		.loc 1 47 2 is_stmt 1 view .LVU16
+ 104              		.loc 1 47 8 is_stmt 0 view .LVU17
+ 105 0002 4FF40014 		mov	r4, #2097152
+ 106 0006 4FF0E02C 		mov	ip, #-536813568
+  48:src/btphy/rf.c **** 	IO2IntClr |= PIN_GIO6;
+ 107              		.loc 1 48 2 view .LVU18
+ 108 000a 154B     		ldr	r3, .L10
+  47:src/btphy/rf.c **** 	IO2IntClr |= PIN_GIO6;
+ 109              		.loc 1 47 8 view .LVU19
+ 110 000c CCF88042 		str	r4, [ip, #640]
+ 111              		.loc 1 48 2 is_stmt 1 view .LVU20
+ 112 0010 D3F8AC40 		ldr	r4, [r3, #172]
+  49:src/btphy/rf.c **** 
+  50:src/btphy/rf.c **** 	rf_state.int_handler = cb;
+ 113              		.loc 1 50 23 is_stmt 0 view .LVU21
+ARM GAS  /tmp/ccWPuOFR.s 			page 4
+
+
+ 114 0014 DFF84CE0 		ldr	lr, .L10+4
+  48:src/btphy/rf.c **** 
+ 115              		.loc 1 48 12 view .LVU22
+ 116 0018 44F00404 		orr	r4, r4, #4
+ 117 001c C3F8AC40 		str	r4, [r3, #172]
+ 118              		.loc 1 50 2 is_stmt 1 view .LVU23
+ 119              		.loc 1 50 23 is_stmt 0 view .LVU24
+ 120 0020 CEF80400 		str	r0, [lr, #4]
+  51:src/btphy/rf.c **** 	rf_state.int_arg = cb_arg;
+ 121              		.loc 1 51 2 is_stmt 1 view .LVU25
+ 122              		.loc 1 51 19 is_stmt 0 view .LVU26
+ 123 0024 CEF80810 		str	r1, [lr, #8]
+  52:src/btphy/rf.c **** 
+  53:src/btphy/rf.c **** 	/* Configure interrupt on GIO6 rising edge */
+  54:src/btphy/rf.c **** 	if (tx)
+ 124              		.loc 1 54 2 is_stmt 1 view .LVU27
+ 125              		.loc 1 54 5 is_stmt 0 view .LVU28
+ 126 0028 62B1     		cbz	r2, .L8
+  55:src/btphy/rf.c **** 		IO2IntEnR |= PIN_GIO6;
+ 127              		.loc 1 55 3 is_stmt 1 view .LVU29
+ 128 002a D3F8B020 		ldr	r2, [r3, #176]
+ 129              	.LVL3:
+ 130              		.loc 1 55 13 is_stmt 0 view .LVU30
+ 131 002e 42F00402 		orr	r2, r2, #4
+ 132 0032 C3F8B020 		str	r2, [r3, #176]
+  56:src/btphy/rf.c **** 	else
+  57:src/btphy/rf.c **** 		IO2IntEnF |= PIN_GIO6;
+  58:src/btphy/rf.c **** 
+  59:src/btphy/rf.c **** 	/* Enable */
+  60:src/btphy/rf.c **** 	ISER0 = ISER0_ISE_EINT3;
+ 133              		.loc 1 60 2 is_stmt 1 view .LVU31
+ 134              		.loc 1 60 8 is_stmt 0 view .LVU32
+ 135 0036 4FF0E023 		mov	r3, #-536813568
+ 136 003a 4FF40012 		mov	r2, #2097152
+ 137 003e C3F80021 		str	r2, [r3, #256]
+  61:src/btphy/rf.c **** }
+ 138              		.loc 1 61 1 view .LVU33
+ 139 0042 10BD     		pop	{r4, pc}
+ 140              	.LVL4:
+ 141              	.L8:
+  57:src/btphy/rf.c **** 
+ 142              		.loc 1 57 3 is_stmt 1 view .LVU34
+ 143 0044 D3F8B420 		ldr	r2, [r3, #180]
+ 144              	.LVL5:
+  57:src/btphy/rf.c **** 
+ 145              		.loc 1 57 13 is_stmt 0 view .LVU35
+ 146 0048 42F00402 		orr	r2, r2, #4
+ 147 004c C3F8B420 		str	r2, [r3, #180]
+  60:src/btphy/rf.c **** }
+ 148              		.loc 1 60 2 is_stmt 1 view .LVU36
+  60:src/btphy/rf.c **** }
+ 149              		.loc 1 60 8 is_stmt 0 view .LVU37
+ 150 0050 4FF0E023 		mov	r3, #-536813568
+ 151 0054 4FF40012 		mov	r2, #2097152
+ 152 0058 C3F80021 		str	r2, [r3, #256]
+ 153              		.loc 1 61 1 view .LVU38
+ 154 005c 10BD     		pop	{r4, pc}
+ARM GAS  /tmp/ccWPuOFR.s 			page 5
+
+
+ 155              	.L11:
+ 156 005e 00BF     		.align	2
+ 157              	.L10:
+ 158 0060 00800240 		.word	1073905664
+ 159 0064 00000000 		.word	.LANCHOR0
+ 160              		.cfi_endproc
+ 161              	.LFE9:
+ 163              		.section	.text.btphy_rf_disable_int,"ax",%progbits
+ 164              		.align	1
+ 165              		.p2align 2,,3
+ 166              		.global	btphy_rf_disable_int
+ 167              		.syntax unified
+ 168              		.thumb
+ 169              		.thumb_func
+ 171              	btphy_rf_disable_int:
+ 172              	.LFB10:
+  62:src/btphy/rf.c **** 
+  63:src/btphy/rf.c **** void btphy_rf_disable_int(void)
+  64:src/btphy/rf.c **** {
+ 173              		.loc 1 64 1 is_stmt 1 view -0
+ 174              		.cfi_startproc
+ 175              		@ args = 0, pretend = 0, frame = 0
+ 176              		@ frame_needed = 0, uses_anonymous_args = 0
+ 177              		@ link register save eliminated.
+  65:src/btphy/rf.c **** 	/* Mask interrupt */
+  66:src/btphy/rf.c **** 	ICER0 = ISER0_ISE_EINT3;
+ 178              		.loc 1 66 2 view .LVU40
+ 179              		.loc 1 66 8 is_stmt 0 view .LVU41
+ 180 0000 4FF0E021 		mov	r1, #-536813568
+ 181 0004 4FF40010 		mov	r0, #2097152
+  67:src/btphy/rf.c **** 
+  68:src/btphy/rf.c **** 	IO2IntEnR &= ~PIN_GIO6;
+ 182              		.loc 1 68 12 view .LVU42
+ 183 0008 0B4B     		ldr	r3, .L13
+  66:src/btphy/rf.c **** 
+ 184              		.loc 1 66 8 view .LVU43
+ 185 000a C1F88001 		str	r0, [r1, #384]
+ 186              		.loc 1 68 2 is_stmt 1 view .LVU44
+ 187              		.loc 1 68 12 is_stmt 0 view .LVU45
+ 188 000e D3F8B020 		ldr	r2, [r3, #176]
+ 189 0012 22F00402 		bic	r2, r2, #4
+ 190 0016 C3F8B020 		str	r2, [r3, #176]
+  69:src/btphy/rf.c **** 	IO2IntEnF &= ~PIN_GIO6;
+ 191              		.loc 1 69 2 is_stmt 1 view .LVU46
+ 192              		.loc 1 69 12 is_stmt 0 view .LVU47
+ 193 001a D3F8B420 		ldr	r2, [r3, #180]
+ 194 001e 22F00402 		bic	r2, r2, #4
+ 195 0022 C3F8B420 		str	r2, [r3, #180]
+  70:src/btphy/rf.c **** 
+  71:src/btphy/rf.c **** 	/* Clear pending interrupt */
+  72:src/btphy/rf.c **** 	IO2IntClr |= PIN_GIO6;
+ 196              		.loc 1 72 2 is_stmt 1 view .LVU48
+ 197 0026 D3F8AC20 		ldr	r2, [r3, #172]
+ 198              		.loc 1 72 12 is_stmt 0 view .LVU49
+ 199 002a 42F00402 		orr	r2, r2, #4
+ 200 002e C3F8AC20 		str	r2, [r3, #172]
+  73:src/btphy/rf.c **** 	ICPR0 = ISER0_ISE_EINT3;
+ARM GAS  /tmp/ccWPuOFR.s 			page 6
+
+
+ 201              		.loc 1 73 2 is_stmt 1 view .LVU50
+ 202              		.loc 1 73 8 is_stmt 0 view .LVU51
+ 203 0032 C1F88002 		str	r0, [r1, #640]
+  74:src/btphy/rf.c **** }
+ 204              		.loc 1 74 1 view .LVU52
+ 205 0036 7047     		bx	lr
+ 206              	.L14:
+ 207              		.align	2
+ 208              	.L13:
+ 209 0038 00800240 		.word	1073905664
+ 210              		.cfi_endproc
+ 211              	.LFE10:
+ 213              		.section	.rodata.str1.4
+ 214              		.align	2
+ 215              	.LC1:
+ 216 0018 66726571 		.ascii	"freq off reg: %d\012\000"
+ 216      206F6666 
+ 216      20726567 
+ 216      3A202564 
+ 216      0A00
+ 217              		.section	.text.btphy_rf_set_freq_off,"ax",%progbits
+ 218              		.align	1
+ 219              		.p2align 2,,3
+ 220              		.global	btphy_rf_set_freq_off
+ 221              		.syntax unified
+ 222              		.thumb
+ 223              		.thumb_func
+ 225              	btphy_rf_set_freq_off:
+ 226              	.LVL6:
+ 227              	.LFB11:
+  75:src/btphy/rf.c **** 
+  76:src/btphy/rf.c **** void btphy_rf_set_freq_off(uint8_t off)
+  77:src/btphy/rf.c **** {
+ 228              		.loc 1 77 1 is_stmt 1 view -0
+ 229              		.cfi_startproc
+ 230              		@ args = 0, pretend = 0, frame = 0
+ 231              		@ frame_needed = 0, uses_anonymous_args = 0
+ 232              		.loc 1 77 1 is_stmt 0 view .LVU54
+ 233 0000 38B5     		push	{r3, r4, r5, lr}
+ 234              		.cfi_def_cfa_offset 16
+ 235              		.cfi_offset 3, -16
+ 236              		.cfi_offset 4, -12
+ 237              		.cfi_offset 5, -8
+ 238              		.cfi_offset 14, -4
+  78:src/btphy/rf.c **** 	uint32_t flags = irq_save_disable();
+ 239              		.loc 1 78 2 is_stmt 1 view .LVU55
+ 240              	.LBB14:
+ 241              	.LBI14:
+ 242              		.file 2 "include/ubtbr/system.h"
+   1:include/ubtbr/system.h **** #ifndef __SYSTEM_H
+   2:include/ubtbr/system.h **** #define __SYSTEM_H
+   3:include/ubtbr/system.h **** #include <stdint.h>
+   4:include/ubtbr/system.h **** 
+   5:include/ubtbr/system.h **** static inline uint32_t irq_save_disable(void)
+ 243              		.loc 2 5 24 view .LVU56
+ 244              	.LBB15:
+   6:include/ubtbr/system.h **** {
+ARM GAS  /tmp/ccWPuOFR.s 			page 7
+
+
+   7:include/ubtbr/system.h **** 	uint32_t primask;
+ 245              		.loc 2 7 2 view .LVU57
+   8:include/ubtbr/system.h **** 
+   9:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 246              		.loc 2 9 2 view .LVU58
+ 247              	.LBE15:
+ 248              	.LBE14:
+  77:src/btphy/rf.c **** 	uint32_t flags = irq_save_disable();
+ 249              		.loc 1 77 1 is_stmt 0 view .LVU59
+ 250 0002 0346     		mov	r3, r0
+ 251              	.LBB17:
+ 252              	.LBB16:
+ 253              		.loc 2 9 2 view .LVU60
+ 254              		.syntax unified
+ 255              	@ 9 "include/ubtbr/system.h" 1
+ 256 0004 EFF31085 			mrs    r5, primask
+ 257 0008 72B6     		cpsid  i
+ 258              	
+ 259              	@ 0 "" 2
+  10:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+  11:include/ubtbr/system.h **** 	"\tcpsid  i\n"
+  12:include/ubtbr/system.h **** 	: "=r" (primask)
+  13:include/ubtbr/system.h **** 	:
+  14:include/ubtbr/system.h **** 	: "memory");
+  15:include/ubtbr/system.h **** 
+  16:include/ubtbr/system.h **** 	return primask;
+ 260              		.loc 2 16 2 is_stmt 1 view .LVU61
+ 261              	.LVL7:
+ 262              		.loc 2 16 2 is_stmt 0 view .LVU62
+ 263              		.thumb
+ 264              		.syntax unified
+ 265              	.LBE16:
+ 266              	.LBE17:
+  79:src/btphy/rf.c **** 
+  80:src/btphy/rf.c **** 	rf_state.freq_off_reg = off;
+ 267              		.loc 1 80 2 is_stmt 1 view .LVU63
+ 268              		.loc 1 80 24 is_stmt 0 view .LVU64
+ 269 000a 094C     		ldr	r4, .L16
+  81:src/btphy/rf.c **** 	cc2400_set(MDMCTRL, 0x0029|(rf_state.freq_off_reg<<7)); // 160 kHz frequency deviation
+ 270              		.loc 1 81 2 view .LVU65
+ 271 000c 0320     		movs	r0, #3
+ 272              	.LVL8:
+  80:src/btphy/rf.c **** 	cc2400_set(MDMCTRL, 0x0029|(rf_state.freq_off_reg<<7)); // 160 kHz frequency deviation
+ 273              		.loc 1 80 24 view .LVU66
+ 274 000e 2380     		strh	r3, [r4]	@ movhi
+ 275              		.loc 1 81 2 is_stmt 1 view .LVU67
+ 276              		.loc 1 81 38 is_stmt 0 view .LVU68
+ 277 0010 2188     		ldrh	r1, [r4]
+ 278              		.loc 1 81 28 view .LVU69
+ 279 0012 C901     		lsls	r1, r1, #7
+ 280 0014 41F02901 		orr	r1, r1, #41
+ 281              		.loc 1 81 2 view .LVU70
+ 282 0018 89B2     		uxth	r1, r1
+ 283 001a FFF7FEFF 		bl	cc2400_set
+ 284              	.LVL9:
+  82:src/btphy/rf.c **** 	irq_restore(flags);
+ 285              		.loc 1 82 2 is_stmt 1 view .LVU71
+ARM GAS  /tmp/ccWPuOFR.s 			page 8
+
+
+ 286              	.LBB18:
+ 287              	.LBI18:
+  17:include/ubtbr/system.h **** }
+  18:include/ubtbr/system.h **** 
+  19:include/ubtbr/system.h **** static inline void irq_restore(uint32_t primask)
+ 288              		.loc 2 19 20 view .LVU72
+ 289              	.LBB19:
+  20:include/ubtbr/system.h **** {
+  21:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 290              		.loc 2 21 2 view .LVU73
+ 291              		.syntax unified
+ 292              	@ 21 "include/ubtbr/system.h" 1
+ 293 001e 85F31088 		msr primask, r5
+ 294              	@ 0 "" 2
+ 295              	.LVL10:
+ 296              		.loc 2 21 2 is_stmt 0 view .LVU74
+ 297              		.thumb
+ 298              		.syntax unified
+ 299              	.LBE19:
+ 300              	.LBE18:
+  83:src/btphy/rf.c **** 	cprintf("freq off reg: %d\n", rf_state.freq_off_reg);
+ 301              		.loc 1 83 2 is_stmt 1 view .LVU75
+ 302              		.loc 1 83 40 is_stmt 0 view .LVU76
+ 303 0022 2188     		ldrh	r1, [r4]
+ 304              		.loc 1 83 2 view .LVU77
+ 305 0024 0348     		ldr	r0, .L16+4
+ 306 0026 89B2     		uxth	r1, r1
+  84:src/btphy/rf.c **** }
+ 307              		.loc 1 84 1 view .LVU78
+ 308 0028 BDE83840 		pop	{r3, r4, r5, lr}
+ 309              		.cfi_restore 14
+ 310              		.cfi_restore 5
+ 311              		.cfi_restore 4
+ 312              		.cfi_restore 3
+ 313              		.cfi_def_cfa_offset 0
+ 314              	.LVL11:
+  83:src/btphy/rf.c **** 	cprintf("freq off reg: %d\n", rf_state.freq_off_reg);
+ 315              		.loc 1 83 2 view .LVU79
+ 316 002c FFF7FEBF 		b	cprintf
+ 317              	.LVL12:
+ 318              	.L17:
+ 319              		.align	2
+ 320              	.L16:
+ 321 0030 00000000 		.word	.LANCHOR0
+ 322 0034 18000000 		.word	.LC1
+ 323              		.cfi_endproc
+ 324              	.LFE11:
+ 326              		.section	.rodata.str1.4
+ 327 002a 0000     		.align	2
+ 328              	.LC2:
+ 329 002c 6D617820 		.ascii	"max ac errors: %d\012\000"
+ 329      61632065 
+ 329      72726F72 
+ 329      733A2025 
+ 329      640A00
+ 330              		.section	.text.btphy_rf_set_max_ac_errors,"ax",%progbits
+ 331              		.align	1
+ARM GAS  /tmp/ccWPuOFR.s 			page 9
+
+
+ 332              		.p2align 2,,3
+ 333              		.global	btphy_rf_set_max_ac_errors
+ 334              		.syntax unified
+ 335              		.thumb
+ 336              		.thumb_func
+ 338              	btphy_rf_set_max_ac_errors:
+ 339              	.LVL13:
+ 340              	.LFB12:
+  85:src/btphy/rf.c **** 
+  86:src/btphy/rf.c **** void btphy_rf_set_max_ac_errors(uint8_t max_ac_errors)
+  87:src/btphy/rf.c **** {
+ 341              		.loc 1 87 1 is_stmt 1 view -0
+ 342              		.cfi_startproc
+ 343              		@ args = 0, pretend = 0, frame = 0
+ 344              		@ frame_needed = 0, uses_anonymous_args = 0
+ 345              		@ link register save eliminated.
+ 346              		.loc 1 87 1 is_stmt 0 view .LVU81
+  88:src/btphy/rf.c **** 	rf_state.max_ac_errors = max_ac_errors;
+ 347              		.loc 1 88 2 is_stmt 1 view .LVU82
+  87:src/btphy/rf.c **** 	rf_state.max_ac_errors = max_ac_errors;
+ 348              		.loc 1 87 1 is_stmt 0 view .LVU83
+ 349 0000 0346     		mov	r3, r0
+ 350              		.loc 1 88 25 view .LVU84
+ 351 0002 034A     		ldr	r2, .L19
+  89:src/btphy/rf.c **** 	cprintf("max ac errors: %d\n", rf_state.max_ac_errors);
+ 352              		.loc 1 89 2 view .LVU85
+ 353 0004 0348     		ldr	r0, .L19+4
+ 354              	.LVL14:
+  88:src/btphy/rf.c **** 	rf_state.max_ac_errors = max_ac_errors;
+ 355              		.loc 1 88 25 view .LVU86
+ 356 0006 5380     		strh	r3, [r2, #2]	@ movhi
+ 357              		.loc 1 89 2 is_stmt 1 view .LVU87
+ 358              		.loc 1 89 41 is_stmt 0 view .LVU88
+ 359 0008 5188     		ldrh	r1, [r2, #2]
+ 360              		.loc 1 89 2 view .LVU89
+ 361 000a 89B2     		uxth	r1, r1
+ 362 000c FFF7FEBF 		b	cprintf
+ 363              	.LVL15:
+ 364              	.L20:
+ 365              		.loc 1 89 2 view .LVU90
+ 366              		.align	2
+ 367              	.L19:
+ 368 0010 00000000 		.word	.LANCHOR0
+ 369 0014 2C000000 		.word	.LC2
+ 370              		.cfi_endproc
+ 371              	.LFE12:
+ 373              		.section	.text.btphy_rf_cfg_sync,"ax",%progbits
+ 374              		.align	1
+ 375              		.p2align 2,,3
+ 376              		.global	btphy_rf_cfg_sync
+ 377              		.syntax unified
+ 378              		.thumb
+ 379              		.thumb_func
+ 381              	btphy_rf_cfg_sync:
+ 382              	.LVL16:
+ 383              	.LFB13:
+  90:src/btphy/rf.c **** }
+ARM GAS  /tmp/ccWPuOFR.s 			page 10
+
+
+  91:src/btphy/rf.c **** 
+  92:src/btphy/rf.c **** void btphy_rf_cfg_sync(uint32_t sync)
+  93:src/btphy/rf.c **** {
+ 384              		.loc 1 93 1 is_stmt 1 view -0
+ 385              		.cfi_startproc
+ 386              		@ args = 0, pretend = 0, frame = 0
+ 387              		@ frame_needed = 0, uses_anonymous_args = 0
+ 388              		.loc 1 93 1 is_stmt 0 view .LVU92
+ 389 0000 10B5     		push	{r4, lr}
+ 390              		.cfi_def_cfa_offset 8
+ 391              		.cfi_offset 4, -8
+ 392              		.cfi_offset 14, -4
+  94:src/btphy/rf.c **** 	cc2400_set(SYNCL,   sync & 0xffff);
+ 393              		.loc 1 94 2 is_stmt 1 view .LVU93
+  93:src/btphy/rf.c **** 	cc2400_set(SYNCL,   sync & 0xffff);
+ 394              		.loc 1 93 1 is_stmt 0 view .LVU94
+ 395 0002 0446     		mov	r4, r0
+ 396              		.loc 1 94 2 view .LVU95
+ 397 0004 2C20     		movs	r0, #44
+ 398              	.LVL17:
+ 399              		.loc 1 94 2 view .LVU96
+ 400 0006 A1B2     		uxth	r1, r4
+ 401 0008 FFF7FEFF 		bl	cc2400_set
+ 402              	.LVL18:
+  95:src/btphy/rf.c **** 	cc2400_set(SYNCH,   (sync >> 16) & 0xffff);
+ 403              		.loc 1 95 2 is_stmt 1 view .LVU97
+ 404 000c 210C     		lsrs	r1, r4, #16
+ 405 000e 2D20     		movs	r0, #45
+  96:src/btphy/rf.c **** }
+ 406              		.loc 1 96 1 is_stmt 0 view .LVU98
+ 407 0010 BDE81040 		pop	{r4, lr}
+ 408              		.cfi_restore 14
+ 409              		.cfi_restore 4
+ 410              		.cfi_def_cfa_offset 0
+ 411              	.LVL19:
+  95:src/btphy/rf.c **** 	cc2400_set(SYNCH,   (sync >> 16) & 0xffff);
+ 412              		.loc 1 95 2 view .LVU99
+ 413 0014 FFF7FEBF 		b	cc2400_set
+ 414              	.LVL20:
+ 415              		.cfi_endproc
+ 416              	.LFE13:
+ 418              		.section	.text.btphy_rf_init,"ax",%progbits
+ 419              		.align	1
+ 420              		.p2align 2,,3
+ 421              		.global	btphy_rf_init
+ 422              		.syntax unified
+ 423              		.thumb
+ 424              		.thumb_func
+ 426              	btphy_rf_init:
+ 427              	.LFB14:
+  97:src/btphy/rf.c **** 
+  98:src/btphy/rf.c **** void btphy_rf_init(void)
+  99:src/btphy/rf.c **** {
+ 428              		.loc 1 99 1 is_stmt 1 view -0
+ 429              		.cfi_startproc
+ 430              		@ args = 0, pretend = 0, frame = 0
+ 431              		@ frame_needed = 0, uses_anonymous_args = 0
+ARM GAS  /tmp/ccWPuOFR.s 			page 11
+
+
+ 432 0000 10B5     		push	{r4, lr}
+ 433              		.cfi_def_cfa_offset 8
+ 434              		.cfi_offset 4, -8
+ 435              		.cfi_offset 14, -4
+ 100:src/btphy/rf.c **** 	uint32_t mdmtst0, iocfg;
+ 436              		.loc 1 100 2 view .LVU101
+ 101:src/btphy/rf.c **** 
+ 102:src/btphy/rf.c **** 	/* Initialize dma here */
+ 103:src/btphy/rf.c **** 	dma_poweron();
+ 437              		.loc 1 103 2 view .LVU102
+ 438 0002 FFF7FEFF 		bl	dma_poweron
+ 439              	.LVL21:
+ 104:src/btphy/rf.c **** 	dio_ssp_init();
+ 440              		.loc 1 104 2 view .LVU103
+ 441 0006 FFF7FEFF 		bl	dio_ssp_init
+ 442              	.LVL22:
+ 105:src/btphy/rf.c **** 
+ 106:src/btphy/rf.c **** 	rf_state.max_ac_errors = MAX_AC_ERRORS_DEFAULT;
+ 443              		.loc 1 106 2 view .LVU104
+ 444              		.loc 1 106 25 is_stmt 0 view .LVU105
+ 445 000a 0123     		movs	r3, #1
+ 446 000c 2A4C     		ldr	r4, .L25
+ 447              	.LBB20:
+ 448              	.LBB21:
+ 449              		.file 3 "include/ubtbr/rf.h"
+   1:include/ubtbr/rf.h **** #ifndef __BTPHY_RF_H
+   2:include/ubtbr/rf.h **** #define __BTPHY_RF_H
+   3:include/ubtbr/rf.h **** #include <stdint.h>
+   4:include/ubtbr/rf.h **** #include "ubertooth.h"
+   5:include/ubtbr/rf.h **** 
+   6:include/ubtbr/rf.h **** /* Num of bytes left in fifo when FIFO_EMPTY int trigger 64usec */
+   7:include/ubtbr/rf.h **** #define PHY_MIN_FIFO_BYTES 16
+   8:include/ubtbr/rf.h **** #define PHY_FIFO_THRESHOLD (32-PHY_MIN_FIFO_BYTES)
+   9:include/ubtbr/rf.h **** 
+  10:include/ubtbr/rf.h **** #define WAIT_CC2400_STATE(state) while((cc2400_get(FSMSTATE) & 0x1f) != (state));
+  11:include/ubtbr/rf.h **** #define FS_TUNED() (cc2400_status() & FS_LOCK)
+  12:include/ubtbr/rf.h **** #define WAIT_FS_TUNED() while(!FS_TUNED())
+  13:include/ubtbr/rf.h **** 
+  14:include/ubtbr/rf.h **** #define RF_EXPECTED_RX_CLKN_OFFSET 610	// (29usec of rf warmup + 32usec of sw)
+  15:include/ubtbr/rf.h **** 
+  16:include/ubtbr/rf.h **** typedef void (*btbr_int_cb_t)(void *arg);
+  17:include/ubtbr/rf.h **** 
+  18:include/ubtbr/rf.h **** #define MAX_AC_ERRORS_DEFAULT	1
+  19:include/ubtbr/rf.h **** typedef struct {
+  20:include/ubtbr/rf.h **** 	uint16_t freq_off_reg;
+  21:include/ubtbr/rf.h **** 	uint16_t max_ac_errors;
+  22:include/ubtbr/rf.h **** 	btbr_int_cb_t int_handler;
+  23:include/ubtbr/rf.h **** 	void *int_arg;
+  24:include/ubtbr/rf.h **** } rf_state_t;
+  25:include/ubtbr/rf.h **** 
+  26:include/ubtbr/rf.h **** extern volatile rf_state_t rf_state;
+  27:include/ubtbr/rf.h **** 
+  28:include/ubtbr/rf.h **** void btphy_rf_init(void);
+  29:include/ubtbr/rf.h **** void btphy_rf_off(void);
+  30:include/ubtbr/rf.h **** void btphy_rf_set_freq_off(uint8_t off);
+  31:include/ubtbr/rf.h **** void btphy_rf_set_max_ac_errors(uint8_t max_ac_errors);
+  32:include/ubtbr/rf.h **** void btphy_rf_cfg_sync(uint32_t sync);
+ARM GAS  /tmp/ccWPuOFR.s 			page 12
+
+
+  33:include/ubtbr/rf.h **** void btphy_rf_tune_chan(uint16_t channel, int tx);
+  34:include/ubtbr/rf.h **** void btphy_rf_fifo_write(uint8_t *data, unsigned len);
+  35:include/ubtbr/rf.h **** 
+  36:include/ubtbr/rf.h **** void btphy_rf_enable_int(btbr_int_cb_t cb, void*cb_arg, int tx);
+  37:include/ubtbr/rf.h **** void btphy_rf_disable_int(void);
+  38:include/ubtbr/rf.h **** 
+  39:include/ubtbr/rf.h **** static inline void btphy_rf_idle(void)
+  40:include/ubtbr/rf.h **** {
+  41:include/ubtbr/rf.h **** 	cc2400_strobe(SRFOFF);
+ 450              		.loc 3 41 2 view .LVU106
+ 451 000e 6420     		movs	r0, #100
+ 452              	.LBE21:
+ 453              	.LBE20:
+ 454              		.loc 1 106 25 view .LVU107
+ 455 0010 6380     		strh	r3, [r4, #2]	@ movhi
+ 107:src/btphy/rf.c **** 
+ 108:src/btphy/rf.c **** 	btphy_rf_idle();
+ 456              		.loc 1 108 2 is_stmt 1 view .LVU108
+ 457              	.LBB23:
+ 458              	.LBI20:
+  39:include/ubtbr/rf.h **** {
+ 459              		.loc 3 39 20 view .LVU109
+ 460              	.LBB22:
+ 461              		.loc 3 41 2 view .LVU110
+ 462 0012 FFF7FEFF 		bl	cc2400_strobe
+ 463              	.LVL23:
+  42:include/ubtbr/rf.h **** 	TXLED_CLR;
+ 464              		.loc 3 42 2 view .LVU111
+ 465 0016 4FF48071 		mov	r1, #256
+  43:include/ubtbr/rf.h **** 	RXLED_CLR;
+ 466              		.loc 3 43 2 is_stmt 0 view .LVU112
+ 467 001a 1022     		movs	r2, #16
+  42:include/ubtbr/rf.h **** 	TXLED_CLR;
+ 468              		.loc 3 42 2 view .LVU113
+ 469 001c 274B     		ldr	r3, .L25+4
+ 470 001e D963     		str	r1, [r3, #60]
+ 471              		.loc 3 43 2 is_stmt 1 view .LVU114
+ 472 0020 DA63     		str	r2, [r3, #60]
+ 473              	.LBE22:
+ 474              	.LBE23:
+ 109:src/btphy/rf.c **** 	WAIT_CC2400_STATE(STATE_IDLE);
+ 475              		.loc 1 109 2 view .LVU115
+ 476              	.L23:
+ 477              		.loc 1 109 2 discriminator 2 view .LVU116
+ 478 0022 0E20     		movs	r0, #14
+ 479 0024 FFF7FEFF 		bl	cc2400_get
+ 480              	.LVL24:
+ 481 0028 00F01F00 		and	r0, r0, #31
+ 482 002c 0128     		cmp	r0, #1
+ 483 002e F8D1     		bne	.L23
+ 484              		.loc 1 109 31 view .LVU117
+ 110:src/btphy/rf.c **** 
+ 111:src/btphy/rf.c **** 	// Bluetooth-like modulation
+ 112:src/btphy/rf.c **** 	cc2400_set(MANAND,  0x7fff);
+ 485              		.loc 1 112 2 view .LVU118
+ 486 0030 47F6FF71 		movw	r1, #32767
+ 487 0034 0D20     		movs	r0, #13
+ARM GAS  /tmp/ccWPuOFR.s 			page 13
+
+
+ 488 0036 FFF7FEFF 		bl	cc2400_set
+ 489              	.LVL25:
+ 113:src/btphy/rf.c **** 	cc2400_set(LMTST,   0x2b22);    // LNA and receive mixers test register
+ 490              		.loc 1 113 2 view .LVU119
+ 491 003a 42F62231 		movw	r1, #11042
+ 492 003e 1220     		movs	r0, #18
+ 493 0040 FFF7FEFF 		bl	cc2400_set
+ 494              	.LVL26:
+ 114:src/btphy/rf.c **** 	mdmtst0 = 0x34b;
+ 495              		.loc 1 114 2 view .LVU120
+ 115:src/btphy/rf.c **** #ifndef USE_TX_1MHZ_OFF
+ 116:src/btphy/rf.c **** 	mdmtst0 |= 0x1000;
+ 496              		.loc 1 116 2 view .LVU121
+ 117:src/btphy/rf.c **** #endif
+ 118:src/btphy/rf.c **** 	// 1      2      4b
+ 119:src/btphy/rf.c **** 	// 00 0 1 0 0 10 01001011
+ 120:src/btphy/rf.c **** 	//    | | | | |  +---------> AFC_DELTA = ??
+ 121:src/btphy/rf.c **** 	//    | | | | +------------> AFC settling = 4 pairs (8 bit preamble)
+ 122:src/btphy/rf.c **** 	//    | | | +--------------> no AFC adjust on packet
+ 123:src/btphy/rf.c **** 	//    | | +----------------> do not invert data
+ 124:src/btphy/rf.c **** 	//    | +------------------> TX IF freq 1 0Hz
+ 125:src/btphy/rf.c **** 	//    +--------------------> PRNG off
+ 126:src/btphy/rf.c **** 	//
+ 127:src/btphy/rf.c **** 	// ref: CC2400 datasheet page 67
+ 128:src/btphy/rf.c **** 	// AFC settling explained page 41/42
+ 129:src/btphy/rf.c **** 	cc2400_set(MDMTST0, mdmtst0);
+ 497              		.loc 1 129 2 view .LVU122
+ 498 0044 41F24B31 		movw	r1, #4939
+ 499 0048 1420     		movs	r0, #20
+ 500 004a FFF7FEFF 		bl	cc2400_set
+ 501              	.LVL27:
+ 130:src/btphy/rf.c **** 	cc2400_set(FREND,   0b1011);	// Amplifier level (-7 dBm, picked from hat)
+ 502              		.loc 1 130 2 view .LVU123
+ 503 004e 0B21     		movs	r1, #11
+ 504 0050 0520     		movs	r0, #5
+ 505 0052 FFF7FEFF 		bl	cc2400_set
+ 506              	.LVL28:
+ 131:src/btphy/rf.c **** 	cc2400_set(MDMCTRL, 0x0029|(rf_state.freq_off_reg<<7)); // 160 kHz frequency deviation
+ 507              		.loc 1 131 2 view .LVU124
+ 508              		.loc 1 131 38 is_stmt 0 view .LVU125
+ 509 0056 2188     		ldrh	r1, [r4]
+ 510              		.loc 1 131 2 view .LVU126
+ 511 0058 0320     		movs	r0, #3
+ 512              		.loc 1 131 28 view .LVU127
+ 513 005a C901     		lsls	r1, r1, #7
+ 514 005c 41F02901 		orr	r1, r1, #41
+ 515              		.loc 1 131 2 view .LVU128
+ 516 0060 89B2     		uxth	r1, r1
+ 517 0062 FFF7FEFF 		bl	cc2400_set
+ 518              	.LVL29:
+ 132:src/btphy/rf.c **** 	cc2400_set(INT,     PHY_FIFO_THRESHOLD);	// FIFO_THRESHOLD
+ 519              		.loc 1 132 2 is_stmt 1 view .LVU129
+ 520 0066 1021     		movs	r1, #16
+ 521 0068 2320     		movs	r0, #35
+ 522 006a FFF7FEFF 		bl	cc2400_set
+ 523              	.LVL30:
+ 133:src/btphy/rf.c **** 
+ARM GAS  /tmp/ccWPuOFR.s 			page 14
+
+
+ 134:src/btphy/rf.c **** 	btphy_rf_disable_int();
+ 524              		.loc 1 134 2 view .LVU130
+ 525              	.LBB24:
+ 526              	.LBI24:
+  63:src/btphy/rf.c **** {
+ 527              		.loc 1 63 6 view .LVU131
+ 528              	.LBB25:
+  66:src/btphy/rf.c **** 
+ 529              		.loc 1 66 2 view .LVU132
+  66:src/btphy/rf.c **** 
+ 530              		.loc 1 66 8 is_stmt 0 view .LVU133
+ 531 006e 4FF0E020 		mov	r0, #-536813568
+ 532 0072 4FF4001C 		mov	ip, #2097152
+ 533              	.LBE25:
+ 534              	.LBE24:
+ 135:src/btphy/rf.c **** 
+ 136:src/btphy/rf.c **** #ifdef UBERTOOTH_ONE
+ 137:src/btphy/rf.c **** 	PAEN_SET;
+ 535              		.loc 1 137 2 view .LVU134
+ 536 0076 4FF0800E 		mov	lr, #128
+ 138:src/btphy/rf.c **** 	HGM_SET;
+ 537              		.loc 1 138 2 view .LVU135
+ 538 007a 4FF48074 		mov	r4, #256
+ 539              	.LBB28:
+ 540              	.LBB26:
+  68:src/btphy/rf.c **** 	IO2IntEnF &= ~PIN_GIO6;
+ 541              		.loc 1 68 12 view .LVU136
+ 542 007e 104B     		ldr	r3, .L25+8
+  66:src/btphy/rf.c **** 
+ 543              		.loc 1 66 8 view .LVU137
+ 544 0080 C0F880C1 		str	ip, [r0, #384]
+  68:src/btphy/rf.c **** 	IO2IntEnF &= ~PIN_GIO6;
+ 545              		.loc 1 68 2 is_stmt 1 view .LVU138
+  68:src/btphy/rf.c **** 	IO2IntEnF &= ~PIN_GIO6;
+ 546              		.loc 1 68 12 is_stmt 0 view .LVU139
+ 547 0084 D3F8B020 		ldr	r2, [r3, #176]
+ 548              	.LBE26:
+ 549              	.LBE28:
+ 137:src/btphy/rf.c **** 	HGM_SET;
+ 550              		.loc 1 137 2 view .LVU140
+ 551 0088 0C49     		ldr	r1, .L25+4
+ 552              	.LBB29:
+ 553              	.LBB27:
+  68:src/btphy/rf.c **** 	IO2IntEnF &= ~PIN_GIO6;
+ 554              		.loc 1 68 12 view .LVU141
+ 555 008a 22F00402 		bic	r2, r2, #4
+ 556 008e C3F8B020 		str	r2, [r3, #176]
+  69:src/btphy/rf.c **** 
+ 557              		.loc 1 69 2 is_stmt 1 view .LVU142
+  69:src/btphy/rf.c **** 
+ 558              		.loc 1 69 12 is_stmt 0 view .LVU143
+ 559 0092 D3F8B420 		ldr	r2, [r3, #180]
+ 560 0096 22F00402 		bic	r2, r2, #4
+ 561 009a C3F8B420 		str	r2, [r3, #180]
+  72:src/btphy/rf.c **** 	ICPR0 = ISER0_ISE_EINT3;
+ 562              		.loc 1 72 2 is_stmt 1 view .LVU144
+ 563 009e D3F8AC20 		ldr	r2, [r3, #172]
+ARM GAS  /tmp/ccWPuOFR.s 			page 15
+
+
+  72:src/btphy/rf.c **** 	ICPR0 = ISER0_ISE_EINT3;
+ 564              		.loc 1 72 12 is_stmt 0 view .LVU145
+ 565 00a2 42F00402 		orr	r2, r2, #4
+ 566 00a6 C3F8AC20 		str	r2, [r3, #172]
+  73:src/btphy/rf.c **** }
+ 567              		.loc 1 73 2 is_stmt 1 view .LVU146
+  73:src/btphy/rf.c **** }
+ 568              		.loc 1 73 8 is_stmt 0 view .LVU147
+ 569 00aa C0F880C2 		str	ip, [r0, #640]
+ 570              	.LBE27:
+ 571              	.LBE29:
+ 137:src/btphy/rf.c **** 	HGM_SET;
+ 572              		.loc 1 137 2 is_stmt 1 view .LVU148
+ 573 00ae C1F858E0 		str	lr, [r1, #88]
+ 574              		.loc 1 138 2 view .LVU149
+ 575 00b2 8C65     		str	r4, [r1, #88]
+ 139:src/btphy/rf.c **** #endif
+ 140:src/btphy/rf.c **** }
+ 576              		.loc 1 140 1 is_stmt 0 view .LVU150
+ 577 00b4 10BD     		pop	{r4, pc}
+ 578              	.L26:
+ 579 00b6 00BF     		.align	2
+ 580              	.L25:
+ 581 00b8 00000000 		.word	.LANCHOR0
+ 582 00bc 00C00920 		.word	537509888
+ 583 00c0 00800240 		.word	1073905664
+ 584              		.cfi_endproc
+ 585              	.LFE14:
+ 587              		.section	.text.btphy_rf_fifo_write,"ax",%progbits
+ 588              		.align	1
+ 589              		.p2align 2,,3
+ 590              		.global	btphy_rf_fifo_write
+ 591              		.syntax unified
+ 592              		.thumb
+ 593              		.thumb_func
+ 595              	btphy_rf_fifo_write:
+ 596              	.LVL31:
+ 597              	.LFB17:
+ 141:src/btphy/rf.c **** 
+ 142:src/btphy/rf.c **** static void spi_delay() {
+ 143:src/btphy/rf.c **** 	volatile int delay_counter;
+ 144:src/btphy/rf.c **** 	delay_counter = 10;
+ 145:src/btphy/rf.c **** 	while (--delay_counter);
+ 146:src/btphy/rf.c **** }
+ 147:src/btphy/rf.c **** 
+ 148:src/btphy/rf.c **** /* write multiple bytes to SPI */
+ 149:src/btphy/rf.c **** static void btphy_rf_cc2400_fifo_write(u8 len, u8 *data) {
+ 150:src/btphy/rf.c **** 	u8 msb = 1 << 7;
+ 151:src/btphy/rf.c **** 	u8 reg = FIFOREG;
+ 152:src/btphy/rf.c **** 	u8 i, j, temp;
+ 153:src/btphy/rf.c **** 
+ 154:src/btphy/rf.c **** 	/* start transaction by dropping CSN */
+ 155:src/btphy/rf.c **** 	CSN_CLR;
+ 156:src/btphy/rf.c **** 
+ 157:src/btphy/rf.c **** 	for (i = 0; i < 8; ++i) {
+ 158:src/btphy/rf.c **** 		if (reg & msb)
+ 159:src/btphy/rf.c **** 			MOSI_SET;
+ARM GAS  /tmp/ccWPuOFR.s 			page 16
+
+
+ 160:src/btphy/rf.c **** 		else
+ 161:src/btphy/rf.c **** 			MOSI_CLR;
+ 162:src/btphy/rf.c **** 		reg <<= 1;
+ 163:src/btphy/rf.c **** 		SCLK_SET;
+ 164:src/btphy/rf.c **** 		SCLK_CLR;
+ 165:src/btphy/rf.c **** 	}
+ 166:src/btphy/rf.c **** 
+ 167:src/btphy/rf.c **** 	/* Push reversed bytes to save a few cycles */
+ 168:src/btphy/rf.c **** 	for (i = 0; i < len; ++i) {
+ 169:src/btphy/rf.c **** 		temp = data[i];
+ 170:src/btphy/rf.c **** 		for (j = 0; j < 8; ++j) {
+ 171:src/btphy/rf.c **** 			if (temp & 1)
+ 172:src/btphy/rf.c **** 				MOSI_SET;
+ 173:src/btphy/rf.c **** 			else
+ 174:src/btphy/rf.c **** 				MOSI_CLR;
+ 175:src/btphy/rf.c **** 			temp >>= 1;
+ 176:src/btphy/rf.c **** 			SCLK_SET;
+ 177:src/btphy/rf.c **** 			SCLK_CLR;
+ 178:src/btphy/rf.c **** 		}
+ 179:src/btphy/rf.c **** 	}
+ 180:src/btphy/rf.c **** 
+ 181:src/btphy/rf.c **** 	spi_delay();
+ 182:src/btphy/rf.c **** 	/* end transaction by raising CSN */
+ 183:src/btphy/rf.c **** 	CSN_SET;
+ 184:src/btphy/rf.c **** }
+ 185:src/btphy/rf.c **** 
+ 186:src/btphy/rf.c **** void btphy_rf_fifo_write(uint8_t *data, unsigned len)
+ 187:src/btphy/rf.c **** {
+ 598              		.loc 1 187 1 is_stmt 1 view -0
+ 599              		.cfi_startproc
+ 600              		@ args = 0, pretend = 0, frame = 8
+ 601              		@ frame_needed = 0, uses_anonymous_args = 0
+ 602              		@ link register save eliminated.
+ 603              		.loc 1 187 1 is_stmt 0 view .LVU152
+ 604 0000 10B4     		push	{r4}
+ 605              		.cfi_def_cfa_offset 4
+ 606              		.cfi_offset 4, -4
+ 607 0002 83B0     		sub	sp, sp, #12
+ 608              		.cfi_def_cfa_offset 16
+ 188:src/btphy/rf.c **** 	/* Bufferize message  */
+ 189:src/btphy/rf.c **** 	btphy_rf_cc2400_fifo_write(len, data);
+ 609              		.loc 1 189 2 is_stmt 1 view .LVU153
+ 610              	.LBB34:
+ 611              	.LBB35:
+ 163:src/btphy/rf.c **** 		SCLK_CLR;
+ 612              		.loc 1 163 3 is_stmt 0 view .LVU154
+ 613 0004 1022     		movs	r2, #16
+ 161:src/btphy/rf.c **** 		reg <<= 1;
+ 614              		.loc 1 161 4 view .LVU155
+ 615 0006 0124     		movs	r4, #1
+ 155:src/btphy/rf.c **** 
+ 616              		.loc 1 155 2 view .LVU156
+ 617 0008 4FF0200C 		mov	ip, #32
+ 618              	.LVL32:
+ 155:src/btphy/rf.c **** 
+ 619              		.loc 1 155 2 view .LVU157
+ 620              	.LBE35:
+ARM GAS  /tmp/ccWPuOFR.s 			page 17
+
+
+ 621              	.LBI34:
+ 149:src/btphy/rf.c **** 	u8 msb = 1 << 7;
+ 622              		.loc 1 149 13 is_stmt 1 view .LVU158
+ 623              	.LBB38:
+ 150:src/btphy/rf.c **** 	u8 reg = FIFOREG;
+ 624              		.loc 1 150 2 view .LVU159
+ 151:src/btphy/rf.c **** 	u8 i, j, temp;
+ 625              		.loc 1 151 2 view .LVU160
+ 152:src/btphy/rf.c **** 
+ 626              		.loc 1 152 2 view .LVU161
+ 155:src/btphy/rf.c **** 
+ 627              		.loc 1 155 2 view .LVU162
+ 628 000c 374B     		ldr	r3, .L51
+ 168:src/btphy/rf.c **** 		temp = data[i];
+ 629              		.loc 1 168 16 is_stmt 0 discriminator 1 view .LVU163
+ 630 000e 11F0FF01 		ands	r1, r1, #255
+ 631              	.LVL33:
+ 155:src/btphy/rf.c **** 
+ 632              		.loc 1 155 2 view .LVU164
+ 633 0012 C3F85CC0 		str	ip, [r3, #92]
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 634              		.loc 1 157 2 is_stmt 1 view .LVU165
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 635              		.loc 1 157 16 discriminator 1 view .LVU166
+ 158:src/btphy/rf.c **** 			MOSI_SET;
+ 636              		.loc 1 158 3 view .LVU167
+ 161:src/btphy/rf.c **** 		reg <<= 1;
+ 637              		.loc 1 161 4 view .LVU168
+ 638 0016 DC65     		str	r4, [r3, #92]
+ 162:src/btphy/rf.c **** 		SCLK_SET;
+ 639              		.loc 1 162 3 view .LVU169
+ 640              	.LVL34:
+ 163:src/btphy/rf.c **** 		SCLK_CLR;
+ 641              		.loc 1 163 3 view .LVU170
+ 642 0018 9A65     		str	r2, [r3, #88]
+ 164:src/btphy/rf.c **** 	}
+ 643              		.loc 1 164 3 view .LVU171
+ 644 001a DA65     		str	r2, [r3, #92]
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 645              		.loc 1 157 21 discriminator 2 view .LVU172
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 646              		.loc 1 157 16 discriminator 1 view .LVU173
+ 158:src/btphy/rf.c **** 			MOSI_SET;
+ 647              		.loc 1 158 3 view .LVU174
+ 159:src/btphy/rf.c **** 		else
+ 648              		.loc 1 159 4 view .LVU175
+ 649 001c 9C65     		str	r4, [r3, #88]
+ 162:src/btphy/rf.c **** 		SCLK_SET;
+ 650              		.loc 1 162 3 view .LVU176
+ 651              	.LVL35:
+ 163:src/btphy/rf.c **** 		SCLK_CLR;
+ 652              		.loc 1 163 3 view .LVU177
+ 653 001e 9A65     		str	r2, [r3, #88]
+ 164:src/btphy/rf.c **** 	}
+ 654              		.loc 1 164 3 view .LVU178
+ 655 0020 DA65     		str	r2, [r3, #92]
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ARM GAS  /tmp/ccWPuOFR.s 			page 18
+
+
+ 656              		.loc 1 157 21 discriminator 2 view .LVU179
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 657              		.loc 1 157 16 discriminator 1 view .LVU180
+ 158:src/btphy/rf.c **** 			MOSI_SET;
+ 658              		.loc 1 158 3 view .LVU181
+ 159:src/btphy/rf.c **** 		else
+ 659              		.loc 1 159 4 view .LVU182
+ 660 0022 9C65     		str	r4, [r3, #88]
+ 162:src/btphy/rf.c **** 		SCLK_SET;
+ 661              		.loc 1 162 3 view .LVU183
+ 662              	.LVL36:
+ 163:src/btphy/rf.c **** 		SCLK_CLR;
+ 663              		.loc 1 163 3 view .LVU184
+ 664 0024 9A65     		str	r2, [r3, #88]
+ 164:src/btphy/rf.c **** 	}
+ 665              		.loc 1 164 3 view .LVU185
+ 666 0026 DA65     		str	r2, [r3, #92]
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 667              		.loc 1 157 21 discriminator 2 view .LVU186
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 668              		.loc 1 157 16 discriminator 1 view .LVU187
+ 158:src/btphy/rf.c **** 			MOSI_SET;
+ 669              		.loc 1 158 3 view .LVU188
+ 159:src/btphy/rf.c **** 		else
+ 670              		.loc 1 159 4 view .LVU189
+ 671 0028 9C65     		str	r4, [r3, #88]
+ 162:src/btphy/rf.c **** 		SCLK_SET;
+ 672              		.loc 1 162 3 view .LVU190
+ 673              	.LVL37:
+ 163:src/btphy/rf.c **** 		SCLK_CLR;
+ 674              		.loc 1 163 3 view .LVU191
+ 675 002a 9A65     		str	r2, [r3, #88]
+ 164:src/btphy/rf.c **** 	}
+ 676              		.loc 1 164 3 view .LVU192
+ 677 002c DA65     		str	r2, [r3, #92]
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 678              		.loc 1 157 21 discriminator 2 view .LVU193
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 679              		.loc 1 157 16 discriminator 1 view .LVU194
+ 158:src/btphy/rf.c **** 			MOSI_SET;
+ 680              		.loc 1 158 3 view .LVU195
+ 161:src/btphy/rf.c **** 		reg <<= 1;
+ 681              		.loc 1 161 4 view .LVU196
+ 682 002e DC65     		str	r4, [r3, #92]
+ 162:src/btphy/rf.c **** 		SCLK_SET;
+ 683              		.loc 1 162 3 view .LVU197
+ 163:src/btphy/rf.c **** 		SCLK_CLR;
+ 684              		.loc 1 163 3 view .LVU198
+ 685 0030 9A65     		str	r2, [r3, #88]
+ 164:src/btphy/rf.c **** 	}
+ 686              		.loc 1 164 3 view .LVU199
+ 687 0032 DA65     		str	r2, [r3, #92]
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 688              		.loc 1 157 21 discriminator 2 view .LVU200
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 689              		.loc 1 157 16 discriminator 1 view .LVU201
+ 158:src/btphy/rf.c **** 			MOSI_SET;
+ARM GAS  /tmp/ccWPuOFR.s 			page 19
+
+
+ 690              		.loc 1 158 3 view .LVU202
+ 161:src/btphy/rf.c **** 		reg <<= 1;
+ 691              		.loc 1 161 4 view .LVU203
+ 692 0034 DC65     		str	r4, [r3, #92]
+ 162:src/btphy/rf.c **** 		SCLK_SET;
+ 693              		.loc 1 162 3 view .LVU204
+ 163:src/btphy/rf.c **** 		SCLK_CLR;
+ 694              		.loc 1 163 3 view .LVU205
+ 695 0036 9A65     		str	r2, [r3, #88]
+ 164:src/btphy/rf.c **** 	}
+ 696              		.loc 1 164 3 view .LVU206
+ 697 0038 DA65     		str	r2, [r3, #92]
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 698              		.loc 1 157 21 discriminator 2 view .LVU207
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 699              		.loc 1 157 16 discriminator 1 view .LVU208
+ 158:src/btphy/rf.c **** 			MOSI_SET;
+ 700              		.loc 1 158 3 view .LVU209
+ 161:src/btphy/rf.c **** 		reg <<= 1;
+ 701              		.loc 1 161 4 view .LVU210
+ 702 003a DC65     		str	r4, [r3, #92]
+ 162:src/btphy/rf.c **** 		SCLK_SET;
+ 703              		.loc 1 162 3 view .LVU211
+ 163:src/btphy/rf.c **** 		SCLK_CLR;
+ 704              		.loc 1 163 3 view .LVU212
+ 705 003c 9A65     		str	r2, [r3, #88]
+ 164:src/btphy/rf.c **** 	}
+ 706              		.loc 1 164 3 view .LVU213
+ 707 003e DA65     		str	r2, [r3, #92]
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 708              		.loc 1 157 21 discriminator 2 view .LVU214
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 709              		.loc 1 157 16 discriminator 1 view .LVU215
+ 158:src/btphy/rf.c **** 			MOSI_SET;
+ 710              		.loc 1 158 3 view .LVU216
+ 161:src/btphy/rf.c **** 		reg <<= 1;
+ 711              		.loc 1 161 4 view .LVU217
+ 712 0040 DC65     		str	r4, [r3, #92]
+ 162:src/btphy/rf.c **** 		SCLK_SET;
+ 713              		.loc 1 162 3 view .LVU218
+ 163:src/btphy/rf.c **** 		SCLK_CLR;
+ 714              		.loc 1 163 3 view .LVU219
+ 715 0042 9A65     		str	r2, [r3, #88]
+ 164:src/btphy/rf.c **** 	}
+ 716              		.loc 1 164 3 view .LVU220
+ 717 0044 DA65     		str	r2, [r3, #92]
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 718              		.loc 1 157 21 discriminator 2 view .LVU221
+ 157:src/btphy/rf.c **** 		if (reg & msb)
+ 719              		.loc 1 157 16 discriminator 1 view .LVU222
+ 720              	.LVL38:
+ 168:src/btphy/rf.c **** 		temp = data[i];
+ 721              		.loc 1 168 16 discriminator 1 view .LVU223
+ 722 0046 3ED0     		beq	.L28
+ 723 0048 0139     		subs	r1, r1, #1
+ 724 004a 5FFA81FC 		uxtb	ip, r1
+ 725 004e 8444     		add	ip, ip, r0
+ARM GAS  /tmp/ccWPuOFR.s 			page 20
+
+
+ 726 0050 0138     		subs	r0, r0, #1
+ 727              	.LVL39:
+ 728              	.L45:
+ 169:src/btphy/rf.c **** 		for (j = 0; j < 8; ++j) {
+ 729              		.loc 1 169 3 view .LVU224
+ 169:src/btphy/rf.c **** 		for (j = 0; j < 8; ++j) {
+ 730              		.loc 1 169 8 is_stmt 0 view .LVU225
+ 731 0052 10F8011F 		ldrb	r1, [r0, #1]!	@ zero_extendqisi2
+ 732              	.LVL40:
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 733              		.loc 1 170 3 is_stmt 1 view .LVU226
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 734              		.loc 1 170 17 discriminator 1 view .LVU227
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 735              		.loc 1 171 4 view .LVU228
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 736              		.loc 1 171 7 is_stmt 0 view .LVU229
+ 737 0056 11F0010F 		tst	r1, #1
+ 174:src/btphy/rf.c **** 			temp >>= 1;
+ 738              		.loc 1 174 5 is_stmt 1 view .LVU230
+ 739 005a 0CBF     		ite	eq
+ 740 005c DC65     		streq	r4, [r3, #92]
+ 172:src/btphy/rf.c **** 			else
+ 741              		.loc 1 172 5 view .LVU231
+ 175:src/btphy/rf.c **** 			SCLK_SET;
+ 742              		.loc 1 175 4 view .LVU232
+ 743              	.LVL41:
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 744              		.loc 1 176 4 view .LVU233
+ 172:src/btphy/rf.c **** 			else
+ 745              		.loc 1 172 5 is_stmt 0 view .LVU234
+ 746 005e 9C65     		strne	r4, [r3, #88]
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 747              		.loc 1 171 7 view .LVU235
+ 748 0060 11F0020F 		tst	r1, #2
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 749              		.loc 1 176 4 view .LVU236
+ 750 0064 9A65     		str	r2, [r3, #88]
+ 177:src/btphy/rf.c **** 		}
+ 751              		.loc 1 177 4 is_stmt 1 view .LVU237
+ 752 0066 DA65     		str	r2, [r3, #92]
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 753              		.loc 1 170 22 discriminator 2 view .LVU238
+ 754              	.LVL42:
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 755              		.loc 1 170 17 discriminator 1 view .LVU239
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 756              		.loc 1 171 4 view .LVU240
+ 174:src/btphy/rf.c **** 			temp >>= 1;
+ 757              		.loc 1 174 5 view .LVU241
+ 758 0068 0CBF     		ite	eq
+ 759 006a DC65     		streq	r4, [r3, #92]
+ 172:src/btphy/rf.c **** 			else
+ 760              		.loc 1 172 5 view .LVU242
+ 175:src/btphy/rf.c **** 			SCLK_SET;
+ 761              		.loc 1 175 4 view .LVU243
+ 762              	.LVL43:
+ARM GAS  /tmp/ccWPuOFR.s 			page 21
+
+
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 763              		.loc 1 176 4 view .LVU244
+ 172:src/btphy/rf.c **** 			else
+ 764              		.loc 1 172 5 is_stmt 0 view .LVU245
+ 765 006c 9C65     		strne	r4, [r3, #88]
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 766              		.loc 1 171 7 view .LVU246
+ 767 006e 11F0040F 		tst	r1, #4
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 768              		.loc 1 176 4 view .LVU247
+ 769 0072 9A65     		str	r2, [r3, #88]
+ 177:src/btphy/rf.c **** 		}
+ 770              		.loc 1 177 4 is_stmt 1 view .LVU248
+ 771 0074 DA65     		str	r2, [r3, #92]
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 772              		.loc 1 170 22 discriminator 2 view .LVU249
+ 773              	.LVL44:
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 774              		.loc 1 170 17 discriminator 1 view .LVU250
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 775              		.loc 1 171 4 view .LVU251
+ 174:src/btphy/rf.c **** 			temp >>= 1;
+ 776              		.loc 1 174 5 view .LVU252
+ 777 0076 0CBF     		ite	eq
+ 778 0078 DC65     		streq	r4, [r3, #92]
+ 172:src/btphy/rf.c **** 			else
+ 779              		.loc 1 172 5 view .LVU253
+ 175:src/btphy/rf.c **** 			SCLK_SET;
+ 780              		.loc 1 175 4 view .LVU254
+ 781              	.LVL45:
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 782              		.loc 1 176 4 view .LVU255
+ 172:src/btphy/rf.c **** 			else
+ 783              		.loc 1 172 5 is_stmt 0 view .LVU256
+ 784 007a 9C65     		strne	r4, [r3, #88]
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 785              		.loc 1 171 7 view .LVU257
+ 786 007c 11F0080F 		tst	r1, #8
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 787              		.loc 1 176 4 view .LVU258
+ 788 0080 9A65     		str	r2, [r3, #88]
+ 177:src/btphy/rf.c **** 		}
+ 789              		.loc 1 177 4 is_stmt 1 view .LVU259
+ 790 0082 DA65     		str	r2, [r3, #92]
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 791              		.loc 1 170 22 discriminator 2 view .LVU260
+ 792              	.LVL46:
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 793              		.loc 1 170 17 discriminator 1 view .LVU261
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 794              		.loc 1 171 4 view .LVU262
+ 174:src/btphy/rf.c **** 			temp >>= 1;
+ 795              		.loc 1 174 5 view .LVU263
+ 796 0084 0CBF     		ite	eq
+ 797 0086 DC65     		streq	r4, [r3, #92]
+ 172:src/btphy/rf.c **** 			else
+ 798              		.loc 1 172 5 view .LVU264
+ARM GAS  /tmp/ccWPuOFR.s 			page 22
+
+
+ 175:src/btphy/rf.c **** 			SCLK_SET;
+ 799              		.loc 1 175 4 view .LVU265
+ 800              	.LVL47:
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 801              		.loc 1 176 4 view .LVU266
+ 172:src/btphy/rf.c **** 			else
+ 802              		.loc 1 172 5 is_stmt 0 view .LVU267
+ 803 0088 9C65     		strne	r4, [r3, #88]
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 804              		.loc 1 171 7 view .LVU268
+ 805 008a 11F0100F 		tst	r1, #16
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 806              		.loc 1 176 4 view .LVU269
+ 807 008e 9A65     		str	r2, [r3, #88]
+ 177:src/btphy/rf.c **** 		}
+ 808              		.loc 1 177 4 is_stmt 1 view .LVU270
+ 809 0090 DA65     		str	r2, [r3, #92]
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 810              		.loc 1 170 22 discriminator 2 view .LVU271
+ 811              	.LVL48:
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 812              		.loc 1 170 17 discriminator 1 view .LVU272
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 813              		.loc 1 171 4 view .LVU273
+ 174:src/btphy/rf.c **** 			temp >>= 1;
+ 814              		.loc 1 174 5 view .LVU274
+ 815 0092 0CBF     		ite	eq
+ 816 0094 DC65     		streq	r4, [r3, #92]
+ 172:src/btphy/rf.c **** 			else
+ 817              		.loc 1 172 5 view .LVU275
+ 175:src/btphy/rf.c **** 			SCLK_SET;
+ 818              		.loc 1 175 4 view .LVU276
+ 819              	.LVL49:
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 820              		.loc 1 176 4 view .LVU277
+ 172:src/btphy/rf.c **** 			else
+ 821              		.loc 1 172 5 is_stmt 0 view .LVU278
+ 822 0096 9C65     		strne	r4, [r3, #88]
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 823              		.loc 1 171 7 view .LVU279
+ 824 0098 11F0200F 		tst	r1, #32
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 825              		.loc 1 176 4 view .LVU280
+ 826 009c 9A65     		str	r2, [r3, #88]
+ 177:src/btphy/rf.c **** 		}
+ 827              		.loc 1 177 4 is_stmt 1 view .LVU281
+ 828 009e DA65     		str	r2, [r3, #92]
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 829              		.loc 1 170 22 discriminator 2 view .LVU282
+ 830              	.LVL50:
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 831              		.loc 1 170 17 discriminator 1 view .LVU283
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 832              		.loc 1 171 4 view .LVU284
+ 174:src/btphy/rf.c **** 			temp >>= 1;
+ 833              		.loc 1 174 5 view .LVU285
+ 834 00a0 0CBF     		ite	eq
+ARM GAS  /tmp/ccWPuOFR.s 			page 23
+
+
+ 835 00a2 DC65     		streq	r4, [r3, #92]
+ 172:src/btphy/rf.c **** 			else
+ 836              		.loc 1 172 5 view .LVU286
+ 175:src/btphy/rf.c **** 			SCLK_SET;
+ 837              		.loc 1 175 4 view .LVU287
+ 838              	.LVL51:
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 839              		.loc 1 176 4 view .LVU288
+ 172:src/btphy/rf.c **** 			else
+ 840              		.loc 1 172 5 is_stmt 0 view .LVU289
+ 841 00a4 9C65     		strne	r4, [r3, #88]
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 842              		.loc 1 171 7 view .LVU290
+ 843 00a6 11F0400F 		tst	r1, #64
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 844              		.loc 1 176 4 view .LVU291
+ 845 00aa 9A65     		str	r2, [r3, #88]
+ 177:src/btphy/rf.c **** 		}
+ 846              		.loc 1 177 4 is_stmt 1 view .LVU292
+ 847 00ac DA65     		str	r2, [r3, #92]
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 848              		.loc 1 170 22 discriminator 2 view .LVU293
+ 849              	.LVL52:
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 850              		.loc 1 170 17 discriminator 1 view .LVU294
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 851              		.loc 1 171 4 view .LVU295
+ 174:src/btphy/rf.c **** 			temp >>= 1;
+ 852              		.loc 1 174 5 view .LVU296
+ 853 00ae 0CBF     		ite	eq
+ 854 00b0 DC65     		streq	r4, [r3, #92]
+ 172:src/btphy/rf.c **** 			else
+ 855              		.loc 1 172 5 view .LVU297
+ 175:src/btphy/rf.c **** 			SCLK_SET;
+ 856              		.loc 1 175 4 view .LVU298
+ 857              	.LVL53:
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 858              		.loc 1 176 4 view .LVU299
+ 172:src/btphy/rf.c **** 			else
+ 859              		.loc 1 172 5 is_stmt 0 view .LVU300
+ 860 00b2 9C65     		strne	r4, [r3, #88]
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 861              		.loc 1 171 7 view .LVU301
+ 862 00b4 C909     		lsrs	r1, r1, #7
+ 863              	.LVL54:
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 864              		.loc 1 176 4 view .LVU302
+ 865 00b6 9A65     		str	r2, [r3, #88]
+ 177:src/btphy/rf.c **** 		}
+ 866              		.loc 1 177 4 is_stmt 1 view .LVU303
+ 867 00b8 DA65     		str	r2, [r3, #92]
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 868              		.loc 1 170 22 discriminator 2 view .LVU304
+ 869              	.LVL55:
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 870              		.loc 1 170 17 discriminator 1 view .LVU305
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ARM GAS  /tmp/ccWPuOFR.s 			page 24
+
+
+ 871              		.loc 1 171 4 view .LVU306
+ 171:src/btphy/rf.c **** 				MOSI_SET;
+ 872              		.loc 1 171 7 is_stmt 0 view .LVU307
+ 873 00ba 11D1     		bne	.L43
+ 174:src/btphy/rf.c **** 			temp >>= 1;
+ 874              		.loc 1 174 5 is_stmt 1 view .LVU308
+ 168:src/btphy/rf.c **** 		temp = data[i];
+ 875              		.loc 1 168 16 is_stmt 0 discriminator 1 view .LVU309
+ 876 00bc 8445     		cmp	ip, r0
+ 174:src/btphy/rf.c **** 			temp >>= 1;
+ 877              		.loc 1 174 5 view .LVU310
+ 878 00be DC65     		str	r4, [r3, #92]
+ 175:src/btphy/rf.c **** 			SCLK_SET;
+ 879              		.loc 1 175 4 is_stmt 1 view .LVU311
+ 880              	.LVL56:
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 881              		.loc 1 176 4 view .LVU312
+ 882 00c0 9A65     		str	r2, [r3, #88]
+ 177:src/btphy/rf.c **** 		}
+ 883              		.loc 1 177 4 view .LVU313
+ 884 00c2 DA65     		str	r2, [r3, #92]
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 885              		.loc 1 170 22 discriminator 2 view .LVU314
+ 886              	.LVL57:
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 887              		.loc 1 170 17 discriminator 1 view .LVU315
+ 168:src/btphy/rf.c **** 		temp = data[i];
+ 888              		.loc 1 168 23 discriminator 2 view .LVU316
+ 168:src/btphy/rf.c **** 		temp = data[i];
+ 889              		.loc 1 168 16 discriminator 1 view .LVU317
+ 890 00c4 C5D1     		bne	.L45
+ 891              	.LVL58:
+ 892              	.L28:
+ 181:src/btphy/rf.c **** 	/* end transaction by raising CSN */
+ 893              		.loc 1 181 2 view .LVU318
+ 894              	.LBB36:
+ 895              	.LBI36:
+ 142:src/btphy/rf.c **** 	volatile int delay_counter;
+ 896              		.loc 1 142 13 view .LVU319
+ 897              	.LBB37:
+ 143:src/btphy/rf.c **** 	delay_counter = 10;
+ 898              		.loc 1 143 2 view .LVU320
+ 144:src/btphy/rf.c **** 	while (--delay_counter);
+ 899              		.loc 1 144 2 view .LVU321
+ 144:src/btphy/rf.c **** 	while (--delay_counter);
+ 900              		.loc 1 144 16 is_stmt 0 view .LVU322
+ 901 00c6 0A23     		movs	r3, #10
+ 902 00c8 0193     		str	r3, [sp, #4]
+ 145:src/btphy/rf.c **** }
+ 903              		.loc 1 145 2 is_stmt 1 view .LVU323
+ 904              	.L46:
+ 145:src/btphy/rf.c **** }
+ 905              		.loc 1 145 9 discriminator 1 view .LVU324
+ 906 00ca 019B     		ldr	r3, [sp, #4]
+ 907 00cc 013B     		subs	r3, r3, #1
+ 908 00ce 0193     		str	r3, [sp, #4]
+ 909 00d0 002B     		cmp	r3, #0
+ARM GAS  /tmp/ccWPuOFR.s 			page 25
+
+
+ 910 00d2 FAD1     		bne	.L46
+ 911              	.LBE37:
+ 912              	.LBE36:
+ 183:src/btphy/rf.c **** }
+ 913              		.loc 1 183 2 view .LVU325
+ 914 00d4 2022     		movs	r2, #32
+ 915 00d6 054B     		ldr	r3, .L51
+ 916 00d8 9A65     		str	r2, [r3, #88]
+ 917              	.LVL59:
+ 183:src/btphy/rf.c **** }
+ 918              		.loc 1 183 2 is_stmt 0 view .LVU326
+ 919              	.LBE38:
+ 920              	.LBE34:
+ 190:src/btphy/rf.c **** }
+ 921              		.loc 1 190 1 view .LVU327
+ 922 00da 03B0     		add	sp, sp, #12
+ 923              		.cfi_remember_state
+ 924              		.cfi_def_cfa_offset 4
+ 925              		@ sp needed
+ 926 00dc 10BC     		pop	{r4}
+ 927              		.cfi_restore 4
+ 928              		.cfi_def_cfa_offset 0
+ 929 00de 7047     		bx	lr
+ 930              	.LVL60:
+ 931              	.L43:
+ 932              		.cfi_restore_state
+ 933              	.LBB40:
+ 934              	.LBB39:
+ 172:src/btphy/rf.c **** 			else
+ 935              		.loc 1 172 5 is_stmt 1 view .LVU328
+ 168:src/btphy/rf.c **** 		temp = data[i];
+ 936              		.loc 1 168 16 is_stmt 0 discriminator 1 view .LVU329
+ 937 00e0 8445     		cmp	ip, r0
+ 172:src/btphy/rf.c **** 			else
+ 938              		.loc 1 172 5 view .LVU330
+ 939 00e2 9C65     		str	r4, [r3, #88]
+ 175:src/btphy/rf.c **** 			SCLK_SET;
+ 940              		.loc 1 175 4 is_stmt 1 view .LVU331
+ 941              	.LVL61:
+ 176:src/btphy/rf.c **** 			SCLK_CLR;
+ 942              		.loc 1 176 4 view .LVU332
+ 943 00e4 9A65     		str	r2, [r3, #88]
+ 177:src/btphy/rf.c **** 		}
+ 944              		.loc 1 177 4 view .LVU333
+ 945 00e6 DA65     		str	r2, [r3, #92]
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 946              		.loc 1 170 22 discriminator 2 view .LVU334
+ 947              	.LVL62:
+ 170:src/btphy/rf.c **** 			if (temp & 1)
+ 948              		.loc 1 170 17 discriminator 1 view .LVU335
+ 168:src/btphy/rf.c **** 		temp = data[i];
+ 949              		.loc 1 168 23 discriminator 2 view .LVU336
+ 168:src/btphy/rf.c **** 		temp = data[i];
+ 950              		.loc 1 168 16 discriminator 1 view .LVU337
+ 951 00e8 B3D1     		bne	.L45
+ 952 00ea ECE7     		b	.L28
+ 953              	.L52:
+ARM GAS  /tmp/ccWPuOFR.s 			page 26
+
+
+ 954              		.align	2
+ 955              	.L51:
+ 956 00ec 00C00920 		.word	537509888
+ 957              	.LBE39:
+ 958              	.LBE40:
+ 959              		.cfi_endproc
+ 960              	.LFE17:
+ 962              		.section	.text.btphy_rf_off,"ax",%progbits
+ 963              		.align	1
+ 964              		.p2align 2,,3
+ 965              		.global	btphy_rf_off
+ 966              		.syntax unified
+ 967              		.thumb
+ 968              		.thumb_func
+ 970              	btphy_rf_off:
+ 971              	.LFB18:
+ 191:src/btphy/rf.c **** 
+ 192:src/btphy/rf.c **** void btphy_rf_off(void)
+ 193:src/btphy/rf.c **** {
+ 972              		.loc 1 193 1 view -0
+ 973              		.cfi_startproc
+ 974              		@ args = 0, pretend = 0, frame = 0
+ 975              		@ frame_needed = 0, uses_anonymous_args = 0
+ 976 0000 08B5     		push	{r3, lr}
+ 977              		.cfi_def_cfa_offset 8
+ 978              		.cfi_offset 3, -8
+ 979              		.cfi_offset 14, -4
+ 194:src/btphy/rf.c **** 	btphy_rf_idle();
+ 980              		.loc 1 194 2 view .LVU339
+ 981              	.LBB41:
+ 982              	.LBI41:
+  39:include/ubtbr/rf.h **** {
+ 983              		.loc 3 39 20 view .LVU340
+ 984              	.LBB42:
+  41:include/ubtbr/rf.h **** 	TXLED_CLR;
+ 985              		.loc 3 41 2 view .LVU341
+ 986 0002 6420     		movs	r0, #100
+ 987 0004 FFF7FEFF 		bl	cc2400_strobe
+ 988              	.LVL63:
+  42:include/ubtbr/rf.h **** 	RXLED_CLR;
+ 989              		.loc 3 42 2 view .LVU342
+ 990 0008 4FF48071 		mov	r1, #256
+ 991              		.loc 3 43 2 is_stmt 0 view .LVU343
+ 992 000c 1022     		movs	r2, #16
+  42:include/ubtbr/rf.h **** 	RXLED_CLR;
+ 993              		.loc 3 42 2 view .LVU344
+ 994 000e 084B     		ldr	r3, .L56
+ 995 0010 D963     		str	r1, [r3, #60]
+ 996              		.loc 3 43 2 is_stmt 1 view .LVU345
+ 997 0012 DA63     		str	r2, [r3, #60]
+ 998              	.LBE42:
+ 999              	.LBE41:
+ 195:src/btphy/rf.c **** 	WAIT_CC2400_STATE(STATE_IDLE);
+ 1000              		.loc 1 195 2 view .LVU346
+ 1001              	.L54:
+ 1002              		.loc 1 195 2 discriminator 2 view .LVU347
+ 1003 0014 0E20     		movs	r0, #14
+ARM GAS  /tmp/ccWPuOFR.s 			page 27
+
+
+ 1004 0016 FFF7FEFF 		bl	cc2400_get
+ 1005              	.LVL64:
+ 1006 001a 00F01F00 		and	r0, r0, #31
+ 1007 001e 0128     		cmp	r0, #1
+ 1008 0020 F8D1     		bne	.L54
+ 1009              		.loc 1 195 31 view .LVU348
+ 196:src/btphy/rf.c **** 
+ 197:src/btphy/rf.c **** #ifdef UBERTOOTH_ONE
+ 198:src/btphy/rf.c **** 	PAEN_CLR;
+ 1010              		.loc 1 198 2 view .LVU349
+ 1011 0022 8021     		movs	r1, #128
+ 199:src/btphy/rf.c **** 	HGM_CLR;
+ 1012              		.loc 1 199 2 is_stmt 0 view .LVU350
+ 1013 0024 4FF48072 		mov	r2, #256
+ 198:src/btphy/rf.c **** 	HGM_CLR;
+ 1014              		.loc 1 198 2 view .LVU351
+ 1015 0028 014B     		ldr	r3, .L56
+ 1016 002a D965     		str	r1, [r3, #92]
+ 1017              		.loc 1 199 2 is_stmt 1 view .LVU352
+ 1018 002c DA65     		str	r2, [r3, #92]
+ 200:src/btphy/rf.c **** #endif
+ 201:src/btphy/rf.c **** }
+ 1019              		.loc 1 201 1 is_stmt 0 view .LVU353
+ 1020 002e 08BD     		pop	{r3, pc}
+ 1021              	.L57:
+ 1022              		.align	2
+ 1023              	.L56:
+ 1024 0030 00C00920 		.word	537509888
+ 1025              		.cfi_endproc
+ 1026              	.LFE18:
+ 1028              		.section	.text.btphy_rf_tune_chan,"ax",%progbits
+ 1029              		.align	1
+ 1030              		.p2align 2,,3
+ 1031              		.global	btphy_rf_tune_chan
+ 1032              		.syntax unified
+ 1033              		.thumb
+ 1034              		.thumb_func
+ 1036              	btphy_rf_tune_chan:
+ 1037              	.LVL65:
+ 1038              	.LFB19:
+ 202:src/btphy/rf.c **** 
+ 203:src/btphy/rf.c **** void btphy_rf_tune_chan(uint16_t channel, int tx)
+ 204:src/btphy/rf.c **** {
+ 1039              		.loc 1 204 1 is_stmt 1 view -0
+ 1040              		.cfi_startproc
+ 1041              		@ args = 0, pretend = 0, frame = 0
+ 1042              		@ frame_needed = 0, uses_anonymous_args = 0
+ 1043              		.loc 1 204 1 is_stmt 0 view .LVU355
+ 1044 0000 38B5     		push	{r3, r4, r5, lr}
+ 1045              		.cfi_def_cfa_offset 16
+ 1046              		.cfi_offset 3, -16
+ 1047              		.cfi_offset 4, -12
+ 1048              		.cfi_offset 5, -8
+ 1049              		.cfi_offset 14, -4
+ 1050 0002 0446     		mov	r4, r0
+ 1051 0004 0D46     		mov	r5, r1
+ 205:src/btphy/rf.c **** 	/* Wait for state IDLE before changing FSDIV */
+ARM GAS  /tmp/ccWPuOFR.s 			page 28
+
+
+ 206:src/btphy/rf.c **** 	WAIT_CC2400_STATE(STATE_IDLE);
+ 1052              		.loc 1 206 2 is_stmt 1 view .LVU356
+ 1053              	.LVL66:
+ 1054              	.L59:
+ 1055              		.loc 1 206 2 discriminator 2 view .LVU357
+ 1056 0006 0E20     		movs	r0, #14
+ 1057 0008 FFF7FEFF 		bl	cc2400_get
+ 1058              	.LVL67:
+ 1059 000c 00F01F00 		and	r0, r0, #31
+ 1060 0010 0128     		cmp	r0, #1
+ 1061 0012 F8D1     		bne	.L59
+ 1062              		.loc 1 206 31 view .LVU358
+ 207:src/btphy/rf.c **** 
+ 208:src/btphy/rf.c **** 	/* Retune */
+ 209:src/btphy/rf.c **** #ifdef USE_TX_1MHZ_OFF
+ 210:src/btphy/rf.c **** 	channel -= 1;
+ 211:src/btphy/rf.c **** #else
+ 212:src/btphy/rf.c **** 	if (!tx)
+ 1063              		.loc 1 212 2 view .LVU359
+ 213:src/btphy/rf.c **** 		channel -= 1;
+ 1064              		.loc 1 213 11 is_stmt 0 view .LVU360
+ 1065 0014 611E     		subs	r1, r4, #1
+ 1066 0016 89B2     		uxth	r1, r1
+ 1067              	.LVL68:
+ 214:src/btphy/rf.c **** #endif
+ 215:src/btphy/rf.c **** 	cc2400_set(FSDIV, channel);
+ 1068              		.loc 1 215 2 is_stmt 1 view .LVU361
+ 1069 0018 002D     		cmp	r5, #0
+ 1070 001a 18BF     		it	ne
+ 1071 001c 2146     		movne	r1, r4
+ 1072              	.LVL69:
+ 216:src/btphy/rf.c **** }
+ 1073              		.loc 1 216 1 is_stmt 0 view .LVU362
+ 1074 001e BDE83840 		pop	{r3, r4, r5, lr}
+ 1075              		.cfi_restore 14
+ 1076              		.cfi_restore 5
+ 1077              		.cfi_restore 4
+ 1078              		.cfi_restore 3
+ 1079              		.cfi_def_cfa_offset 0
+ 1080              	.LVL70:
+ 215:src/btphy/rf.c **** }
+ 1081              		.loc 1 215 2 view .LVU363
+ 1082 0022 0220     		movs	r0, #2
+ 1083 0024 FFF7FEBF 		b	cc2400_set
+ 1084              	.LVL71:
+ 215:src/btphy/rf.c **** }
+ 1085              		.loc 1 215 2 view .LVU364
+ 1086              		.cfi_endproc
+ 1087              	.LFE19:
+ 1089              		.global	rf_state
+ 1090              		.bss
+ 1091              		.align	2
+ 1092              		.set	.LANCHOR0,. + 0
+ 1095              	rf_state:
+ 1096 0000 00000000 		.space	12
+ 1096      00000000 
+ 1096      00000000 
+ARM GAS  /tmp/ccWPuOFR.s 			page 29
+
+
+ 1097              		.text
+ 1098              	.Letext0:
+ 1099              		.file 4 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 1100              		.file 5 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 1101              		.file 6 "../common/ubertooth.h"
+ 1102              		.file 7 "include/ubtbr/ubertooth_dma.h"
+ 1103              		.file 8 "include/ubtbr/debug.h"
+ARM GAS  /tmp/ccWPuOFR.s 			page 30
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 rf.c
+     /tmp/ccWPuOFR.s:19     .rodata.str1.4:00000000 $d
+     /tmp/ccWPuOFR.s:23     .text.EINT3_IRQHandler:00000000 $t
+     /tmp/ccWPuOFR.s:30     .text.EINT3_IRQHandler:00000000 EINT3_IRQHandler
+     /tmp/ccWPuOFR.s:77     .text.EINT3_IRQHandler:00000028 $d
+     /tmp/ccWPuOFR.s:84     .text.btphy_rf_enable_int:00000000 $t
+     /tmp/ccWPuOFR.s:91     .text.btphy_rf_enable_int:00000000 btphy_rf_enable_int
+     /tmp/ccWPuOFR.s:158    .text.btphy_rf_enable_int:00000060 $d
+     /tmp/ccWPuOFR.s:164    .text.btphy_rf_disable_int:00000000 $t
+     /tmp/ccWPuOFR.s:171    .text.btphy_rf_disable_int:00000000 btphy_rf_disable_int
+     /tmp/ccWPuOFR.s:209    .text.btphy_rf_disable_int:00000038 $d
+     /tmp/ccWPuOFR.s:218    .text.btphy_rf_set_freq_off:00000000 $t
+     /tmp/ccWPuOFR.s:225    .text.btphy_rf_set_freq_off:00000000 btphy_rf_set_freq_off
+     /tmp/ccWPuOFR.s:321    .text.btphy_rf_set_freq_off:00000030 $d
+     /tmp/ccWPuOFR.s:331    .text.btphy_rf_set_max_ac_errors:00000000 $t
+     /tmp/ccWPuOFR.s:338    .text.btphy_rf_set_max_ac_errors:00000000 btphy_rf_set_max_ac_errors
+     /tmp/ccWPuOFR.s:368    .text.btphy_rf_set_max_ac_errors:00000010 $d
+     /tmp/ccWPuOFR.s:374    .text.btphy_rf_cfg_sync:00000000 $t
+     /tmp/ccWPuOFR.s:381    .text.btphy_rf_cfg_sync:00000000 btphy_rf_cfg_sync
+     /tmp/ccWPuOFR.s:419    .text.btphy_rf_init:00000000 $t
+     /tmp/ccWPuOFR.s:426    .text.btphy_rf_init:00000000 btphy_rf_init
+     /tmp/ccWPuOFR.s:581    .text.btphy_rf_init:000000b8 $d
+     /tmp/ccWPuOFR.s:588    .text.btphy_rf_fifo_write:00000000 $t
+     /tmp/ccWPuOFR.s:595    .text.btphy_rf_fifo_write:00000000 btphy_rf_fifo_write
+     /tmp/ccWPuOFR.s:956    .text.btphy_rf_fifo_write:000000ec $d
+     /tmp/ccWPuOFR.s:963    .text.btphy_rf_off:00000000 $t
+     /tmp/ccWPuOFR.s:970    .text.btphy_rf_off:00000000 btphy_rf_off
+     /tmp/ccWPuOFR.s:1024   .text.btphy_rf_off:00000030 $d
+     /tmp/ccWPuOFR.s:1029   .text.btphy_rf_tune_chan:00000000 $t
+     /tmp/ccWPuOFR.s:1036   .text.btphy_rf_tune_chan:00000000 btphy_rf_tune_chan
+     /tmp/ccWPuOFR.s:1095   .bss:00000000 rf_state
+     /tmp/ccWPuOFR.s:1091   .bss:00000000 $d
+
+UNDEFINED SYMBOLS
+die
+cc2400_set
+cprintf
+dma_poweron
+dio_ssp_init
+cc2400_strobe
+cc2400_get

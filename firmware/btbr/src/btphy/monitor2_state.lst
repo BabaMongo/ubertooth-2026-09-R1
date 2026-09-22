@@ -1,0 +1,792 @@
+ARM GAS  /tmp/ccmQTCkg.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"monitor2_state.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/btphy/monitor2_state.c"
+  18              		.section	.rodata.str1.4,"aMS",%progbits,1
+  19              		.align	2
+  20              	.LC0:
+  21 0000 4449457C 		.ascii	"DIE|rx : expect acl rx\012\000"
+  21      7278203A 
+  21      20657870 
+  21      65637420 
+  21      61636C20 
+  22              		.align	2
+  23              	.LC2:
+  24 0018 2825632C 		.ascii	"(%c,%x,%x)\000"
+  24      25782C25 
+  24      782900
+  25 0023 00       		.align	2
+  26              	.LC3:
+  27 0024 4449457C 		.ascii	"DIE|mon2: txq full\012\000"
+  27      6D6F6E32 
+  27      3A207478 
+  27      71206675 
+  27      6C6C0A00 
+  28              		.align	2
+  29              	.LC1:
+  30 0038 4E504600 		.ascii	"NPF\000"
+  31              		.section	.text.monitor2_rx_cb,"ax",%progbits
+  32              		.align	1
+  33              		.p2align 2,,3
+  34              		.syntax unified
+  35              		.thumb
+  36              		.thumb_func
+  38              	monitor2_rx_cb:
+  39              	.LVL0:
+  40              	.LFB32:
+   1:src/btphy/monitor2_state.c **** /* Monitor connection state
+   2:src/btphy/monitor2_state.c ****  *
+   3:src/btphy/monitor2_state.c ****  * Copyright 2020 Etienne Helluy-Lafont, Univ. Lille, CNRS.
+   4:src/btphy/monitor2_state.c ****  *
+   5:src/btphy/monitor2_state.c ****  * This file is part of Project Ubertooth.
+   6:src/btphy/monitor2_state.c ****  *
+   7:src/btphy/monitor2_state.c ****  * This program is free software; you can redistribute it and/or modify
+   8:src/btphy/monitor2_state.c ****  * it under the terms of the GNU General Public License as published by
+ARM GAS  /tmp/ccmQTCkg.s 			page 2
+
+
+   9:src/btphy/monitor2_state.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  10:src/btphy/monitor2_state.c ****  * any later version.
+  11:src/btphy/monitor2_state.c ****  *
+  12:src/btphy/monitor2_state.c ****  * This program is distributed in the hope that it will be useful,
+  13:src/btphy/monitor2_state.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  14:src/btphy/monitor2_state.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  15:src/btphy/monitor2_state.c ****  * GNU General Public License for more details.
+  16:src/btphy/monitor2_state.c ****  *
+  17:src/btphy/monitor2_state.c ****  * You should have received a copy of the GNU General Public License
+  18:src/btphy/monitor2_state.c ****  * along with this program; see the file COPYING.  If not, write to
+  19:src/btphy/monitor2_state.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  20:src/btphy/monitor2_state.c ****  * Boston, MA 02110-1301, USA.
+  21:src/btphy/monitor2_state.c ****  */
+  22:src/btphy/monitor2_state.c **** #include <string.h>
+  23:src/btphy/monitor2_state.c **** #include <ubtbr/cfg.h>
+  24:src/btphy/monitor2_state.c **** #include <ubtbr/btctl_intf.h>
+  25:src/btphy/monitor2_state.c **** #include <ubtbr/btphy.h>
+  26:src/btphy/monitor2_state.c **** #include <ubtbr/tdma_sched.h>
+  27:src/btphy/monitor2_state.c **** #include <ubtbr/bb.h>
+  28:src/btphy/monitor2_state.c **** #include <ubtbr/rx_task.h>
+  29:src/btphy/monitor2_state.c **** 
+  30:src/btphy/monitor2_state.c **** #define RX_PREPARE_IDX	1  //  We will receive in all timeslots where clkn1_0 = 0
+  31:src/btphy/monitor2_state.c **** 
+  32:src/btphy/monitor2_state.c **** static struct {
+  33:src/btphy/monitor2_state.c **** 	/* Parameters */
+  34:src/btphy/monitor2_state.c **** 	uint64_t master_bdaddr;
+  35:src/btphy/monitor2_state.c **** } monitor2_state;
+  36:src/btphy/monitor2_state.c **** 
+  37:src/btphy/monitor2_state.c **** static void monitor2_state_schedule_rx(unsigned skip_slots);
+  38:src/btphy/monitor2_state.c **** 
+  39:src/btphy/monitor2_state.c **** static int monitor2_state_canceled(void)
+  40:src/btphy/monitor2_state.c **** {
+  41:src/btphy/monitor2_state.c **** 	return btctl_get_state() != BTCTL_STATE_CONNECTED;
+  42:src/btphy/monitor2_state.c **** }
+  43:src/btphy/monitor2_state.c **** 
+  44:src/btphy/monitor2_state.c **** static int monitor2_rx_cb(msg_t *msg, void *arg, int time_offset)
+  45:src/btphy/monitor2_state.c **** {
+  41              		.loc 1 45 1 view -0
+  42              		.cfi_startproc
+  43              		@ args = 0, pretend = 0, frame = 8
+  44              		@ frame_needed = 0, uses_anonymous_args = 0
+  45              		.loc 1 45 1 is_stmt 0 view .LVU1
+  46 0000 10B5     		push	{r4, lr}
+  47              		.cfi_def_cfa_offset 8
+  48              		.cfi_offset 4, -8
+  49              		.cfi_offset 14, -4
+  50 0002 82B0     		sub	sp, sp, #8
+  51              		.cfi_def_cfa_offset 16
+  46:src/btphy/monitor2_state.c **** 	btctl_hdr_t *h = (btctl_hdr_t*)msg->data;
+  52              		.loc 1 46 2 is_stmt 1 view .LVU2
+  47:src/btphy/monitor2_state.c **** 	btctl_rx_pkt_t *pkt;
+  53              		.loc 1 47 2 view .LVU3
+  48:src/btphy/monitor2_state.c **** 	int rc;
+  54              		.loc 1 48 2 view .LVU4
+  49:src/btphy/monitor2_state.c **** 
+  50:src/btphy/monitor2_state.c **** 	if (monitor2_state_canceled())
+  55              		.loc 1 50 2 view .LVU5
+ARM GAS  /tmp/ccmQTCkg.s 			page 3
+
+
+  56              	.LBB75:
+  57              	.LBI75:
+  39:src/btphy/monitor2_state.c **** {
+  58              		.loc 1 39 12 view .LVU6
+  41:src/btphy/monitor2_state.c **** }
+  59              		.loc 1 41 2 view .LVU7
+  60              	.LBB76:
+  61              	.LBI76:
+  62              		.file 2 "include/ubtbr/btctl_intf.h"
+   1:include/ubtbr/btctl_intf.h **** #ifndef __BTCTL_INTF_H
+   2:include/ubtbr/btctl_intf.h **** #define __BTCTL_INTF_H
+   3:include/ubtbr/btctl_intf.h **** #include <ubtbr/bb_msg.h>
+   4:include/ubtbr/btctl_intf.h **** #include <ubtbr/queue.h>
+   5:include/ubtbr/btctl_intf.h **** #include <ubtbr/system.h>
+   6:include/ubtbr/btctl_intf.h **** #include <ubertooth_interface.h>
+   7:include/ubtbr/btctl_intf.h **** 
+   8:include/ubtbr/btctl_intf.h **** typedef struct btctl_s {
+   9:include/ubtbr/btctl_intf.h **** 	btctl_state_t state;
+  10:include/ubtbr/btctl_intf.h **** 	msg_queue_t rx_q;
+  11:include/ubtbr/btctl_intf.h **** 	msg_queue_t tx_q;
+  12:include/ubtbr/btctl_intf.h **** 	msg_queue_t acl_tx_q;
+  13:include/ubtbr/btctl_intf.h **** 	msg_t *eir_msg;
+  14:include/ubtbr/btctl_intf.h **** 	btctl_tx_pkt_t *eir_pkt;
+  15:include/ubtbr/btctl_intf.h **** } btctl_t;
+  16:include/ubtbr/btctl_intf.h **** 
+  17:include/ubtbr/btctl_intf.h **** extern btctl_t btctl;
+  18:include/ubtbr/btctl_intf.h **** 
+  19:include/ubtbr/btctl_intf.h **** void btctl_init(void);
+  20:include/ubtbr/btctl_intf.h **** int btctl_work(void);
+  21:include/ubtbr/btctl_intf.h **** 
+  22:include/ubtbr/btctl_intf.h **** void btctl_set_state(btctl_state_t state, btctl_reason_t reason);
+  23:include/ubtbr/btctl_intf.h **** 
+  24:include/ubtbr/btctl_intf.h **** static inline btctl_state_t btctl_get_state(void)
+  63              		.loc 2 24 29 view .LVU8
+  64              	.LBB77:
+  25:include/ubtbr/btctl_intf.h **** {
+  26:include/ubtbr/btctl_intf.h **** 	return btctl.state;
+  65              		.loc 2 26 2 view .LVU9
+  66              		.loc 2 26 14 is_stmt 0 view .LVU10
+  67 0004 254B     		ldr	r3, .L27
+  68              	.LBE77:
+  69              	.LBE76:
+  70              	.LBE75:
+  45:src/btphy/monitor2_state.c **** 	btctl_hdr_t *h = (btctl_hdr_t*)msg->data;
+  71              		.loc 1 45 1 view .LVU11
+  72 0006 0446     		mov	r4, r0
+  73              		.loc 1 50 5 discriminator 1 view .LVU12
+  74 0008 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+  75 000a 032B     		cmp	r3, #3
+  76 000c 1FD1     		bne	.L22
+  51:src/btphy/monitor2_state.c **** 	{
+  52:src/btphy/monitor2_state.c **** 		msg_free(msg);
+  53:src/btphy/monitor2_state.c **** 		return 0;
+  54:src/btphy/monitor2_state.c **** 	}
+  55:src/btphy/monitor2_state.c **** 	/* Check if a packet was received, to adjust clock if needed */
+  56:src/btphy/monitor2_state.c **** 	if (h->type != BTCTL_RX_PKT)
+  77              		.loc 1 56 2 is_stmt 1 view .LVU13
+ARM GAS  /tmp/ccmQTCkg.s 			page 4
+
+
+  78              		.loc 1 56 5 is_stmt 0 view .LVU14
+  79 000e 037B     		ldrb	r3, [r0, #12]	@ zero_extendqisi2
+  80 0010 282B     		cmp	r3, #40
+  81 0012 40D1     		bne	.L23
+  82              	.LVL1:
+  83              	.LBB78:
+  84              	.LBI78:
+  44:src/btphy/monitor2_state.c **** {
+  85              		.loc 1 44 12 is_stmt 1 view .LVU15
+  86              	.LBB79:
+  57:src/btphy/monitor2_state.c **** 		DIE("rx : expect acl rx");
+  58:src/btphy/monitor2_state.c **** 	pkt = (btctl_rx_pkt_t *)h->data;
+  87              		.loc 1 58 2 view .LVU16
+  59:src/btphy/monitor2_state.c **** 
+  60:src/btphy/monitor2_state.c **** 	if (!BBPKT_HAS_PKT(pkt))
+  88              		.loc 1 60 2 view .LVU17
+  89              		.loc 1 60 7 is_stmt 0 view .LVU18
+  90 0014 437D     		ldrb	r3, [r0, #21]	@ zero_extendqisi2
+  91              		.loc 1 60 5 view .LVU19
+  92 0016 D807     		lsls	r0, r3, #31
+  93              	.LVL2:
+  94              		.loc 1 60 5 view .LVU20
+  95 0018 09D5     		bpl	.L5
+  61:src/btphy/monitor2_state.c **** 	{
+  62:src/btphy/monitor2_state.c **** 		//console_putc('N');
+  63:src/btphy/monitor2_state.c **** 		goto end;
+  64:src/btphy/monitor2_state.c **** 	}
+  65:src/btphy/monitor2_state.c **** 
+  66:src/btphy/monitor2_state.c **** 	if ((pkt->clkn&2) == 0) // Packet from master
+  96              		.loc 1 66 2 is_stmt 1 view .LVU21
+  97              		.loc 1 66 10 is_stmt 0 view .LVU22
+  98 001a 2169     		ldr	r1, [r4, #16]	@ unaligned
+  99              	.LVL3:
+ 100              		.loc 1 66 5 view .LVU23
+ 101 001c 8907     		lsls	r1, r1, #30
+ 102 001e 35D5     		bpl	.L24
+ 103              	.LVL4:
+ 104              	.L6:
+  67:src/btphy/monitor2_state.c **** 	{
+  68:src/btphy/monitor2_state.c **** 		/* Resync to master */
+  69:src/btphy/monitor2_state.c **** 		btphy_adj_clkn_delay(time_offset);
+  70:src/btphy/monitor2_state.c **** 	}
+  71:src/btphy/monitor2_state.c **** 
+  72:src/btphy/monitor2_state.c **** 	if (!BBPKT_HAS_HDR(pkt))
+ 105              		.loc 1 72 2 is_stmt 1 view .LVU24
+ 106              		.loc 1 72 5 is_stmt 0 view .LVU25
+ 107 0020 9A07     		lsls	r2, r3, #30
+ 108 0022 04D5     		bpl	.L5
+  73:src/btphy/monitor2_state.c **** 	{
+  74:src/btphy/monitor2_state.c **** 		goto end;
+  75:src/btphy/monitor2_state.c **** 	}
+  76:src/btphy/monitor2_state.c **** #if 1
+  77:src/btphy/monitor2_state.c **** 	if (pkt->bb_hdr.type < 3) // NULL / POLL / FHS
+ 109              		.loc 1 77 2 is_stmt 1 view .LVU26
+ 110              		.loc 1 77 17 is_stmt 0 view .LVU27
+ 111 0024 617E     		ldrb	r1, [r4, #25]	@ zero_extendqisi2
+ 112              		.loc 1 77 5 view .LVU28
+ARM GAS  /tmp/ccmQTCkg.s 			page 5
+
+
+ 113 0026 0229     		cmp	r1, #2
+ 114 0028 26D9     		bls	.L25
+ 115              	.L7:
+  78:src/btphy/monitor2_state.c **** 	{
+  79:src/btphy/monitor2_state.c **** 		cprintf("(%c,%x,%x)","NPF"[pkt->bb_hdr.type], pkt->clkn&0xff,pkt->bb_hdr.flags);
+  80:src/btphy/monitor2_state.c **** 	}
+  81:src/btphy/monitor2_state.c **** #endif
+  82:src/btphy/monitor2_state.c **** 	if (BBPKT_HAS_CRC(pkt))
+ 116              		.loc 1 82 2 is_stmt 1 view .LVU29
+ 117              		.loc 1 82 5 is_stmt 0 view .LVU30
+ 118 002a 5B07     		lsls	r3, r3, #29
+ 119 002c 14D4     		bmi	.L26
+ 120              	.L5:
+ 121              	.LDL1:
+  83:src/btphy/monitor2_state.c **** 	{
+  84:src/btphy/monitor2_state.c **** 		if(btctl_tx_enqueue(msg) != 0)
+  85:src/btphy/monitor2_state.c **** 		{
+  86:src/btphy/monitor2_state.c **** 			DIE("mon2: txq full");
+  87:src/btphy/monitor2_state.c **** 		}
+  88:src/btphy/monitor2_state.c **** 		goto end_nofree;
+  89:src/btphy/monitor2_state.c **** 	}
+  90:src/btphy/monitor2_state.c **** end:
+  91:src/btphy/monitor2_state.c **** 	msg_free(msg);
+ 122              		.loc 1 91 2 is_stmt 1 view .LVU31
+ 123              	.LVL5:
+ 124              	.LBB80:
+ 125              	.LBI80:
+ 126              		.file 3 "include/ubtbr/msg.h"
+   1:include/ubtbr/msg.h **** #ifndef __DEF_MSG_H
+   2:include/ubtbr/msg.h **** #define __DEF_MSG_H
+   3:include/ubtbr/msg.h **** #include <stdint.h>
+   4:include/ubtbr/msg.h **** 
+   5:include/ubtbr/msg.h **** typedef struct msg_s {
+   6:include/ubtbr/msg.h **** 	uint16_t len;
+   7:include/ubtbr/msg.h **** 	uint16_t data_len;
+   8:include/ubtbr/msg.h **** 	uint8_t *read;
+   9:include/ubtbr/msg.h **** 	uint8_t *write;
+  10:include/ubtbr/msg.h **** 	/* never move head */
+  11:include/ubtbr/msg.h **** 	uint8_t data[0];
+  12:include/ubtbr/msg.h **** } msg_t;
+  13:include/ubtbr/msg.h **** 
+  14:include/ubtbr/msg.h **** /* Allocate a msg_t wigh given room*/
+  15:include/ubtbr/msg.h **** static inline msg_t *msg_alloc(unsigned size)
+  16:include/ubtbr/msg.h **** {
+  17:include/ubtbr/msg.h **** 	msg_t *msg = (msg_t*)btctl_mem_alloc(sizeof(msg_t)+size);
+  18:include/ubtbr/msg.h **** 
+  19:include/ubtbr/msg.h **** 	msg->write = msg->data;
+  20:include/ubtbr/msg.h **** 	msg->read = msg->data;
+  21:include/ubtbr/msg.h **** 	msg->data_len = size;
+  22:include/ubtbr/msg.h **** 
+  23:include/ubtbr/msg.h **** 	return msg;
+  24:include/ubtbr/msg.h **** }
+  25:include/ubtbr/msg.h **** 
+  26:include/ubtbr/msg.h **** static inline void msg_free(msg_t *msg)
+ 127              		.loc 3 26 20 view .LVU32
+ 128              	.LBB81:
+  27:include/ubtbr/msg.h **** {
+ARM GAS  /tmp/ccmQTCkg.s 			page 6
+
+
+  28:include/ubtbr/msg.h **** 	btctl_mem_free(msg);
+ 129              		.loc 3 28 2 view .LVU33
+ 130 002e 2046     		mov	r0, r4
+ 131 0030 FFF7FEFF 		bl	mem_pool_free
+ 132              	.LVL6:
+ 133              	.L8:
+ 134              		.loc 3 28 2 is_stmt 0 view .LVU34
+ 135              	.LBE81:
+ 136              	.LBE80:
+  92:src/btphy/monitor2_state.c **** end_nofree:
+  93:src/btphy/monitor2_state.c **** 	monitor2_state_schedule_rx(0);
+ 137              		.loc 1 93 2 is_stmt 1 view .LVU35
+ 138              	.LBB82:
+ 139              	.LBI82:
+  94:src/btphy/monitor2_state.c **** 	return 0;
+  95:src/btphy/monitor2_state.c **** }
+  96:src/btphy/monitor2_state.c **** 
+  97:src/btphy/monitor2_state.c **** static void monitor2_state_schedule_rx(unsigned skip_slots)
+ 140              		.loc 1 97 13 view .LVU36
+ 141              	.LBB83:
+  98:src/btphy/monitor2_state.c **** {
+  99:src/btphy/monitor2_state.c **** 	/* Listen for a packet in next rx slot */
+ 100:src/btphy/monitor2_state.c **** 	unsigned delay = 2*skip_slots + (1&(RX_PREPARE_IDX - (btphy.slave_clkn&1)));
+ 142              		.loc 1 100 2 view .LVU37
+ 101:src/btphy/monitor2_state.c **** 
+ 102:src/btphy/monitor2_state.c **** 	/* Schedule rx: */
+ 103:src/btphy/monitor2_state.c **** 	rx_task_schedule(delay,
+ 143              		.loc 1 103 2 view .LVU38
+ 100:src/btphy/monitor2_state.c **** 
+ 144              		.loc 1 100 61 is_stmt 0 view .LVU39
+ 145 0034 1A4A     		ldr	r2, .L27+4
+ 146              		.loc 1 103 2 view .LVU40
+ 147 0036 0323     		movs	r3, #3
+ 100:src/btphy/monitor2_state.c **** 
+ 148              		.loc 1 100 53 view .LVU41
+ 149 0038 9068     		ldr	r0, [r2, #8]
+ 150              		.loc 1 103 2 view .LVU42
+ 151 003a 1A49     		ldr	r1, .L27+8
+ 100:src/btphy/monitor2_state.c **** 
+ 152              		.loc 1 100 53 view .LVU43
+ 153 003c C043     		mvns	r0, r0
+ 154              		.loc 1 103 2 view .LVU44
+ 155 003e 0022     		movs	r2, #0
+ 156 0040 00F00100 		and	r0, r0, #1
+ 157 0044 FFF7FEFF 		bl	rx_task_schedule
+ 158              	.LVL7:
+ 159              		.loc 1 103 2 view .LVU45
+ 160              	.LBE83:
+ 161              	.LBE82:
+  94:src/btphy/monitor2_state.c **** }
+ 162              		.loc 1 94 2 is_stmt 1 view .LVU46
+  94:src/btphy/monitor2_state.c **** }
+ 163              		.loc 1 94 2 is_stmt 0 view .LVU47
+ 164              	.LBE79:
+ 165              	.LBE78:
+  95:src/btphy/monitor2_state.c **** 
+ 166              		.loc 1 95 1 view .LVU48
+ARM GAS  /tmp/ccmQTCkg.s 			page 7
+
+
+ 167 0048 0020     		movs	r0, #0
+ 168 004a 02B0     		add	sp, sp, #8
+ 169              		.cfi_remember_state
+ 170              		.cfi_def_cfa_offset 8
+ 171              		@ sp needed
+ 172 004c 10BD     		pop	{r4, pc}
+ 173              	.LVL8:
+ 174              	.L22:
+ 175              		.cfi_restore_state
+  52:src/btphy/monitor2_state.c **** 		return 0;
+ 176              		.loc 1 52 3 is_stmt 1 view .LVU49
+ 177              	.LBB95:
+ 178              	.LBI95:
+  26:include/ubtbr/msg.h **** {
+ 179              		.loc 3 26 20 view .LVU50
+ 180              	.LBB96:
+ 181              		.loc 3 28 2 view .LVU51
+ 182 004e FFF7FEFF 		bl	mem_pool_free
+ 183              	.LVL9:
+ 184              		.loc 3 28 2 is_stmt 0 view .LVU52
+ 185              	.LBE96:
+ 186              	.LBE95:
+  53:src/btphy/monitor2_state.c **** 	}
+ 187              		.loc 1 53 3 is_stmt 1 view .LVU53
+  95:src/btphy/monitor2_state.c **** 
+ 188              		.loc 1 95 1 is_stmt 0 view .LVU54
+ 189 0052 0020     		movs	r0, #0
+ 190 0054 02B0     		add	sp, sp, #8
+ 191              		.cfi_remember_state
+ 192              		.cfi_def_cfa_offset 8
+ 193              		@ sp needed
+ 194 0056 10BD     		pop	{r4, pc}
+ 195              	.LVL10:
+ 196              	.L26:
+ 197              		.cfi_restore_state
+ 198              	.LBB97:
+ 199              	.LBB94:
+  84:src/btphy/monitor2_state.c **** 		{
+ 200              		.loc 1 84 3 is_stmt 1 view .LVU55
+ 201              	.LBB84:
+ 202              	.LBI84:
+  27:include/ubtbr/btctl_intf.h **** }
+  28:include/ubtbr/btctl_intf.h **** 
+  29:include/ubtbr/btctl_intf.h **** static inline btctl_tx_pkt_t *btctl_get_eir(void)
+  30:include/ubtbr/btctl_intf.h **** {
+  31:include/ubtbr/btctl_intf.h **** 	return btctl.eir_pkt;
+  32:include/ubtbr/btctl_intf.h **** }
+  33:include/ubtbr/btctl_intf.h **** 
+  34:include/ubtbr/btctl_intf.h **** static inline msg_t *btctl_msg_alloc(unsigned type)
+  35:include/ubtbr/btctl_intf.h **** {
+  36:include/ubtbr/btctl_intf.h **** 	msg_t *msg;
+  37:include/ubtbr/btctl_intf.h **** 	btctl_hdr_t *hdr;
+  38:include/ubtbr/btctl_intf.h **** 
+  39:include/ubtbr/btctl_intf.h **** 	/* maximum size ?*/
+  40:include/ubtbr/btctl_intf.h **** 	msg = msg_alloc(sizeof(btctl_hdr_t)+sizeof(btctl_rx_pkt_t)+MAX_ACL_PACKET_SIZE);
+  41:include/ubtbr/btctl_intf.h **** 	hdr = (btctl_hdr_t*) msg_put(msg, sizeof(*hdr));
+  42:include/ubtbr/btctl_intf.h **** 	hdr->type = type;
+ARM GAS  /tmp/ccmQTCkg.s 			page 8
+
+
+  43:include/ubtbr/btctl_intf.h **** 
+  44:include/ubtbr/btctl_intf.h **** 	return msg;
+  45:include/ubtbr/btctl_intf.h **** }
+  46:include/ubtbr/btctl_intf.h **** 
+  47:include/ubtbr/btctl_intf.h **** static inline msg_t *safe_dequeue(msg_queue_t* q)
+  48:include/ubtbr/btctl_intf.h **** {
+  49:include/ubtbr/btctl_intf.h **** 	uint32_t flags = irq_save_disable();
+  50:include/ubtbr/btctl_intf.h **** 	msg_t *msg;
+  51:include/ubtbr/btctl_intf.h **** 
+  52:include/ubtbr/btctl_intf.h **** 	msg = msg_dequeue(q);
+  53:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+  54:include/ubtbr/btctl_intf.h **** 
+  55:include/ubtbr/btctl_intf.h **** 	return msg;
+  56:include/ubtbr/btctl_intf.h **** }
+  57:include/ubtbr/btctl_intf.h **** 
+  58:include/ubtbr/btctl_intf.h **** static inline int safe_enqueue(msg_queue_t *q, msg_t *msg)
+  59:include/ubtbr/btctl_intf.h **** {
+  60:include/ubtbr/btctl_intf.h **** 	uint32_t flags = irq_save_disable();
+  61:include/ubtbr/btctl_intf.h **** 	int rc;
+  62:include/ubtbr/btctl_intf.h **** 
+  63:include/ubtbr/btctl_intf.h **** 	rc = msg_enqueue(q, msg);
+  64:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+  65:include/ubtbr/btctl_intf.h **** 
+  66:include/ubtbr/btctl_intf.h **** 	return rc;
+  67:include/ubtbr/btctl_intf.h **** }
+  68:include/ubtbr/btctl_intf.h **** 
+  69:include/ubtbr/btctl_intf.h **** /* Called by usb driver to retreive next message to send to host */
+  70:include/ubtbr/btctl_intf.h **** static inline msg_t *btctl_tx_dequeue(void)
+  71:include/ubtbr/btctl_intf.h **** {
+  72:include/ubtbr/btctl_intf.h **** 	return safe_dequeue(&btctl.tx_q);
+  73:include/ubtbr/btctl_intf.h **** }
+  74:include/ubtbr/btctl_intf.h **** 
+  75:include/ubtbr/btctl_intf.h **** /* Enqueue a message for host */
+  76:include/ubtbr/btctl_intf.h **** static inline int btctl_tx_enqueue(msg_t *msg)
+ 203              		.loc 2 76 19 view .LVU56
+ 204              	.LBB85:
+  77:include/ubtbr/btctl_intf.h **** {
+  78:include/ubtbr/btctl_intf.h **** 	return safe_enqueue(&btctl.tx_q, msg);
+ 205              		.loc 2 78 2 view .LVU57
+ 206              	.LBB86:
+ 207              	.LBI86:
+  58:include/ubtbr/btctl_intf.h **** {
+ 208              		.loc 2 58 19 view .LVU58
+ 209              	.LBB87:
+  60:include/ubtbr/btctl_intf.h **** 	int rc;
+ 210              		.loc 2 60 2 view .LVU59
+ 211              	.LBB88:
+ 212              	.LBI88:
+ 213              		.file 4 "include/ubtbr/system.h"
+   1:include/ubtbr/system.h **** #ifndef __SYSTEM_H
+   2:include/ubtbr/system.h **** #define __SYSTEM_H
+   3:include/ubtbr/system.h **** #include <stdint.h>
+   4:include/ubtbr/system.h **** 
+   5:include/ubtbr/system.h **** static inline uint32_t irq_save_disable(void)
+ 214              		.loc 4 5 24 view .LVU60
+ 215              	.LBB89:
+   6:include/ubtbr/system.h **** {
+ARM GAS  /tmp/ccmQTCkg.s 			page 9
+
+
+   7:include/ubtbr/system.h **** 	uint32_t primask;
+ 216              		.loc 4 7 2 view .LVU61
+   8:include/ubtbr/system.h **** 
+   9:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 217              		.loc 4 9 2 view .LVU62
+ 218              		.syntax unified
+ 219              	@ 9 "include/ubtbr/system.h" 1
+ 220 0058 EFF31083 			mrs    r3, primask
+ 221 005c 72B6     		cpsid  i
+ 222              	
+ 223              	@ 0 "" 2
+ 224              		.thumb
+ 225              		.syntax unified
+ 226              	.LBE89:
+ 227              	.LBE88:
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 228              		.loc 2 63 7 is_stmt 0 view .LVU63
+ 229 005e 1248     		ldr	r0, .L27+12
+ 230              	.LVL11:
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 231              		.loc 2 63 7 view .LVU64
+ 232 0060 2146     		mov	r1, r4
+ 233              	.LBB91:
+ 234              	.LBB90:
+ 235              		.loc 4 9 2 view .LVU65
+ 236 0062 0193     		str	r3, [sp, #4]
+  10:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+  11:include/ubtbr/system.h **** 	"\tcpsid  i\n"
+  12:include/ubtbr/system.h **** 	: "=r" (primask)
+  13:include/ubtbr/system.h **** 	:
+  14:include/ubtbr/system.h **** 	: "memory");
+  15:include/ubtbr/system.h **** 
+  16:include/ubtbr/system.h **** 	return primask;
+ 237              		.loc 4 16 2 is_stmt 1 view .LVU66
+ 238              	.LVL12:
+ 239              		.loc 4 16 2 is_stmt 0 view .LVU67
+ 240              	.LBE90:
+ 241              	.LBE91:
+  61:include/ubtbr/btctl_intf.h **** 
+ 242              		.loc 2 61 2 is_stmt 1 view .LVU68
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 243              		.loc 2 63 2 view .LVU69
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 244              		.loc 2 63 7 is_stmt 0 view .LVU70
+ 245 0064 FFF7FEFF 		bl	msg_enqueue
+ 246              	.LVL13:
+  64:include/ubtbr/btctl_intf.h **** 
+ 247              		.loc 2 64 2 is_stmt 1 view .LVU71
+ 248              	.LBB92:
+ 249              	.LBI92:
+  17:include/ubtbr/system.h **** }
+  18:include/ubtbr/system.h **** 
+  19:include/ubtbr/system.h **** static inline void irq_restore(uint32_t primask)
+ 250              		.loc 4 19 20 view .LVU72
+ 251              	.LBB93:
+  20:include/ubtbr/system.h **** {
+  21:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ARM GAS  /tmp/ccmQTCkg.s 			page 10
+
+
+ 252              		.loc 4 21 2 view .LVU73
+ 253 0068 019B     		ldr	r3, [sp, #4]
+ 254              		.syntax unified
+ 255              	@ 21 "include/ubtbr/system.h" 1
+ 256 006a 83F31088 		msr primask, r3
+ 257              	@ 0 "" 2
+ 258              	.LVL14:
+ 259              		.loc 4 21 2 is_stmt 0 view .LVU74
+ 260              		.thumb
+ 261              		.syntax unified
+ 262              	.LBE93:
+ 263              	.LBE92:
+  66:include/ubtbr/btctl_intf.h **** }
+ 264              		.loc 2 66 2 is_stmt 1 view .LVU75
+  66:include/ubtbr/btctl_intf.h **** }
+ 265              		.loc 2 66 2 is_stmt 0 view .LVU76
+ 266              	.LBE87:
+ 267              	.LBE86:
+ 268              	.LBE85:
+ 269              	.LBE84:
+  84:src/btphy/monitor2_state.c **** 		{
+ 270              		.loc 1 84 5 discriminator 1 view .LVU77
+ 271 006e 0028     		cmp	r0, #0
+ 272 0070 E0D0     		beq	.L8
+  86:src/btphy/monitor2_state.c **** 		}
+ 273              		.loc 1 86 4 is_stmt 1 view .LVU78
+ 274 0072 0E48     		ldr	r0, .L27+16
+ 275 0074 FFF7FEFF 		bl	die
+ 276              	.LVL15:
+ 277              	.L25:
+  79:src/btphy/monitor2_state.c **** 	}
+ 278              		.loc 1 79 3 view .LVU79
+  79:src/btphy/monitor2_state.c **** 	}
+ 279              		.loc 1 79 52 is_stmt 0 view .LVU80
+ 280 0078 2269     		ldr	r2, [r4, #16]	@ unaligned
+  79:src/btphy/monitor2_state.c **** 	}
+ 281              		.loc 1 79 29 view .LVU81
+ 282 007a 0D48     		ldr	r0, .L27+20
+  79:src/btphy/monitor2_state.c **** 	}
+ 283              		.loc 1 79 3 view .LVU82
+ 284 007c A37E     		ldrb	r3, [r4, #26]	@ zero_extendqisi2
+ 285 007e 415C     		ldrb	r1, [r0, r1]	@ zero_extendqisi2
+ 286 0080 D2B2     		uxtb	r2, r2
+ 287 0082 0C48     		ldr	r0, .L27+24
+ 288 0084 FFF7FEFF 		bl	cprintf
+ 289              	.LVL16:
+  82:src/btphy/monitor2_state.c **** 	{
+ 290              		.loc 1 82 6 view .LVU83
+ 291 0088 637D     		ldrb	r3, [r4, #21]	@ zero_extendqisi2
+ 292 008a CEE7     		b	.L7
+ 293              	.LVL17:
+ 294              	.L24:
+  69:src/btphy/monitor2_state.c **** 	}
+ 295              		.loc 1 69 3 is_stmt 1 view .LVU84
+ 296 008c 1046     		mov	r0, r2
+ 297 008e FFF7FEFF 		bl	btphy_adj_clkn_delay
+ 298              	.LVL18:
+ARM GAS  /tmp/ccmQTCkg.s 			page 11
+
+
+  72:src/btphy/monitor2_state.c **** 	{
+ 299              		.loc 1 72 7 is_stmt 0 view .LVU85
+ 300 0092 637D     		ldrb	r3, [r4, #21]	@ zero_extendqisi2
+ 301 0094 C4E7     		b	.L6
+ 302              	.LVL19:
+ 303              	.L23:
+  72:src/btphy/monitor2_state.c **** 	{
+ 304              		.loc 1 72 7 view .LVU86
+ 305              	.LBE94:
+ 306              	.LBE97:
+  57:src/btphy/monitor2_state.c **** 	pkt = (btctl_rx_pkt_t *)h->data;
+ 307              		.loc 1 57 3 is_stmt 1 view .LVU87
+ 308 0096 0848     		ldr	r0, .L27+28
+ 309              	.LVL20:
+  57:src/btphy/monitor2_state.c **** 	pkt = (btctl_rx_pkt_t *)h->data;
+ 310              		.loc 1 57 3 is_stmt 0 view .LVU88
+ 311 0098 FFF7FEFF 		bl	die
+ 312              	.LVL21:
+ 313              	.L28:
+  57:src/btphy/monitor2_state.c **** 	pkt = (btctl_rx_pkt_t *)h->data;
+ 314              		.loc 1 57 3 view .LVU89
+ 315              		.align	2
+ 316              	.L27:
+ 317 009c 00000000 		.word	btctl
+ 318 00a0 00000000 		.word	btphy
+ 319 00a4 00000000 		.word	monitor2_rx_cb
+ 320 00a8 2C000000 		.word	btctl+44
+ 321 00ac 24000000 		.word	.LC3
+ 322 00b0 38000000 		.word	.LC1
+ 323 00b4 18000000 		.word	.LC2
+ 324 00b8 00000000 		.word	.LC0
+ 325              		.cfi_endproc
+ 326              	.LFE32:
+ 328              		.section	.rodata.str1.4
+ 329              		.align	2
+ 330              	.LC4:
+ 331 003c 6D6F6E69 		.ascii	"monitor2 started\012\000"
+ 331      746F7232 
+ 331      20737461 
+ 331      72746564 
+ 331      0A00
+ 332              		.section	.text.monitor2_state_init,"ax",%progbits
+ 333              		.align	1
+ 334              		.p2align 2,,3
+ 335              		.global	monitor2_state_init
+ 336              		.syntax unified
+ 337              		.thumb
+ 338              		.thumb_func
+ 340              	monitor2_state_init:
+ 341              	.LVL22:
+ 342              	.LFB34:
+ 104:src/btphy/monitor2_state.c **** 		monitor2_rx_cb, NULL,	// ID rx callback
+ 105:src/btphy/monitor2_state.c **** 		(1<<RX_F_PAYLOAD)	// wait for header 
+ 106:src/btphy/monitor2_state.c **** 		|(1<<RX_F_RAW));	// ignore size and crc in payload
+ 107:src/btphy/monitor2_state.c **** }
+ 108:src/btphy/monitor2_state.c **** 
+ 109:src/btphy/monitor2_state.c **** void monitor2_state_init(uint64_t master_bdaddr)
+ARM GAS  /tmp/ccmQTCkg.s 			page 12
+
+
+ 110:src/btphy/monitor2_state.c **** {
+ 343              		.loc 1 110 1 is_stmt 1 view -0
+ 344              		.cfi_startproc
+ 345              		@ args = 0, pretend = 0, frame = 0
+ 346              		@ frame_needed = 0, uses_anonymous_args = 0
+ 347              		.loc 1 110 1 is_stmt 0 view .LVU91
+ 348 0000 10B5     		push	{r4, lr}
+ 349              		.cfi_def_cfa_offset 8
+ 350              		.cfi_offset 4, -8
+ 351              		.cfi_offset 14, -4
+ 111:src/btphy/monitor2_state.c **** 	monitor2_state.master_bdaddr = master_bdaddr;
+ 352              		.loc 1 111 2 is_stmt 1 view .LVU92
+ 112:src/btphy/monitor2_state.c **** 
+ 113:src/btphy/monitor2_state.c **** 	/* Initialize basic hopping from master's clock */
+ 114:src/btphy/monitor2_state.c **** 	btphy_set_mode(BT_MODE_SLAVE, master_bdaddr&0xffffff, 0xff & (master_bdaddr>>24));
+ 353              		.loc 1 114 2 view .LVU93
+ 354 0002 020E     		lsrs	r2, r0, #24
+ 355 0004 20F07F41 		bic	r1, r0, #-16777216
+ 356 0008 0520     		movs	r0, #5
+ 357              	.LVL23:
+ 358              		.loc 1 114 2 is_stmt 0 view .LVU94
+ 359 000a FFF7FEFF 		bl	btphy_set_mode
+ 360              	.LVL24:
+ 115:src/btphy/monitor2_state.c **** 
+ 116:src/btphy/monitor2_state.c **** 	cprintf("monitor2 started\n");
+ 361              		.loc 1 116 2 is_stmt 1 view .LVU95
+ 362 000e 0A48     		ldr	r0, .L30
+ 363 0010 FFF7FEFF 		bl	cprintf
+ 364              	.LVL25:
+ 117:src/btphy/monitor2_state.c **** 	btctl_set_state(BTCTL_STATE_CONNECTED, BTCTL_REASON_PAGED);
+ 365              		.loc 1 117 2 view .LVU96
+ 366 0014 0221     		movs	r1, #2
+ 367 0016 0320     		movs	r0, #3
+ 368 0018 FFF7FEFF 		bl	btctl_set_state
+ 369              	.LVL26:
+ 118:src/btphy/monitor2_state.c **** 	monitor2_state_schedule_rx(1);
+ 370              		.loc 1 118 2 view .LVU97
+ 371              	.LBB98:
+ 372              	.LBI98:
+  97:src/btphy/monitor2_state.c **** {
+ 373              		.loc 1 97 13 view .LVU98
+ 374              	.LBB99:
+ 100:src/btphy/monitor2_state.c **** 
+ 375              		.loc 1 100 2 view .LVU99
+ 103:src/btphy/monitor2_state.c **** 		monitor2_rx_cb, NULL,	// ID rx callback
+ 376              		.loc 1 103 2 view .LVU100
+ 377              	.LBE99:
+ 378              	.LBE98:
+ 119:src/btphy/monitor2_state.c **** }
+ 379              		.loc 1 119 1 is_stmt 0 view .LVU101
+ 380 001c BDE81040 		pop	{r4, lr}
+ 381              		.cfi_restore 14
+ 382              		.cfi_restore 4
+ 383              		.cfi_def_cfa_offset 0
+ 384              	.LBB101:
+ 385              	.LBB100:
+ 100:src/btphy/monitor2_state.c **** 
+ARM GAS  /tmp/ccmQTCkg.s 			page 13
+
+
+ 386              		.loc 1 100 61 view .LVU102
+ 387 0020 064A     		ldr	r2, .L30+4
+ 103:src/btphy/monitor2_state.c **** 		monitor2_rx_cb, NULL,	// ID rx callback
+ 388              		.loc 1 103 2 view .LVU103
+ 389 0022 0323     		movs	r3, #3
+ 100:src/btphy/monitor2_state.c **** 
+ 390              		.loc 1 100 53 view .LVU104
+ 391 0024 9068     		ldr	r0, [r2, #8]
+ 103:src/btphy/monitor2_state.c **** 		monitor2_rx_cb, NULL,	// ID rx callback
+ 392              		.loc 1 103 2 view .LVU105
+ 393 0026 0649     		ldr	r1, .L30+8
+ 100:src/btphy/monitor2_state.c **** 
+ 394              		.loc 1 100 53 view .LVU106
+ 395 0028 C043     		mvns	r0, r0
+ 100:src/btphy/monitor2_state.c **** 
+ 396              		.loc 1 100 36 view .LVU107
+ 397 002a 00F00100 		and	r0, r0, #1
+ 103:src/btphy/monitor2_state.c **** 		monitor2_rx_cb, NULL,	// ID rx callback
+ 398              		.loc 1 103 2 view .LVU108
+ 399 002e 0022     		movs	r2, #0
+ 400 0030 0230     		adds	r0, r0, #2
+ 401 0032 FFF7FEBF 		b	rx_task_schedule
+ 402              	.LVL27:
+ 403              	.L31:
+ 103:src/btphy/monitor2_state.c **** 		monitor2_rx_cb, NULL,	// ID rx callback
+ 404              		.loc 1 103 2 view .LVU109
+ 405 0036 00BF     		.align	2
+ 406              	.L30:
+ 407 0038 3C000000 		.word	.LC4
+ 408 003c 00000000 		.word	btphy
+ 409 0040 00000000 		.word	monitor2_rx_cb
+ 410              	.LBE100:
+ 411              	.LBE101:
+ 412              		.cfi_endproc
+ 413              	.LFE34:
+ 415              		.text
+ 416              	.Letext0:
+ 417              		.file 5 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 418              		.file 6 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 419              		.file 7 "../../host/libubertooth/src/ubertooth_interface.h"
+ 420              		.file 8 "include/ubtbr/queue.h"
+ 421              		.file 9 "include/ubtbr/btphy.h"
+ 422              		.file 10 "include/ubtbr/rx_task.h"
+ 423              		.file 11 "include/ubtbr/mem_pool.h"
+ 424              		.file 12 "include/ubtbr/debug.h"
+ARM GAS  /tmp/ccmQTCkg.s 			page 14
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 monitor2_state.c
+     /tmp/ccmQTCkg.s:19     .rodata.str1.4:00000000 $d
+     /tmp/ccmQTCkg.s:32     .text.monitor2_rx_cb:00000000 $t
+     /tmp/ccmQTCkg.s:38     .text.monitor2_rx_cb:00000000 monitor2_rx_cb
+     /tmp/ccmQTCkg.s:317    .text.monitor2_rx_cb:0000009c $d
+     /tmp/ccmQTCkg.s:333    .text.monitor2_state_init:00000000 $t
+     /tmp/ccmQTCkg.s:340    .text.monitor2_state_init:00000000 monitor2_state_init
+     /tmp/ccmQTCkg.s:407    .text.monitor2_state_init:00000038 $d
+
+UNDEFINED SYMBOLS
+mem_pool_free
+rx_task_schedule
+msg_enqueue
+die
+cprintf
+btphy_adj_clkn_delay
+btctl
+btphy
+btphy_set_mode
+btctl_set_state

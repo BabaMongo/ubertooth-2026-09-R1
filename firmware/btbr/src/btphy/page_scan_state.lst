@@ -1,0 +1,1133 @@
+ARM GAS  /tmp/ccq3TktM.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"page_scan_state.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/btphy/page_scan_state.c"
+  18              		.section	.rodata.str1.4,"aMS",%progbits,1
+  19              		.align	2
+  20              	.LC0:
+  21 0000 6668733A 		.ascii	"fhs: ba=%llx clk27_2=%x lta=%d\012\000"
+  21      2062613D 
+  21      256C6C78 
+  21      20636C6B 
+  21      32375F32 
+  22              		.section	.text.page_scan_tx_cb,"ax",%progbits
+  23              		.align	1
+  24              		.p2align 2,,3
+  25              		.syntax unified
+  26              		.thumb
+  27              		.thumb_func
+  29              	page_scan_tx_cb:
+  30              	.LVL0:
+  31              	.LFB32:
+   1:src/btphy/page_scan_state.c **** /* Page scan state
+   2:src/btphy/page_scan_state.c ****  *
+   3:src/btphy/page_scan_state.c ****  * Copyright 2020 Etienne Helluy-Lafont, Univ. Lille, CNRS.
+   4:src/btphy/page_scan_state.c ****  *
+   5:src/btphy/page_scan_state.c ****  * This file is part of Project Ubertooth.
+   6:src/btphy/page_scan_state.c ****  *
+   7:src/btphy/page_scan_state.c ****  * This program is free software; you can redistribute it and/or modify
+   8:src/btphy/page_scan_state.c ****  * it under the terms of the GNU General Public License as published by
+   9:src/btphy/page_scan_state.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  10:src/btphy/page_scan_state.c ****  * any later version.
+  11:src/btphy/page_scan_state.c ****  *
+  12:src/btphy/page_scan_state.c ****  * This program is distributed in the hope that it will be useful,
+  13:src/btphy/page_scan_state.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  14:src/btphy/page_scan_state.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  15:src/btphy/page_scan_state.c ****  * GNU General Public License for more details.
+  16:src/btphy/page_scan_state.c ****  *
+  17:src/btphy/page_scan_state.c ****  * You should have received a copy of the GNU General Public License
+  18:src/btphy/page_scan_state.c ****  * along with this program; see the file COPYING.  If not, write to
+  19:src/btphy/page_scan_state.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  20:src/btphy/page_scan_state.c ****  * Boston, MA 02110-1301, USA.
+  21:src/btphy/page_scan_state.c ****  */
+  22:src/btphy/page_scan_state.c **** #include <stdlib.h>
+  23:src/btphy/page_scan_state.c **** #include <ubtbr/cfg.h>
+ARM GAS  /tmp/ccq3TktM.s 			page 2
+
+
+  24:src/btphy/page_scan_state.c **** #include <ubtbr/btctl_intf.h>
+  25:src/btphy/page_scan_state.c **** #include <ubtbr/btphy.h>
+  26:src/btphy/page_scan_state.c **** #include <ubtbr/bb.h>
+  27:src/btphy/page_scan_state.c **** #include <ubtbr/tdma_sched.h>
+  28:src/btphy/page_scan_state.c **** #include <ubtbr/scan_task.h>
+  29:src/btphy/page_scan_state.c **** #include <ubtbr/rx_task.h>
+  30:src/btphy/page_scan_state.c **** #include <ubtbr/tx_task.h>
+  31:src/btphy/page_scan_state.c **** #include <ubtbr/slave_state.h>
+  32:src/btphy/page_scan_state.c **** 
+  33:src/btphy/page_scan_state.c **** #define PAGE_SCAN_MAX_TICKS (CLKN_RATE*60)
+  34:src/btphy/page_scan_state.c **** #define TX_PREPARE_IDX	1  // We will transmit at clkn1_0 = 2
+  35:src/btphy/page_scan_state.c **** 
+  36:src/btphy/page_scan_state.c **** struct {
+  37:src/btphy/page_scan_state.c **** 	fhs_info_t fhs_info;
+  38:src/btphy/page_scan_state.c **** 	uint32_t clkn_start;
+  39:src/btphy/page_scan_state.c **** } page_scan_state;
+  40:src/btphy/page_scan_state.c **** 
+  41:src/btphy/page_scan_state.c **** static void page_scan_schedule(unsigned delay);
+  42:src/btphy/page_scan_state.c **** 
+  43:src/btphy/page_scan_state.c **** static int page_scan_canceled(void)
+  44:src/btphy/page_scan_state.c **** {
+  45:src/btphy/page_scan_state.c **** 	return btctl_get_state() != BTCTL_STATE_PAGE_SCAN;
+  46:src/btphy/page_scan_state.c **** }
+  47:src/btphy/page_scan_state.c **** 
+  48:src/btphy/page_scan_state.c **** static void page_scan_tx_cb(void *arg)
+  49:src/btphy/page_scan_state.c **** {
+  32              		.loc 1 49 1 view -0
+  33              		.cfi_startproc
+  34              		@ args = 0, pretend = 0, frame = 0
+  35              		@ frame_needed = 0, uses_anonymous_args = 0
+  36              		.loc 1 49 1 is_stmt 0 view .LVU1
+  37 0000 10B5     		push	{r4, lr}
+  38              		.cfi_def_cfa_offset 8
+  39              		.cfi_offset 4, -8
+  40              		.cfi_offset 14, -4
+  41 0002 82B0     		sub	sp, sp, #8
+  42              		.cfi_def_cfa_offset 16
+  50:src/btphy/page_scan_state.c **** 	cprintf("fhs: ba=%llx clk27_2=%x lta=%d\n",
+  43              		.loc 1 50 2 is_stmt 1 view .LVU2
+  44 0004 084C     		ldr	r4, .L3
+  45 0006 0948     		ldr	r0, .L3+4
+  46              	.LVL1:
+  47              		.loc 1 50 2 is_stmt 0 view .LVU3
+  48 0008 227B     		ldrb	r2, [r4, #12]	@ zero_extendqisi2
+  49 000a A368     		ldr	r3, [r4, #8]
+  50 000c CDE90032 		strd	r3, r2, [sp]
+  51 0010 D4E90023 		ldrd	r2, [r4]
+  52 0014 FFF7FEFF 		bl	cprintf
+  53              	.LVL2:
+  51:src/btphy/page_scan_state.c **** 		page_scan_state.fhs_info.bdaddr,
+  52:src/btphy/page_scan_state.c **** 		page_scan_state.fhs_info.clk27_2,
+  53:src/btphy/page_scan_state.c **** 		page_scan_state.fhs_info.lt_addr);
+  54:src/btphy/page_scan_state.c **** 
+  55:src/btphy/page_scan_state.c **** 	slave_state_init(page_scan_state.fhs_info.bdaddr,
+  54              		.loc 1 55 2 is_stmt 1 view .LVU4
+  55 0018 D4E90001 		ldrd	r0, [r4]
+  56 001c 227B     		ldrb	r2, [r4, #12]	@ zero_extendqisi2
+ARM GAS  /tmp/ccq3TktM.s 			page 3
+
+
+  56:src/btphy/page_scan_state.c **** 			page_scan_state.fhs_info.lt_addr);
+  57:src/btphy/page_scan_state.c **** }
+  57              		.loc 1 57 1 is_stmt 0 view .LVU5
+  58 001e 02B0     		add	sp, sp, #8
+  59              		.cfi_def_cfa_offset 8
+  60              		@ sp needed
+  61 0020 BDE81040 		pop	{r4, lr}
+  62              		.cfi_restore 14
+  63              		.cfi_restore 4
+  64              		.cfi_def_cfa_offset 0
+  55:src/btphy/page_scan_state.c **** 			page_scan_state.fhs_info.lt_addr);
+  65              		.loc 1 55 2 view .LVU6
+  66 0024 FFF7FEBF 		b	slave_state_init
+  67              	.LVL3:
+  68              	.L4:
+  69              		.align	2
+  70              	.L3:
+  71 0028 00000000 		.word	.LANCHOR0
+  72 002c 00000000 		.word	.LC0
+  73              		.cfi_endproc
+  74              	.LFE32:
+  76              		.section	.rodata.str1.4
+  77              		.align	2
+  78              	.LC1:
+  79 0020 70616765 		.ascii	"page scan canceled\012\000"
+  79      20736361 
+  79      6E206361 
+  79      6E63656C 
+  79      65640A00 
+  80              		.align	2
+  81              	.LC2:
+  82 0034 28626164 		.ascii	"(bad type %d)\000"
+  82      20747970 
+  82      65202564 
+  82      2900
+  83 0042 0000     		.align	2
+  84              	.LC3:
+  85 0044 70616765 		.ascii	"page scan timeout\012\000"
+  85      20736361 
+  85      6E207469 
+  85      6D656F75 
+  85      740A00
+  86              		.section	.text.page_scan_rx_fhs_cb,"ax",%progbits
+  87              		.align	1
+  88              		.p2align 2,,3
+  89              		.syntax unified
+  90              		.thumb
+  91              		.thumb_func
+  93              	page_scan_rx_fhs_cb:
+  94              	.LVL4:
+  95              	.LFB33:
+  58:src/btphy/page_scan_state.c **** 
+  59:src/btphy/page_scan_state.c **** /* RX FHS cb */
+  60:src/btphy/page_scan_state.c **** static int page_scan_rx_fhs_cb(msg_t *msg, void *arg, int time_offset)
+  61:src/btphy/page_scan_state.c **** {
+  96              		.loc 1 61 1 is_stmt 1 view -0
+  97              		.cfi_startproc
+ARM GAS  /tmp/ccq3TktM.s 			page 4
+
+
+  98              		@ args = 0, pretend = 0, frame = 8
+  99              		@ frame_needed = 0, uses_anonymous_args = 0
+ 100              		.loc 1 61 1 is_stmt 0 view .LVU8
+ 101 0000 10B5     		push	{r4, lr}
+ 102              		.cfi_def_cfa_offset 8
+ 103              		.cfi_offset 4, -8
+ 104              		.cfi_offset 14, -4
+ 105 0002 84B0     		sub	sp, sp, #16
+ 106              		.cfi_def_cfa_offset 24
+  62:src/btphy/page_scan_state.c **** 	btctl_hdr_t *h = (btctl_hdr_t*)msg->data;
+ 107              		.loc 1 62 2 is_stmt 1 view .LVU9
+  63:src/btphy/page_scan_state.c **** 	btctl_rx_pkt_t *pkt;
+ 108              		.loc 1 63 2 view .LVU10
+  64:src/btphy/page_scan_state.c **** 
+  65:src/btphy/page_scan_state.c **** 	if (page_scan_canceled())
+ 109              		.loc 1 65 2 view .LVU11
+ 110              	.LBB26:
+ 111              	.LBI26:
+  43:src/btphy/page_scan_state.c **** {
+ 112              		.loc 1 43 12 view .LVU12
+  45:src/btphy/page_scan_state.c **** }
+ 113              		.loc 1 45 2 view .LVU13
+ 114              	.LBB27:
+ 115              	.LBI27:
+ 116              		.file 2 "include/ubtbr/btctl_intf.h"
+   1:include/ubtbr/btctl_intf.h **** #ifndef __BTCTL_INTF_H
+   2:include/ubtbr/btctl_intf.h **** #define __BTCTL_INTF_H
+   3:include/ubtbr/btctl_intf.h **** #include <ubtbr/bb_msg.h>
+   4:include/ubtbr/btctl_intf.h **** #include <ubtbr/queue.h>
+   5:include/ubtbr/btctl_intf.h **** #include <ubtbr/system.h>
+   6:include/ubtbr/btctl_intf.h **** #include <ubertooth_interface.h>
+   7:include/ubtbr/btctl_intf.h **** 
+   8:include/ubtbr/btctl_intf.h **** typedef struct btctl_s {
+   9:include/ubtbr/btctl_intf.h **** 	btctl_state_t state;
+  10:include/ubtbr/btctl_intf.h **** 	msg_queue_t rx_q;
+  11:include/ubtbr/btctl_intf.h **** 	msg_queue_t tx_q;
+  12:include/ubtbr/btctl_intf.h **** 	msg_queue_t acl_tx_q;
+  13:include/ubtbr/btctl_intf.h **** 	msg_t *eir_msg;
+  14:include/ubtbr/btctl_intf.h **** 	btctl_tx_pkt_t *eir_pkt;
+  15:include/ubtbr/btctl_intf.h **** } btctl_t;
+  16:include/ubtbr/btctl_intf.h **** 
+  17:include/ubtbr/btctl_intf.h **** extern btctl_t btctl;
+  18:include/ubtbr/btctl_intf.h **** 
+  19:include/ubtbr/btctl_intf.h **** void btctl_init(void);
+  20:include/ubtbr/btctl_intf.h **** int btctl_work(void);
+  21:include/ubtbr/btctl_intf.h **** 
+  22:include/ubtbr/btctl_intf.h **** void btctl_set_state(btctl_state_t state, btctl_reason_t reason);
+  23:include/ubtbr/btctl_intf.h **** 
+  24:include/ubtbr/btctl_intf.h **** static inline btctl_state_t btctl_get_state(void)
+ 117              		.loc 2 24 29 view .LVU14
+ 118              	.LBB28:
+  25:include/ubtbr/btctl_intf.h **** {
+  26:include/ubtbr/btctl_intf.h **** 	return btctl.state;
+ 119              		.loc 2 26 2 view .LVU15
+ 120              		.loc 2 26 14 is_stmt 0 view .LVU16
+ 121 0004 2E4B     		ldr	r3, .L13
+ 122              	.LBE28:
+ARM GAS  /tmp/ccq3TktM.s 			page 5
+
+
+ 123              	.LBE27:
+ 124              	.LBE26:
+  61:src/btphy/page_scan_state.c **** 	btctl_hdr_t *h = (btctl_hdr_t*)msg->data;
+ 125              		.loc 1 61 1 view .LVU17
+ 126 0006 0446     		mov	r4, r0
+ 127              		.loc 1 65 5 discriminator 1 view .LVU18
+ 128 0008 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 129 000a 052B     		cmp	r3, #5
+ 130 000c 23D1     		bne	.L11
+  66:src/btphy/page_scan_state.c **** 	{
+  67:src/btphy/page_scan_state.c **** 		cprintf("page scan canceled\n");
+  68:src/btphy/page_scan_state.c **** 		goto end;
+  69:src/btphy/page_scan_state.c **** 	}
+  70:src/btphy/page_scan_state.c **** 	pkt = (btctl_rx_pkt_t *)h->data;
+ 131              		.loc 1 70 2 is_stmt 1 view .LVU19
+  71:src/btphy/page_scan_state.c **** 	if (BBPKT_GOOD_CRC(pkt))
+ 132              		.loc 1 71 2 view .LVU20
+ 133              		.loc 1 71 5 is_stmt 0 view .LVU21
+ 134 000e 427D     		ldrb	r2, [r0, #21]	@ zero_extendqisi2
+ 135              	.LVL5:
+ 136              		.loc 1 71 5 view .LVU22
+ 137 0010 12F00802 		ands	r2, r2, #8
+ 138 0014 0BD0     		beq	.L8
+  72:src/btphy/page_scan_state.c **** 	{
+  73:src/btphy/page_scan_state.c **** 		if (pkt->bb_hdr.type != BB_TYPE_FHS)
+ 139              		.loc 1 73 3 is_stmt 1 view .LVU23
+ 140              		.loc 1 73 18 is_stmt 0 view .LVU24
+ 141 0016 417E     		ldrb	r1, [r0, #25]	@ zero_extendqisi2
+ 142              	.LVL6:
+ 143              		.loc 1 73 6 view .LVU25
+ 144 0018 0229     		cmp	r1, #2
+ 145 001a 25D0     		beq	.L9
+  74:src/btphy/page_scan_state.c **** 		{
+  75:src/btphy/page_scan_state.c **** 			cprintf("(bad type %d)", pkt->bb_hdr.type);
+ 146              		.loc 1 75 4 is_stmt 1 view .LVU26
+ 147 001c 2948     		ldr	r0, .L13+4
+ 148              	.LVL7:
+ 149              		.loc 1 75 4 is_stmt 0 view .LVU27
+ 150 001e FFF7FEFF 		bl	cprintf
+ 151              	.LVL8:
+  76:src/btphy/page_scan_state.c **** 			goto end;
+ 152              		.loc 1 76 4 is_stmt 1 view .LVU28
+ 153              	.L7:
+  77:src/btphy/page_scan_state.c **** 		}
+  78:src/btphy/page_scan_state.c **** 		// Parse fhs to get bdaddr/clkn/ltaddr
+  79:src/btphy/page_scan_state.c **** 		bbpkt_decode_fhs(pkt->bt_data, &page_scan_state.fhs_info);
+  80:src/btphy/page_scan_state.c **** 
+  81:src/btphy/page_scan_state.c **** 
+  82:src/btphy/page_scan_state.c **** 		// Set slave clkn
+  83:src/btphy/page_scan_state.c **** 		btphy.slave_clkn = (page_scan_state.fhs_info.clk27_2<<2)
+  84:src/btphy/page_scan_state.c **** 				 + (btphy.slave_clkn-pkt->clkn);
+  85:src/btphy/page_scan_state.c **** 		
+  86:src/btphy/page_scan_state.c **** 		/* Schedule TX ID(3)*/
+  87:src/btphy/page_scan_state.c **** 		tx_task_schedule(3&(TX_PREPARE_IDX-CUR_SLAVE_SLOT_IDX()),
+  88:src/btphy/page_scan_state.c **** 			page_scan_tx_cb, NULL,
+  89:src/btphy/page_scan_state.c **** 			NULL, NULL); 	// no header / no payload
+  90:src/btphy/page_scan_state.c **** 		
+ARM GAS  /tmp/ccq3TktM.s 			page 6
+
+
+  91:src/btphy/page_scan_state.c **** 	}
+  92:src/btphy/page_scan_state.c **** 	else{
+  93:src/btphy/page_scan_state.c **** 		page_scan_schedule(0);
+  94:src/btphy/page_scan_state.c **** 	}
+  95:src/btphy/page_scan_state.c **** end:
+  96:src/btphy/page_scan_state.c **** 	msg_free(msg);
+ 154              		.loc 1 96 2 view .LVU29
+ 155              	.LBB29:
+ 156              	.LBI29:
+ 157              		.file 3 "include/ubtbr/msg.h"
+   1:include/ubtbr/msg.h **** #ifndef __DEF_MSG_H
+   2:include/ubtbr/msg.h **** #define __DEF_MSG_H
+   3:include/ubtbr/msg.h **** #include <stdint.h>
+   4:include/ubtbr/msg.h **** 
+   5:include/ubtbr/msg.h **** typedef struct msg_s {
+   6:include/ubtbr/msg.h **** 	uint16_t len;
+   7:include/ubtbr/msg.h **** 	uint16_t data_len;
+   8:include/ubtbr/msg.h **** 	uint8_t *read;
+   9:include/ubtbr/msg.h **** 	uint8_t *write;
+  10:include/ubtbr/msg.h **** 	/* never move head */
+  11:include/ubtbr/msg.h **** 	uint8_t data[0];
+  12:include/ubtbr/msg.h **** } msg_t;
+  13:include/ubtbr/msg.h **** 
+  14:include/ubtbr/msg.h **** /* Allocate a msg_t wigh given room*/
+  15:include/ubtbr/msg.h **** static inline msg_t *msg_alloc(unsigned size)
+  16:include/ubtbr/msg.h **** {
+  17:include/ubtbr/msg.h **** 	msg_t *msg = (msg_t*)btctl_mem_alloc(sizeof(msg_t)+size);
+  18:include/ubtbr/msg.h **** 
+  19:include/ubtbr/msg.h **** 	msg->write = msg->data;
+  20:include/ubtbr/msg.h **** 	msg->read = msg->data;
+  21:include/ubtbr/msg.h **** 	msg->data_len = size;
+  22:include/ubtbr/msg.h **** 
+  23:include/ubtbr/msg.h **** 	return msg;
+  24:include/ubtbr/msg.h **** }
+  25:include/ubtbr/msg.h **** 
+  26:include/ubtbr/msg.h **** static inline void msg_free(msg_t *msg)
+ 158              		.loc 3 26 20 view .LVU30
+ 159              	.LBB30:
+  27:include/ubtbr/msg.h **** {
+  28:include/ubtbr/msg.h **** 	btctl_mem_free(msg);
+ 160              		.loc 3 28 2 view .LVU31
+ 161 0022 2046     		mov	r0, r4
+ 162 0024 FFF7FEFF 		bl	mem_pool_free
+ 163              	.LVL9:
+ 164              		.loc 3 28 2 is_stmt 0 view .LVU32
+ 165              	.LBE30:
+ 166              	.LBE29:
+  97:src/btphy/page_scan_state.c **** 	return 0;
+ 167              		.loc 1 97 2 is_stmt 1 view .LVU33
+  98:src/btphy/page_scan_state.c **** }
+ 168              		.loc 1 98 1 is_stmt 0 view .LVU34
+ 169 0028 0020     		movs	r0, #0
+ 170 002a 04B0     		add	sp, sp, #16
+ 171              		.cfi_remember_state
+ 172              		.cfi_def_cfa_offset 8
+ 173              		@ sp needed
+ 174 002c 10BD     		pop	{r4, pc}
+ARM GAS  /tmp/ccq3TktM.s 			page 7
+
+
+ 175              	.LVL10:
+ 176              	.L8:
+ 177              		.cfi_restore_state
+  93:src/btphy/page_scan_state.c **** 	}
+ 178              		.loc 1 93 3 is_stmt 1 view .LVU35
+ 179              	.LBB34:
+ 180              	.LBI34:
+  99:src/btphy/page_scan_state.c **** 
+ 100:src/btphy/page_scan_state.c **** /* RX ID(1) cb */
+ 101:src/btphy/page_scan_state.c **** static void page_scan_rx_id_cb(int sw_detected, void *arg)
+ 102:src/btphy/page_scan_state.c **** {
+ 103:src/btphy/page_scan_state.c **** 	unsigned delay;
+ 104:src/btphy/page_scan_state.c **** 	if(page_scan_canceled())
+ 105:src/btphy/page_scan_state.c **** 	{
+ 106:src/btphy/page_scan_state.c **** 		cprintf("page scan canceled\n");
+ 107:src/btphy/page_scan_state.c **** 		return;
+ 108:src/btphy/page_scan_state.c **** 	}
+ 109:src/btphy/page_scan_state.c **** 	if (sw_detected)
+ 110:src/btphy/page_scan_state.c **** 	{
+ 111:src/btphy/page_scan_state.c **** 		/* we should be at slave_clk = 0, prepare in one slot*/
+ 112:src/btphy/page_scan_state.c **** 		console_putc('!');
+ 113:src/btphy/page_scan_state.c **** 		/* Schedule TX ID(2) */
+ 114:src/btphy/page_scan_state.c **** 		delay = 3&(TX_PREPARE_IDX-CUR_SLAVE_SLOT_IDX());
+ 115:src/btphy/page_scan_state.c **** 		tx_task_schedule(delay,
+ 116:src/btphy/page_scan_state.c **** 			NULL, NULL,	// no tx callback
+ 117:src/btphy/page_scan_state.c **** 			NULL, NULL); 	// no header / no payload
+ 118:src/btphy/page_scan_state.c **** 
+ 119:src/btphy/page_scan_state.c **** 		/* Schedule rx FHS */
+ 120:src/btphy/page_scan_state.c **** 		rx_task_schedule(delay+2,
+ 121:src/btphy/page_scan_state.c **** 			page_scan_rx_fhs_cb, NULL,	// ID rx callback
+ 122:src/btphy/page_scan_state.c **** 			1<<RX_F_PAYLOAD			// FHS packet has payload
+ 123:src/btphy/page_scan_state.c **** 			);
+ 124:src/btphy/page_scan_state.c **** 	}
+ 125:src/btphy/page_scan_state.c **** 	else
+ 126:src/btphy/page_scan_state.c **** 	{
+ 127:src/btphy/page_scan_state.c **** 		page_scan_schedule(0);
+ 128:src/btphy/page_scan_state.c **** 	}
+ 129:src/btphy/page_scan_state.c **** }
+ 130:src/btphy/page_scan_state.c **** 
+ 131:src/btphy/page_scan_state.c **** static void page_scan_schedule(unsigned delay)
+ 181              		.loc 1 131 13 view .LVU36
+ 182              	.LBB35:
+ 132:src/btphy/page_scan_state.c **** {
+ 133:src/btphy/page_scan_state.c **** 	if (MASTER_CLKN >= page_scan_state.clkn_start + PAGE_SCAN_MAX_TICKS)
+ 183              		.loc 1 133 2 view .LVU37
+ 184              		.loc 1 133 36 is_stmt 0 view .LVU38
+ 185 002e 264B     		ldr	r3, .L13+8
+ 186              		.loc 1 133 6 view .LVU39
+ 187 0030 2649     		ldr	r1, .L13+12
+ 188              	.LVL11:
+ 189              		.loc 1 133 48 view .LVU40
+ 190 0032 1B69     		ldr	r3, [r3, #16]
+ 191              		.loc 1 133 6 view .LVU41
+ 192 0034 8968     		ldr	r1, [r1, #8]
+ 193              		.loc 1 133 48 view .LVU42
+ 194 0036 03F53B33 		add	r3, r3, #191488
+ 195 003a 03F50073 		add	r3, r3, #512
+ARM GAS  /tmp/ccq3TktM.s 			page 8
+
+
+ 196              		.loc 1 133 5 view .LVU43
+ 197 003e 9942     		cmp	r1, r3
+ 198 0040 35D2     		bcs	.L12
+ 134:src/btphy/page_scan_state.c **** 	{
+ 135:src/btphy/page_scan_state.c **** 		cprintf("page scan timeout\n");
+ 136:src/btphy/page_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 137:src/btphy/page_scan_state.c **** 		return;
+ 138:src/btphy/page_scan_state.c **** 	}
+ 139:src/btphy/page_scan_state.c **** 	scan_task_schedule(delay, page_scan_rx_id_cb, NULL);
+ 199              		.loc 1 139 2 is_stmt 1 view .LVU44
+ 200 0042 1046     		mov	r0, r2
+ 201              	.LVL12:
+ 202              		.loc 1 139 2 is_stmt 0 view .LVU45
+ 203 0044 2249     		ldr	r1, .L13+16
+ 204 0046 FFF7FEFF 		bl	scan_task_schedule
+ 205              	.LVL13:
+ 206              		.loc 1 139 2 view .LVU46
+ 207              	.LBE35:
+ 208              	.LBE34:
+  96:src/btphy/page_scan_state.c **** 	return 0;
+ 209              		.loc 1 96 2 is_stmt 1 view .LVU47
+ 210              	.LBB40:
+  26:include/ubtbr/msg.h **** {
+ 211              		.loc 3 26 20 view .LVU48
+ 212              	.LBB31:
+ 213              		.loc 3 28 2 view .LVU49
+ 214 004a 2046     		mov	r0, r4
+ 215 004c FFF7FEFF 		bl	mem_pool_free
+ 216              	.LVL14:
+ 217              		.loc 3 28 2 is_stmt 0 view .LVU50
+ 218              	.LBE31:
+ 219              	.LBE40:
+  97:src/btphy/page_scan_state.c **** }
+ 220              		.loc 1 97 2 is_stmt 1 view .LVU51
+  98:src/btphy/page_scan_state.c **** 
+ 221              		.loc 1 98 1 is_stmt 0 view .LVU52
+ 222 0050 0020     		movs	r0, #0
+ 223 0052 04B0     		add	sp, sp, #16
+ 224              		.cfi_remember_state
+ 225              		.cfi_def_cfa_offset 8
+ 226              		@ sp needed
+ 227 0054 10BD     		pop	{r4, pc}
+ 228              	.LVL15:
+ 229              	.L11:
+ 230              		.cfi_restore_state
+  67:src/btphy/page_scan_state.c **** 		goto end;
+ 231              		.loc 1 67 3 is_stmt 1 view .LVU53
+ 232 0056 1F48     		ldr	r0, .L13+20
+ 233              	.LVL16:
+  67:src/btphy/page_scan_state.c **** 		goto end;
+ 234              		.loc 1 67 3 is_stmt 0 view .LVU54
+ 235 0058 FFF7FEFF 		bl	cprintf
+ 236              	.LVL17:
+  68:src/btphy/page_scan_state.c **** 	}
+ 237              		.loc 1 68 3 is_stmt 1 view .LVU55
+  96:src/btphy/page_scan_state.c **** 	return 0;
+ 238              		.loc 1 96 2 view .LVU56
+ARM GAS  /tmp/ccq3TktM.s 			page 9
+
+
+ 239              	.LBB41:
+  26:include/ubtbr/msg.h **** {
+ 240              		.loc 3 26 20 view .LVU57
+ 241              	.LBB32:
+ 242              		.loc 3 28 2 view .LVU58
+ 243 005c 2046     		mov	r0, r4
+ 244 005e FFF7FEFF 		bl	mem_pool_free
+ 245              	.LVL18:
+ 246              		.loc 3 28 2 is_stmt 0 view .LVU59
+ 247              	.LBE32:
+ 248              	.LBE41:
+  97:src/btphy/page_scan_state.c **** }
+ 249              		.loc 1 97 2 is_stmt 1 view .LVU60
+  98:src/btphy/page_scan_state.c **** 
+ 250              		.loc 1 98 1 is_stmt 0 view .LVU61
+ 251 0062 0020     		movs	r0, #0
+ 252 0064 04B0     		add	sp, sp, #16
+ 253              		.cfi_remember_state
+ 254              		.cfi_def_cfa_offset 8
+ 255              		@ sp needed
+ 256 0066 10BD     		pop	{r4, pc}
+ 257              	.LVL19:
+ 258              	.L9:
+ 259              		.cfi_restore_state
+  79:src/btphy/page_scan_state.c **** 
+ 260              		.loc 1 79 3 is_stmt 1 view .LVU62
+ 261 0068 1749     		ldr	r1, .L13+8
+ 262 006a 1C30     		adds	r0, r0, #28
+ 263              	.LVL20:
+  79:src/btphy/page_scan_state.c **** 
+ 264              		.loc 1 79 3 is_stmt 0 view .LVU63
+ 265 006c FFF7FEFF 		bl	bbpkt_decode_fhs
+ 266              	.LVL21:
+  83:src/btphy/page_scan_state.c **** 				 + (btphy.slave_clkn-pkt->clkn);
+ 267              		.loc 1 83 3 is_stmt 1 view .LVU64
+  87:src/btphy/page_scan_state.c **** 			page_scan_tx_cb, NULL,
+ 268              		.loc 1 87 3 is_stmt 0 view .LVU65
+ 269 0070 0023     		movs	r3, #0
+  84:src/btphy/page_scan_state.c **** 		
+ 270              		.loc 1 84 14 view .LVU66
+ 271 0072 DFF864C0 		ldr	ip, .L13+24
+  83:src/btphy/page_scan_state.c **** 				 + (btphy.slave_clkn-pkt->clkn);
+ 272              		.loc 1 83 55 view .LVU67
+ 273 0076 144A     		ldr	r2, .L13+8
+  84:src/btphy/page_scan_state.c **** 		
+ 274              		.loc 1 84 29 view .LVU68
+ 275 0078 D4F810E0 		ldr	lr, [r4, #16]	@ unaligned
+  83:src/btphy/page_scan_state.c **** 				 + (btphy.slave_clkn-pkt->clkn);
+ 276              		.loc 1 83 55 view .LVU69
+ 277 007c 9068     		ldr	r0, [r2, #8]
+ 278 007e DCF80820 		ldr	r2, [ip, #8]
+  87:src/btphy/page_scan_state.c **** 			page_scan_tx_cb, NULL,
+ 279              		.loc 1 87 3 view .LVU70
+ 280 0082 1649     		ldr	r1, .L13+28
+ 281 0084 02EB8002 		add	r2, r2, r0, lsl #2
+  87:src/btphy/page_scan_state.c **** 			page_scan_tx_cb, NULL,
+ 282              		.loc 1 87 21 view .LVU71
+ARM GAS  /tmp/ccq3TktM.s 			page 10
+
+
+ 283 0088 C2F10100 		rsb	r0, r2, #1
+ 284 008c 7044     		add	r0, r0, lr
+  84:src/btphy/page_scan_state.c **** 		
+ 285              		.loc 1 84 6 view .LVU72
+ 286 008e A2EB0E02 		sub	r2, r2, lr
+  87:src/btphy/page_scan_state.c **** 			page_scan_tx_cb, NULL,
+ 287              		.loc 1 87 3 view .LVU73
+ 288 0092 0093     		str	r3, [sp]
+ 289 0094 00F00300 		and	r0, r0, #3
+  83:src/btphy/page_scan_state.c **** 				 + (btphy.slave_clkn-pkt->clkn);
+ 290              		.loc 1 83 20 view .LVU74
+ 291 0098 CCF80820 		str	r2, [ip, #8]
+  87:src/btphy/page_scan_state.c **** 			page_scan_tx_cb, NULL,
+ 292              		.loc 1 87 3 is_stmt 1 view .LVU75
+ 293 009c 1A46     		mov	r2, r3
+ 294 009e FFF7FEFF 		bl	tx_task_schedule
+ 295              	.LVL22:
+  96:src/btphy/page_scan_state.c **** 	return 0;
+ 296              		.loc 1 96 2 view .LVU76
+ 297              	.LBB42:
+  26:include/ubtbr/msg.h **** {
+ 298              		.loc 3 26 20 view .LVU77
+ 299              	.LBB33:
+ 300              		.loc 3 28 2 view .LVU78
+ 301 00a2 2046     		mov	r0, r4
+ 302 00a4 FFF7FEFF 		bl	mem_pool_free
+ 303              	.LVL23:
+ 304              		.loc 3 28 2 is_stmt 0 view .LVU79
+ 305              	.LBE33:
+ 306              	.LBE42:
+  97:src/btphy/page_scan_state.c **** }
+ 307              		.loc 1 97 2 is_stmt 1 view .LVU80
+  98:src/btphy/page_scan_state.c **** 
+ 308              		.loc 1 98 1 is_stmt 0 view .LVU81
+ 309 00a8 0020     		movs	r0, #0
+ 310 00aa 04B0     		add	sp, sp, #16
+ 311              		.cfi_remember_state
+ 312              		.cfi_def_cfa_offset 8
+ 313              		@ sp needed
+ 314 00ac 10BD     		pop	{r4, pc}
+ 315              	.LVL24:
+ 316              	.L12:
+ 317              		.cfi_restore_state
+ 318              	.LBB43:
+ 319              	.LBB39:
+ 320              	.LBB36:
+ 321              	.LBB37:
+ 135:src/btphy/page_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 322              		.loc 1 135 3 view .LVU82
+ 323 00ae 0C48     		ldr	r0, .L13+32
+ 324              	.LVL25:
+ 135:src/btphy/page_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 325              		.loc 1 135 3 view .LVU83
+ 326 00b0 0392     		str	r2, [sp, #12]
+ 327              	.LBE37:
+ 328              	.LBI36:
+ 131:src/btphy/page_scan_state.c **** {
+ARM GAS  /tmp/ccq3TktM.s 			page 11
+
+
+ 329              		.loc 1 131 13 is_stmt 1 view .LVU84
+ 330              	.LVL26:
+ 331              	.LBB38:
+ 135:src/btphy/page_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 332              		.loc 1 135 3 view .LVU85
+ 333 00b2 FFF7FEFF 		bl	cprintf
+ 334              	.LVL27:
+ 136:src/btphy/page_scan_state.c **** 		return;
+ 335              		.loc 1 136 3 view .LVU86
+ 336 00b6 0121     		movs	r1, #1
+ 337 00b8 0398     		ldr	r0, [sp, #12]
+ 338 00ba FFF7FEFF 		bl	btctl_set_state
+ 339              	.LVL28:
+ 137:src/btphy/page_scan_state.c **** 	}
+ 340              		.loc 1 137 3 view .LVU87
+ 137:src/btphy/page_scan_state.c **** 	}
+ 341              		.loc 1 137 3 is_stmt 0 view .LVU88
+ 342 00be B0E7     		b	.L7
+ 343              	.L14:
+ 344              		.align	2
+ 345              	.L13:
+ 346 00c0 00000000 		.word	btctl
+ 347 00c4 34000000 		.word	.LC2
+ 348 00c8 00000000 		.word	.LANCHOR0
+ 349 00cc 00800040 		.word	1073774592
+ 350 00d0 00000000 		.word	page_scan_rx_id_cb
+ 351 00d4 20000000 		.word	.LC1
+ 352 00d8 00000000 		.word	btphy
+ 353 00dc 00000000 		.word	page_scan_tx_cb
+ 354 00e0 44000000 		.word	.LC3
+ 355              	.LBE38:
+ 356              	.LBE36:
+ 357              	.LBE39:
+ 358              	.LBE43:
+ 359              		.cfi_endproc
+ 360              	.LFE33:
+ 362              		.section	.text.page_scan_rx_id_cb,"ax",%progbits
+ 363              		.align	1
+ 364              		.p2align 2,,3
+ 365              		.syntax unified
+ 366              		.thumb
+ 367              		.thumb_func
+ 369              	page_scan_rx_id_cb:
+ 370              	.LVL29:
+ 371              	.LFB34:
+ 102:src/btphy/page_scan_state.c **** 	unsigned delay;
+ 372              		.loc 1 102 1 is_stmt 1 view -0
+ 373              		.cfi_startproc
+ 374              		@ args = 0, pretend = 0, frame = 8
+ 375              		@ frame_needed = 0, uses_anonymous_args = 0
+ 102:src/btphy/page_scan_state.c **** 	unsigned delay;
+ 376              		.loc 1 102 1 is_stmt 0 view .LVU90
+ 377 0000 00B5     		push	{lr}
+ 378              		.cfi_def_cfa_offset 4
+ 379              		.cfi_offset 14, -4
+ 380 0002 85B0     		sub	sp, sp, #20
+ 381              		.cfi_def_cfa_offset 24
+ARM GAS  /tmp/ccq3TktM.s 			page 12
+
+
+ 103:src/btphy/page_scan_state.c **** 	if(page_scan_canceled())
+ 382              		.loc 1 103 2 is_stmt 1 view .LVU91
+ 104:src/btphy/page_scan_state.c **** 	{
+ 383              		.loc 1 104 2 view .LVU92
+ 384              	.LBB56:
+ 385              	.LBI56:
+  43:src/btphy/page_scan_state.c **** {
+ 386              		.loc 1 43 12 view .LVU93
+  45:src/btphy/page_scan_state.c **** }
+ 387              		.loc 1 45 2 view .LVU94
+ 388              	.LBB57:
+ 389              	.LBI57:
+  24:include/ubtbr/btctl_intf.h **** {
+ 390              		.loc 2 24 29 view .LVU95
+ 391              	.LBB58:
+ 392              		.loc 2 26 2 view .LVU96
+ 393              		.loc 2 26 14 is_stmt 0 view .LVU97
+ 394 0004 204B     		ldr	r3, .L22
+ 395              	.LBE58:
+ 396              	.LBE57:
+ 397              	.LBE56:
+ 102:src/btphy/page_scan_state.c **** 	unsigned delay;
+ 398              		.loc 1 102 1 view .LVU98
+ 399 0006 0246     		mov	r2, r0
+ 104:src/btphy/page_scan_state.c **** 	{
+ 400              		.loc 1 104 4 discriminator 1 view .LVU99
+ 401 0008 1B78     		ldrb	r3, [r3]	@ zero_extendqisi2
+ 402 000a 052B     		cmp	r3, #5
+ 403 000c 2AD1     		bne	.L19
+ 109:src/btphy/page_scan_state.c **** 	{
+ 404              		.loc 1 109 2 is_stmt 1 view .LVU100
+ 109:src/btphy/page_scan_state.c **** 	{
+ 405              		.loc 1 109 5 is_stmt 0 view .LVU101
+ 406 000e 78B9     		cbnz	r0, .L20
+ 127:src/btphy/page_scan_state.c **** 	}
+ 407              		.loc 1 127 3 is_stmt 1 view .LVU102
+ 408              	.LVL30:
+ 409              	.LBB59:
+ 410              	.LBI59:
+ 131:src/btphy/page_scan_state.c **** {
+ 411              		.loc 1 131 13 view .LVU103
+ 412              	.LBB60:
+ 133:src/btphy/page_scan_state.c **** 	{
+ 413              		.loc 1 133 2 view .LVU104
+ 133:src/btphy/page_scan_state.c **** 	{
+ 414              		.loc 1 133 36 is_stmt 0 view .LVU105
+ 415 0010 1E4B     		ldr	r3, .L22+4
+ 133:src/btphy/page_scan_state.c **** 	{
+ 416              		.loc 1 133 6 view .LVU106
+ 417 0012 1F49     		ldr	r1, .L22+8
+ 418              	.LVL31:
+ 133:src/btphy/page_scan_state.c **** 	{
+ 419              		.loc 1 133 48 view .LVU107
+ 420 0014 1B69     		ldr	r3, [r3, #16]
+ 133:src/btphy/page_scan_state.c **** 	{
+ 421              		.loc 1 133 6 view .LVU108
+ 422 0016 8968     		ldr	r1, [r1, #8]
+ARM GAS  /tmp/ccq3TktM.s 			page 13
+
+
+ 133:src/btphy/page_scan_state.c **** 	{
+ 423              		.loc 1 133 48 view .LVU109
+ 424 0018 03F53B33 		add	r3, r3, #191488
+ 425 001c 03F50073 		add	r3, r3, #512
+ 133:src/btphy/page_scan_state.c **** 	{
+ 426              		.loc 1 133 5 view .LVU110
+ 427 0020 9942     		cmp	r1, r3
+ 428 0022 25D2     		bcs	.L21
+ 429              		.loc 1 139 2 is_stmt 1 view .LVU111
+ 430 0024 1B49     		ldr	r1, .L22+12
+ 431              	.LBE60:
+ 432              	.LBE59:
+ 129:src/btphy/page_scan_state.c **** 
+ 433              		.loc 1 129 1 is_stmt 0 view .LVU112
+ 434 0026 05B0     		add	sp, sp, #20
+ 435              		.cfi_remember_state
+ 436              		.cfi_def_cfa_offset 4
+ 437              		@ sp needed
+ 438 0028 5DF804EB 		ldr	lr, [sp], #4
+ 439              		.cfi_restore 14
+ 440              		.cfi_def_cfa_offset 0
+ 441              	.LBB68:
+ 442              	.LBB65:
+ 443              		.loc 1 139 2 view .LVU113
+ 444 002c FFF7FEBF 		b	scan_task_schedule
+ 445              	.LVL32:
+ 446              	.L20:
+ 447              		.cfi_restore_state
+ 448              		.loc 1 139 2 view .LVU114
+ 449              	.LBE65:
+ 450              	.LBE68:
+ 112:src/btphy/page_scan_state.c **** 		/* Schedule TX ID(2) */
+ 451              		.loc 1 112 3 is_stmt 1 view .LVU115
+ 452 0030 2120     		movs	r0, #33
+ 453              	.LVL33:
+ 112:src/btphy/page_scan_state.c **** 		/* Schedule TX ID(2) */
+ 454              		.loc 1 112 3 is_stmt 0 view .LVU116
+ 455 0032 FFF7FEFF 		bl	console_putc
+ 456              	.LVL34:
+ 114:src/btphy/page_scan_state.c **** 		tx_task_schedule(delay,
+ 457              		.loc 1 114 3 is_stmt 1 view .LVU117
+ 115:src/btphy/page_scan_state.c **** 			NULL, NULL,	// no tx callback
+ 458              		.loc 1 115 3 is_stmt 0 view .LVU118
+ 459 0036 0022     		movs	r2, #0
+ 114:src/btphy/page_scan_state.c **** 		tx_task_schedule(delay,
+ 460              		.loc 1 114 29 view .LVU119
+ 461 0038 174B     		ldr	r3, .L22+16
+ 115:src/btphy/page_scan_state.c **** 			NULL, NULL,	// no tx callback
+ 462              		.loc 1 115 3 view .LVU120
+ 463 003a 1146     		mov	r1, r2
+ 114:src/btphy/page_scan_state.c **** 		tx_task_schedule(delay,
+ 464              		.loc 1 114 12 view .LVU121
+ 465 003c 9868     		ldr	r0, [r3, #8]
+ 115:src/btphy/page_scan_state.c **** 			NULL, NULL,	// no tx callback
+ 466              		.loc 1 115 3 view .LVU122
+ 467 003e 1346     		mov	r3, r2
+ 114:src/btphy/page_scan_state.c **** 		tx_task_schedule(delay,
+ARM GAS  /tmp/ccq3TktM.s 			page 14
+
+
+ 468              		.loc 1 114 12 view .LVU123
+ 469 0040 C0F10100 		rsb	r0, r0, #1
+ 114:src/btphy/page_scan_state.c **** 		tx_task_schedule(delay,
+ 470              		.loc 1 114 9 view .LVU124
+ 471 0044 00F00300 		and	r0, r0, #3
+ 472              	.LVL35:
+ 115:src/btphy/page_scan_state.c **** 			NULL, NULL,	// no tx callback
+ 473              		.loc 1 115 3 is_stmt 1 view .LVU125
+ 474 0048 0092     		str	r2, [sp]
+ 475 004a 0390     		str	r0, [sp, #12]
+ 476 004c FFF7FEFF 		bl	tx_task_schedule
+ 477              	.LVL36:
+ 120:src/btphy/page_scan_state.c **** 			page_scan_rx_fhs_cb, NULL,	// ID rx callback
+ 478              		.loc 1 120 3 view .LVU126
+ 479 0050 0123     		movs	r3, #1
+ 480 0052 0022     		movs	r2, #0
+ 481 0054 0398     		ldr	r0, [sp, #12]
+ 482 0056 1149     		ldr	r1, .L22+20
+ 483 0058 0230     		adds	r0, r0, #2
+ 129:src/btphy/page_scan_state.c **** 
+ 484              		.loc 1 129 1 is_stmt 0 view .LVU127
+ 485 005a 05B0     		add	sp, sp, #20
+ 486              		.cfi_remember_state
+ 487              		.cfi_def_cfa_offset 4
+ 488              		@ sp needed
+ 489 005c 5DF804EB 		ldr	lr, [sp], #4
+ 490              		.cfi_restore 14
+ 491              		.cfi_def_cfa_offset 0
+ 492              	.LVL37:
+ 120:src/btphy/page_scan_state.c **** 			page_scan_rx_fhs_cb, NULL,	// ID rx callback
+ 493              		.loc 1 120 3 view .LVU128
+ 494 0060 FFF7FEBF 		b	rx_task_schedule
+ 495              	.LVL38:
+ 496              	.L19:
+ 497              		.cfi_restore_state
+ 498              	.LBB69:
+ 499              	.LBI69:
+ 101:src/btphy/page_scan_state.c **** {
+ 500              		.loc 1 101 13 is_stmt 1 view .LVU129
+ 501              	.LBB70:
+ 106:src/btphy/page_scan_state.c **** 		return;
+ 502              		.loc 1 106 3 view .LVU130
+ 503 0064 0E48     		ldr	r0, .L22+24
+ 504              	.LVL39:
+ 106:src/btphy/page_scan_state.c **** 		return;
+ 505              		.loc 1 106 3 is_stmt 0 view .LVU131
+ 506              	.LBE70:
+ 507              	.LBE69:
+ 129:src/btphy/page_scan_state.c **** 
+ 508              		.loc 1 129 1 view .LVU132
+ 509 0066 05B0     		add	sp, sp, #20
+ 510              		.cfi_remember_state
+ 511              		.cfi_def_cfa_offset 4
+ 512              		@ sp needed
+ 513 0068 5DF804EB 		ldr	lr, [sp], #4
+ 514              		.cfi_restore 14
+ 515              		.cfi_def_cfa_offset 0
+ARM GAS  /tmp/ccq3TktM.s 			page 15
+
+
+ 516              	.LBB72:
+ 517              	.LBB71:
+ 106:src/btphy/page_scan_state.c **** 		return;
+ 518              		.loc 1 106 3 view .LVU133
+ 519 006c FFF7FEBF 		b	cprintf
+ 520              	.LVL40:
+ 521              	.L21:
+ 522              		.cfi_restore_state
+ 106:src/btphy/page_scan_state.c **** 		return;
+ 523              		.loc 1 106 3 view .LVU134
+ 524 0070 0390     		str	r0, [sp, #12]
+ 525              	.LBE71:
+ 526              	.LBE72:
+ 527              	.LBB73:
+ 528              	.LBB66:
+ 529              	.LBB61:
+ 530              	.LBI61:
+ 131:src/btphy/page_scan_state.c **** {
+ 531              		.loc 1 131 13 is_stmt 1 view .LVU135
+ 532              	.LVL41:
+ 533              	.LBB62:
+ 135:src/btphy/page_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 534              		.loc 1 135 3 view .LVU136
+ 535 0072 0C48     		ldr	r0, .L22+28
+ 536              	.LVL42:
+ 135:src/btphy/page_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 537              		.loc 1 135 3 is_stmt 0 view .LVU137
+ 538 0074 FFF7FEFF 		bl	cprintf
+ 539              	.LVL43:
+ 136:src/btphy/page_scan_state.c **** 		return;
+ 540              		.loc 1 136 3 is_stmt 1 view .LVU138
+ 541 0078 0121     		movs	r1, #1
+ 542 007a 0398     		ldr	r0, [sp, #12]
+ 543              	.LBE62:
+ 544              	.LBE61:
+ 545              	.LBE66:
+ 546              	.LBE73:
+ 129:src/btphy/page_scan_state.c **** 
+ 547              		.loc 1 129 1 is_stmt 0 view .LVU139
+ 548 007c 05B0     		add	sp, sp, #20
+ 549              		.cfi_def_cfa_offset 4
+ 550              		@ sp needed
+ 551 007e 5DF804EB 		ldr	lr, [sp], #4
+ 552              		.cfi_restore 14
+ 553              		.cfi_def_cfa_offset 0
+ 554              	.LVL44:
+ 555              	.LBB74:
+ 556              	.LBB67:
+ 557              	.LBB64:
+ 558              	.LBB63:
+ 136:src/btphy/page_scan_state.c **** 		return;
+ 559              		.loc 1 136 3 view .LVU140
+ 560 0082 FFF7FEBF 		b	btctl_set_state
+ 561              	.LVL45:
+ 562              	.L23:
+ 563 0086 00BF     		.align	2
+ 564              	.L22:
+ARM GAS  /tmp/ccq3TktM.s 			page 16
+
+
+ 565 0088 00000000 		.word	btctl
+ 566 008c 00000000 		.word	.LANCHOR0
+ 567 0090 00800040 		.word	1073774592
+ 568 0094 00000000 		.word	page_scan_rx_id_cb
+ 569 0098 00000000 		.word	btphy
+ 570 009c 00000000 		.word	page_scan_rx_fhs_cb
+ 571 00a0 20000000 		.word	.LC1
+ 572 00a4 44000000 		.word	.LC3
+ 573              	.LBE63:
+ 574              	.LBE64:
+ 575              	.LBE67:
+ 576              	.LBE74:
+ 577              		.cfi_endproc
+ 578              	.LFE34:
+ 580              		.section	.text.page_scan_state_setup,"ax",%progbits
+ 581              		.align	1
+ 582              		.p2align 2,,3
+ 583              		.global	page_scan_state_setup
+ 584              		.syntax unified
+ 585              		.thumb
+ 586              		.thumb_func
+ 588              	page_scan_state_setup:
+ 589              	.LFB36:
+ 140:src/btphy/page_scan_state.c **** }
+ 141:src/btphy/page_scan_state.c **** 
+ 142:src/btphy/page_scan_state.c **** /*
+ 143:src/btphy/page_scan_state.c ****  * Page slave
+ 144:src/btphy/page_scan_state.c ****  */
+ 145:src/btphy/page_scan_state.c **** void page_scan_state_setup(void)
+ 146:src/btphy/page_scan_state.c **** {
+ 590              		.loc 1 146 1 is_stmt 1 view -0
+ 591              		.cfi_startproc
+ 592              		@ args = 0, pretend = 0, frame = 0
+ 593              		@ frame_needed = 0, uses_anonymous_args = 0
+ 594 0000 08B5     		push	{r3, lr}
+ 595              		.cfi_def_cfa_offset 8
+ 596              		.cfi_offset 3, -8
+ 597              		.cfi_offset 14, -4
+ 147:src/btphy/page_scan_state.c **** 	btphy_set_mode(BT_MODE_PAGE_SCAN, btphy.my_lap, btphy.my_uap);
+ 598              		.loc 1 147 2 view .LVU142
+ 599 0002 134B     		ldr	r3, .L27
+ 600 0004 0320     		movs	r0, #3
+ 601 0006 93F83820 		ldrb	r2, [r3, #56]	@ zero_extendqisi2
+ 602 000a 596B     		ldr	r1, [r3, #52]
+ 603 000c FFF7FEFF 		bl	btphy_set_mode
+ 604              	.LVL46:
+ 148:src/btphy/page_scan_state.c **** 	btctl_set_state(BTCTL_STATE_PAGE_SCAN, BTCTL_REASON_SUCCESS);
+ 605              		.loc 1 148 2 view .LVU143
+ 606 0010 0021     		movs	r1, #0
+ 607 0012 0520     		movs	r0, #5
+ 608 0014 FFF7FEFF 		bl	btctl_set_state
+ 609              	.LVL47:
+ 149:src/btphy/page_scan_state.c **** 	page_scan_state.clkn_start = MASTER_CLKN+1;
+ 610              		.loc 1 149 2 view .LVU144
+ 611              		.loc 1 149 31 is_stmt 0 view .LVU145
+ 612 0018 0E4A     		ldr	r2, .L27+4
+ 613              		.loc 1 149 29 view .LVU146
+ARM GAS  /tmp/ccq3TktM.s 			page 17
+
+
+ 614 001a 0F48     		ldr	r0, .L27+8
+ 615              		.loc 1 149 31 view .LVU147
+ 616 001c 9368     		ldr	r3, [r2, #8]
+ 617              	.LBB79:
+ 618              	.LBB80:
+ 133:src/btphy/page_scan_state.c **** 	{
+ 619              		.loc 1 133 6 view .LVU148
+ 620 001e 9168     		ldr	r1, [r2, #8]
+ 133:src/btphy/page_scan_state.c **** 	{
+ 621              		.loc 1 133 48 view .LVU149
+ 622 0020 03F53B32 		add	r2, r3, #191488
+ 623 0024 02F20122 		addw	r2, r2, #513
+ 624              	.LBE80:
+ 625              	.LBE79:
+ 626              		.loc 1 149 42 view .LVU150
+ 627 0028 0133     		adds	r3, r3, #1
+ 628              	.LBB89:
+ 629              	.LBB85:
+ 133:src/btphy/page_scan_state.c **** 	{
+ 630              		.loc 1 133 5 view .LVU151
+ 631 002a 9142     		cmp	r1, r2
+ 632              	.LBE85:
+ 633              	.LBE89:
+ 634              		.loc 1 149 29 view .LVU152
+ 635 002c 0361     		str	r3, [r0, #16]
+ 150:src/btphy/page_scan_state.c **** 	page_scan_schedule(1);
+ 636              		.loc 1 150 2 is_stmt 1 view .LVU153
+ 637              	.LVL48:
+ 638              	.LBB90:
+ 639              	.LBI79:
+ 131:src/btphy/page_scan_state.c **** {
+ 640              		.loc 1 131 13 view .LVU154
+ 641              	.LBB86:
+ 133:src/btphy/page_scan_state.c **** 	{
+ 642              		.loc 1 133 2 view .LVU155
+ 133:src/btphy/page_scan_state.c **** 	{
+ 643              		.loc 1 133 5 is_stmt 0 view .LVU156
+ 644 002e 06D2     		bcs	.L26
+ 139:src/btphy/page_scan_state.c **** }
+ 645              		.loc 1 139 2 is_stmt 1 view .LVU157
+ 646              	.LBE86:
+ 647              	.LBE90:
+ 151:src/btphy/page_scan_state.c **** }
+ 648              		.loc 1 151 1 is_stmt 0 view .LVU158
+ 649 0030 BDE80840 		pop	{r3, lr}
+ 650              		.cfi_remember_state
+ 651              		.cfi_restore 14
+ 652              		.cfi_restore 3
+ 653              		.cfi_def_cfa_offset 0
+ 654              	.LBB91:
+ 655              	.LBB87:
+ 139:src/btphy/page_scan_state.c **** }
+ 656              		.loc 1 139 2 view .LVU159
+ 657 0034 0022     		movs	r2, #0
+ 658 0036 0120     		movs	r0, #1
+ 659 0038 0849     		ldr	r1, .L27+12
+ 660 003a FFF7FEBF 		b	scan_task_schedule
+ARM GAS  /tmp/ccq3TktM.s 			page 18
+
+
+ 661              	.LVL49:
+ 662              	.L26:
+ 663              		.cfi_restore_state
+ 664              	.LBB81:
+ 665              	.LBI81:
+ 131:src/btphy/page_scan_state.c **** {
+ 666              		.loc 1 131 13 is_stmt 1 view .LVU160
+ 667              	.LBB82:
+ 135:src/btphy/page_scan_state.c **** 		btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+ 668              		.loc 1 135 3 view .LVU161
+ 669 003e 0848     		ldr	r0, .L27+16
+ 670 0040 FFF7FEFF 		bl	cprintf
+ 671              	.LVL50:
+ 136:src/btphy/page_scan_state.c **** 		return;
+ 672              		.loc 1 136 3 view .LVU162
+ 673              	.LBE82:
+ 674              	.LBE81:
+ 675              	.LBE87:
+ 676              	.LBE91:
+ 677              		.loc 1 151 1 is_stmt 0 view .LVU163
+ 678 0044 BDE80840 		pop	{r3, lr}
+ 679              		.cfi_restore 14
+ 680              		.cfi_restore 3
+ 681              		.cfi_def_cfa_offset 0
+ 682              	.LBB92:
+ 683              	.LBB88:
+ 684              	.LBB84:
+ 685              	.LBB83:
+ 136:src/btphy/page_scan_state.c **** 		return;
+ 686              		.loc 1 136 3 view .LVU164
+ 687 0048 0121     		movs	r1, #1
+ 688 004a 0020     		movs	r0, #0
+ 689 004c FFF7FEBF 		b	btctl_set_state
+ 690              	.LVL51:
+ 691              	.L28:
+ 692              		.align	2
+ 693              	.L27:
+ 694 0050 00000000 		.word	btphy
+ 695 0054 00800040 		.word	1073774592
+ 696 0058 00000000 		.word	.LANCHOR0
+ 697 005c 00000000 		.word	page_scan_rx_id_cb
+ 698 0060 44000000 		.word	.LC3
+ 699              	.LBE83:
+ 700              	.LBE84:
+ 701              	.LBE88:
+ 702              	.LBE92:
+ 703              		.cfi_endproc
+ 704              	.LFE36:
+ 706              		.global	page_scan_state
+ 707              		.bss
+ 708              		.align	3
+ 709              		.set	.LANCHOR0,. + 0
+ 712              	page_scan_state:
+ 713 0000 00000000 		.space	24
+ 713      00000000 
+ 713      00000000 
+ 713      00000000 
+ARM GAS  /tmp/ccq3TktM.s 			page 19
+
+
+ 713      00000000 
+ 714              		.text
+ 715              	.Letext0:
+ 716              		.file 4 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 717              		.file 5 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 718              		.file 6 "../../host/libubertooth/src/ubertooth_interface.h"
+ 719              		.file 7 "include/ubtbr/queue.h"
+ 720              		.file 8 "include/ubtbr/btphy.h"
+ 721              		.file 9 "include/ubtbr/bb.h"
+ 722              		.file 10 "include/ubtbr/scan_task.h"
+ 723              		.file 11 "include/ubtbr/rx_task.h"
+ 724              		.file 12 "include/ubtbr/tx_task.h"
+ 725              		.file 13 "include/ubtbr/mem_pool.h"
+ 726              		.file 14 "include/ubtbr/slave_state.h"
+ 727              		.file 15 "include/ubtbr/console.h"
+ 728              		.file 16 "include/ubtbr/debug.h"
+ARM GAS  /tmp/ccq3TktM.s 			page 20
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 page_scan_state.c
+     /tmp/ccq3TktM.s:19     .rodata.str1.4:00000000 $d
+     /tmp/ccq3TktM.s:23     .text.page_scan_tx_cb:00000000 $t
+     /tmp/ccq3TktM.s:29     .text.page_scan_tx_cb:00000000 page_scan_tx_cb
+     /tmp/ccq3TktM.s:71     .text.page_scan_tx_cb:00000028 $d
+     /tmp/ccq3TktM.s:87     .text.page_scan_rx_fhs_cb:00000000 $t
+     /tmp/ccq3TktM.s:93     .text.page_scan_rx_fhs_cb:00000000 page_scan_rx_fhs_cb
+     /tmp/ccq3TktM.s:346    .text.page_scan_rx_fhs_cb:000000c0 $d
+     /tmp/ccq3TktM.s:369    .text.page_scan_rx_id_cb:00000000 page_scan_rx_id_cb
+     /tmp/ccq3TktM.s:363    .text.page_scan_rx_id_cb:00000000 $t
+     /tmp/ccq3TktM.s:565    .text.page_scan_rx_id_cb:00000088 $d
+     /tmp/ccq3TktM.s:581    .text.page_scan_state_setup:00000000 $t
+     /tmp/ccq3TktM.s:588    .text.page_scan_state_setup:00000000 page_scan_state_setup
+     /tmp/ccq3TktM.s:694    .text.page_scan_state_setup:00000050 $d
+     /tmp/ccq3TktM.s:712    .bss:00000000 page_scan_state
+     /tmp/ccq3TktM.s:708    .bss:00000000 $d
+
+UNDEFINED SYMBOLS
+cprintf
+slave_state_init
+mem_pool_free
+scan_task_schedule
+bbpkt_decode_fhs
+tx_task_schedule
+btctl_set_state
+btctl
+btphy
+console_putc
+rx_task_schedule
+btphy_set_mode

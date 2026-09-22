@@ -1,0 +1,1614 @@
+ARM GAS  /tmp/ccdkPP25.s 			page 1
+
+
+   1              		.cpu cortex-m3
+   2              		.arch armv7-m
+   3              		.fpu softvfp
+   4              		.eabi_attribute 20, 1
+   5              		.eabi_attribute 21, 1
+   6              		.eabi_attribute 23, 3
+   7              		.eabi_attribute 24, 1
+   8              		.eabi_attribute 25, 1
+   9              		.eabi_attribute 26, 1
+  10              		.eabi_attribute 30, 2
+  11              		.eabi_attribute 34, 1
+  12              		.eabi_attribute 18, 4
+  13              		.file	"ll.c"
+  14              		.text
+  15              	.Ltext0:
+  16              		.cfi_sections	.debug_frame
+  17              		.file 1 "src/btphy/ll.c"
+  18              		.section	.rodata.str1.4,"aMS",%progbits,1
+  19              		.align	2
+  20              	.LC0:
+  21 0000 4449457C 		.ascii	"DIE|rx : expect rx pkt\012\000"
+  21      7278203A 
+  21      20657870 
+  21      65637420 
+  21      72782070 
+  22              		.align	2
+  23              	.LC1:
+  24 0018 4C532054 		.ascii	"LS To (con for %d sec, %d pkt rx)\012\000"
+  24      6F202863 
+  24      6F6E2066 
+  24      6F722025 
+  24      64207365 
+  25 003b 00       		.align	2
+  26              	.LC2:
+  27 003c 4449457C 		.ascii	"DIE|txq full in master\012\012\000"
+  27      74787120 
+  27      66756C6C 
+  27      20696E20 
+  27      6D617374 
+  28              		.section	.text.ll_process_rx,"ax",%progbits
+  29              		.align	1
+  30              		.p2align 2,,3
+  31              		.global	ll_process_rx
+  32              		.syntax unified
+  33              		.thumb
+  34              		.thumb_func
+  36              	ll_process_rx:
+  37              	.LVL0:
+  38              	.LFB31:
+   1:src/btphy/ll.c **** /* Link Layer
+   2:src/btphy/ll.c ****  *
+   3:src/btphy/ll.c ****  * Copyright 2020 Etienne Helluy-Lafont, Univ. Lille, CNRS.
+   4:src/btphy/ll.c ****  *
+   5:src/btphy/ll.c ****  * This file is part of Project Ubertooth.
+   6:src/btphy/ll.c ****  *
+   7:src/btphy/ll.c ****  * This program is free software; you can redistribute it and/or modify
+   8:src/btphy/ll.c ****  * it under the terms of the GNU General Public License as published by
+ARM GAS  /tmp/ccdkPP25.s 			page 2
+
+
+   9:src/btphy/ll.c ****  * the Free Software Foundation; either version 2, or (at your option)
+  10:src/btphy/ll.c ****  * any later version.
+  11:src/btphy/ll.c ****  *
+  12:src/btphy/ll.c ****  * This program is distributed in the hope that it will be useful,
+  13:src/btphy/ll.c ****  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+  14:src/btphy/ll.c ****  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+  15:src/btphy/ll.c ****  * GNU General Public License for more details.
+  16:src/btphy/ll.c ****  *
+  17:src/btphy/ll.c ****  * You should have received a copy of the GNU General Public License
+  18:src/btphy/ll.c ****  * along with this program; see the file COPYING.  If not, write to
+  19:src/btphy/ll.c ****  * the Free Software Foundation, Inc., 51 Franklin Street,
+  20:src/btphy/ll.c ****  * Boston, MA 02110-1301, USA.
+  21:src/btphy/ll.c ****  */
+  22:src/btphy/ll.c **** #include <string.h>
+  23:src/btphy/ll.c **** #include <ubtbr/cfg.h>
+  24:src/btphy/ll.c **** #include <ubtbr/btctl_intf.h>
+  25:src/btphy/ll.c **** #include <ubtbr/btphy.h>
+  26:src/btphy/ll.c **** #include <ubtbr/bb.h>
+  27:src/btphy/ll.c **** #include <ubtbr/ll.h>
+  28:src/btphy/ll.c **** 
+  29:src/btphy/ll.c **** #ifdef USE_LL_DEBUG
+  30:src/btphy/ll.c **** #define LL_DEBUG(c)	console_putc(c)
+  31:src/btphy/ll.c **** #else
+  32:src/btphy/ll.c **** #define LL_DEBUG(c)	
+  33:src/btphy/ll.c **** #endif
+  34:src/btphy/ll.c **** 
+  35:src/btphy/ll.c **** #define SUPERVISION_TO  (1*CLKN_RATE) // 1 second
+  36:src/btphy/ll.c **** 
+  37:src/btphy/ll.c **** /* Process rx msg at Link layer
+  38:src/btphy/ll.c ****  * return: 0 if nothing to do
+  39:src/btphy/ll.c ****  *	   1 if tx required
+  40:src/btphy/ll.c ****  * 	  <0 on error
+  41:src/btphy/ll.c ****  */
+  42:src/btphy/ll.c **** int ll_process_rx(link_layer_t *ll, msg_t *msg)
+  43:src/btphy/ll.c **** {
+  39              		.loc 1 43 1 view -0
+  40              		.cfi_startproc
+  41              		@ args = 0, pretend = 0, frame = 8
+  42              		@ frame_needed = 0, uses_anonymous_args = 0
+  43              		.loc 1 43 1 is_stmt 0 view .LVU1
+  44 0000 70B5     		push	{r4, r5, r6, lr}
+  45              		.cfi_def_cfa_offset 16
+  46              		.cfi_offset 4, -16
+  47              		.cfi_offset 5, -12
+  48              		.cfi_offset 6, -8
+  49              		.cfi_offset 14, -4
+  50 0002 82B0     		sub	sp, sp, #8
+  51              		.cfi_def_cfa_offset 24
+  44:src/btphy/ll.c **** 	uint32_t clk_diff;
+  52              		.loc 1 44 2 is_stmt 1 view .LVU2
+  45:src/btphy/ll.c **** 	int rc = ll->is_master != 0;	// master always tx
+  53              		.loc 1 45 2 view .LVU3
+  54              		.loc 1 45 13 is_stmt 0 view .LVU4
+  55 0004 4578     		ldrb	r5, [r0, #1]	@ zero_extendqisi2
+  46:src/btphy/ll.c **** 	int do_free_msg = 1;
+  47:src/btphy/ll.c **** 	btctl_rx_pkt_t *pkt;
+  48:src/btphy/ll.c **** 	btctl_hdr_t *h = (btctl_hdr_t*)msg->data;
+ARM GAS  /tmp/ccdkPP25.s 			page 3
+
+
+  49:src/btphy/ll.c **** 
+  50:src/btphy/ll.c **** 	/* RX packet */
+  51:src/btphy/ll.c **** 	if (h->type != BTCTL_RX_PKT)
+  56              		.loc 1 51 5 view .LVU5
+  57 0006 0A7B     		ldrb	r2, [r1, #12]	@ zero_extendqisi2
+  45:src/btphy/ll.c **** 	int rc = ll->is_master != 0;	// master always tx
+  58              		.loc 1 45 25 view .LVU6
+  59 0008 2E1E     		subs	r6, r5, #0
+  60 000a 18BF     		it	ne
+  61 000c 0126     		movne	r6, #1
+  62              	.LVL1:
+  46:src/btphy/ll.c **** 	int do_free_msg = 1;
+  63              		.loc 1 46 2 is_stmt 1 view .LVU7
+  47:src/btphy/ll.c **** 	btctl_hdr_t *h = (btctl_hdr_t*)msg->data;
+  64              		.loc 1 47 2 view .LVU8
+  48:src/btphy/ll.c **** 
+  65              		.loc 1 48 2 view .LVU9
+  66              		.loc 1 51 2 view .LVU10
+  67              		.loc 1 51 5 is_stmt 0 view .LVU11
+  68 000e 282A     		cmp	r2, #40
+  43:src/btphy/ll.c **** 	uint32_t clk_diff;
+  69              		.loc 1 43 1 view .LVU12
+  70 0010 0346     		mov	r3, r0
+  71 0012 0C46     		mov	r4, r1
+  72              		.loc 1 51 5 view .LVU13
+  73 0014 40F09380 		bne	.L47
+  52:src/btphy/ll.c **** 		DIE("rx : expect rx pkt");
+  53:src/btphy/ll.c **** 	pkt = (btctl_rx_pkt_t *)h->data;
+  74              		.loc 1 53 2 is_stmt 1 view .LVU14
+  54:src/btphy/ll.c **** 
+  55:src/btphy/ll.c **** 	/* No packet received, update timeout */
+  56:src/btphy/ll.c **** 	if (!BBPKT_HAS_HDR(pkt))
+  75              		.loc 1 56 2 view .LVU15
+  76              		.loc 1 56 5 is_stmt 0 view .LVU16
+  77 0018 4A7D     		ldrb	r2, [r1, #21]	@ zero_extendqisi2
+  78 001a 9007     		lsls	r0, r2, #30
+  79              	.LVL2:
+  80              		.loc 1 56 5 view .LVU17
+  81 001c 48D5     		bpl	.L48
+  57:src/btphy/ll.c **** 	{
+  58:src/btphy/ll.c **** 		LL_DEBUG('x');
+  59:src/btphy/ll.c **** 		/* Check supervision timeout */
+  60:src/btphy/ll.c **** 		clk_diff = btphy_cur_clkn() - ll->clkn_last_rx;
+  61:src/btphy/ll.c **** 		if (clk_diff > SUPERVISION_TO)
+  62:src/btphy/ll.c **** 		{
+  63:src/btphy/ll.c **** 			cprintf("LS To (con for %d sec, %d pkt rx)\n",
+  64:src/btphy/ll.c **** 				(btphy_cur_clkn()-ll->clkn_start-SUPERVISION_TO)/CLKN_RATE,
+  65:src/btphy/ll.c **** 				ll->rx_count);
+  66:src/btphy/ll.c **** 			//btctl_set_state(BTCTL_STATE_STANDBY, BTCTL_REASON_TIMEOUT);
+  67:src/btphy/ll.c **** 			rc = -BTCTL_REASON_TIMEOUT;
+  68:src/btphy/ll.c **** 		}
+  69:src/btphy/ll.c **** 		goto end;
+  70:src/btphy/ll.c **** 	}
+  71:src/btphy/ll.c **** 
+  72:src/btphy/ll.c **** 	/* Check for connection establishment */
+  73:src/btphy/ll.c **** 	if (!ll->is_connected)
+  82              		.loc 1 73 2 is_stmt 1 view .LVU18
+ARM GAS  /tmp/ccdkPP25.s 			page 4
+
+
+  83              		.loc 1 73 5 is_stmt 0 view .LVU19
+  84 001e 1A78     		ldrb	r2, [r3]	@ zero_extendqisi2
+  85 0020 B2B1     		cbz	r2, .L49
+  86              	.LBB52:
+  87              	.LBB53:
+  88              		.file 2 "include/ubtbr/btphy.h"
+   1:include/ubtbr/btphy.h **** #ifndef __BTPHY_H
+   2:include/ubtbr/btphy.h **** #define __BTPHY_H
+   3:include/ubtbr/btphy.h **** #include <stdint.h>
+   4:include/ubtbr/btphy.h **** #include <ubertooth_interface.h>
+   5:include/ubtbr/btphy.h **** #include <ubtbr/cfg.h>
+   6:include/ubtbr/btphy.h **** #include <ubtbr/queue.h>
+   7:include/ubtbr/btphy.h **** 
+   8:include/ubtbr/btphy.h **** #define CLKN_RATE 3200
+   9:include/ubtbr/btphy.h **** #define PERIPH_CLK_RATE	50000000			// 50Mhz
+  10:include/ubtbr/btphy.h **** #define PERIPH_CLK_NS (1000000000/PERIPH_CLK_RATE)	// 20ns
+  11:include/ubtbr/btphy.h **** #define CLK100NS_SECOND (1000000000/100)
+  12:include/ubtbr/btphy.h **** /* clkn_offset prescale value (from peripheral clock -> 100ns) */
+  13:include/ubtbr/btphy.h **** #define CLKN_OFFSET_PRESCALE_VAL 	(100/PERIPH_CLK_NS)
+  14:include/ubtbr/btphy.h **** /* clk_offset match register value */
+  15:include/ubtbr/btphy.h **** #define CLKN_OFFSET_RESET_VAL ((PERIPH_CLK_RATE/CLKN_OFFSET_PRESCALE_VAL)/CLKN_RATE)
+  16:include/ubtbr/btphy.h **** #define MASTER_CLKN	T1TC
+  17:include/ubtbr/btphy.h **** #define CLKN_OFFSET	T0TC
+  18:include/ubtbr/btphy.h **** 
+  19:include/ubtbr/btphy.h **** typedef enum btphy_mode_e {
+  20:include/ubtbr/btphy.h **** 	BT_MODE_INQUIRY,
+  21:include/ubtbr/btphy.h **** 	BT_MODE_PAGING,
+  22:include/ubtbr/btphy.h **** 	BT_MODE_INQUIRY_SCAN,
+  23:include/ubtbr/btphy.h **** 	BT_MODE_PAGE_SCAN,
+  24:include/ubtbr/btphy.h **** 	BT_MODE_MASTER,
+  25:include/ubtbr/btphy.h **** 	BT_MODE_SLAVE,
+  26:include/ubtbr/btphy.h **** } btphy_mode_t ; 
+  27:include/ubtbr/btphy.h **** 
+  28:include/ubtbr/btphy.h **** typedef struct btphy_s {
+  29:include/ubtbr/btphy.h **** 	btphy_mode_t mode;
+  30:include/ubtbr/btphy.h **** 	uint32_t master_clkn; 
+  31:include/ubtbr/btphy.h **** 	uint32_t slave_clkn; 
+  32:include/ubtbr/btphy.h **** 	int slave_clkn_delay;
+  33:include/ubtbr/btphy.h **** 	int clkn_delayed;
+  34:include/ubtbr/btphy.h **** 	uint32_t chan_lap;
+  35:include/ubtbr/btphy.h **** 	uint8_t chan_uap;
+  36:include/ubtbr/btphy.h **** 	uint64_t chan_sw;
+  37:include/ubtbr/btphy.h **** 	uint8_t chan_trailer;
+  38:include/ubtbr/btphy.h **** 	uint8_t chan_sw_lo[4];
+  39:include/ubtbr/btphy.h **** 	uint8_t chan_sw_hi[4];
+  40:include/ubtbr/btphy.h **** 	uint32_t my_lap;
+  41:include/ubtbr/btphy.h **** 	uint8_t  my_uap;
+  42:include/ubtbr/btphy.h **** 	uint16_t my_nap;
+  43:include/ubtbr/btphy.h **** 	uint64_t my_sw;
+  44:include/ubtbr/btphy.h **** } btphy_t;
+  45:include/ubtbr/btphy.h **** 
+  46:include/ubtbr/btphy.h **** typedef void (*btphy_timer_fn_t)(void *arg);
+  47:include/ubtbr/btphy.h **** 
+  48:include/ubtbr/btphy.h **** extern btphy_t btphy;
+  49:include/ubtbr/btphy.h **** 
+  50:include/ubtbr/btphy.h **** #define CUR_MASTER_SLOT_IDX()	(btphy.master_clkn&3)
+  51:include/ubtbr/btphy.h **** #define CUR_SLAVE_SLOT_IDX()	(btphy.slave_clkn&3)
+ARM GAS  /tmp/ccdkPP25.s 			page 5
+
+
+  52:include/ubtbr/btphy.h **** 
+  53:include/ubtbr/btphy.h **** static inline uint32_t btphy_cur_clkn(void)
+  54:include/ubtbr/btphy.h **** {
+  55:include/ubtbr/btphy.h **** 	switch(btphy.mode)
+  89              		.loc 2 55 14 view .LVU20
+  90 0022 4A4A     		ldr	r2, .L53
+  91              	.LBE53:
+  92              	.LBE52:
+  93 0024 2846     		mov	r0, r5
+  74:src/btphy/ll.c **** 	{
+  75:src/btphy/ll.c **** 		ll->is_connected = 1;
+  76:src/btphy/ll.c **** 		/* Inform host of connection establishment */
+  77:src/btphy/ll.c **** 		btctl_set_state(BTCTL_STATE_CONNECTED, BTCTL_REASON_SUCCESS|(ll->lt_addr<<5));
+  78:src/btphy/ll.c **** 	}
+  79:src/btphy/ll.c **** 	/* Update supervision timeout / stats */
+  80:src/btphy/ll.c **** 	ll->clkn_last_rx = btphy_cur_clkn();
+  94              		.loc 1 80 2 is_stmt 1 view .LVU21
+  95              	.LBB58:
+  96              	.LBI52:
+  53:include/ubtbr/btphy.h **** {
+  97              		.loc 2 53 24 view .LVU22
+  98              	.LBB54:
+  99              		.loc 2 55 2 view .LVU23
+ 100              		.loc 2 55 14 is_stmt 0 view .LVU24
+ 101 0026 1178     		ldrb	r1, [r2]	@ zero_extendqisi2
+ 102              	.LVL3:
+ 103              		.loc 2 55 2 view .LVU25
+ 104 0028 0329     		cmp	r1, #3
+ 105 002a 21D8     		bhi	.L14
+ 106              	.LVL4:
+ 107              	.L50:
+ 108              		.loc 2 55 2 view .LVU26
+ 109 002c 0129     		cmp	r1, #1
+ 110 002e 21D9     		bls	.L16
+ 111              	.L15:
+  56:include/ubtbr/btphy.h **** 	{
+  57:include/ubtbr/btphy.h **** 	case BT_MODE_INQUIRY_SCAN:
+  58:include/ubtbr/btphy.h **** 	case BT_MODE_PAGE_SCAN:
+  59:include/ubtbr/btphy.h **** 	case BT_MODE_SLAVE:
+  60:include/ubtbr/btphy.h **** 		return btphy.slave_clkn;
+ 112              		.loc 2 60 3 is_stmt 1 view .LVU27
+ 113              		.loc 2 60 15 is_stmt 0 view .LVU28
+ 114 0030 9268     		ldr	r2, [r2, #8]
+ 115              	.L17:
+ 116              	.LBE54:
+ 117              	.LBE58:
+ 118              		.loc 1 80 19 discriminator 1 view .LVU29
+ 119 0032 9A60     		str	r2, [r3, #8]
+  81:src/btphy/ll.c **** 	ll->rx_count ++;
+ 120              		.loc 1 81 2 is_stmt 1 view .LVU30
+ 121              		.loc 1 81 15 is_stmt 0 view .LVU31
+ 122 0034 DA68     		ldr	r2, [r3, #12]
+ 123 0036 0132     		adds	r2, r2, #1
+ 124 0038 DA60     		str	r2, [r3, #12]
+  82:src/btphy/ll.c **** 
+  83:src/btphy/ll.c **** 	/* Check if we must discard the packet */
+  84:src/btphy/ll.c **** 	if (!ll->is_master && pkt->bb_hdr.lt_addr != ll->lt_addr)
+ARM GAS  /tmp/ccdkPP25.s 			page 6
+
+
+ 125              		.loc 1 84 2 is_stmt 1 view .LVU32
+ 126              		.loc 1 84 5 is_stmt 0 view .LVU33
+ 127 003a E8B9     		cbnz	r0, .L18
+ 128              		.loc 1 84 21 discriminator 1 view .LVU34
+ 129 003c 217E     		ldrb	r1, [r4, #24]	@ zero_extendqisi2
+ 130 003e 1A7C     		ldrb	r2, [r3, #16]	@ zero_extendqisi2
+ 131 0040 9142     		cmp	r1, r2
+ 132 0042 19D0     		beq	.L18
+ 133              	.LVL5:
+ 134              	.L12:
+  85:src/btphy/ll.c **** 	{
+  86:src/btphy/ll.c **** 		// TODO: broadcast/sco/monitor..
+  87:src/btphy/ll.c **** 		LL_DEBUG('0'+pkt->bb_hdr.lt_addr);
+  88:src/btphy/ll.c **** 		goto end;
+  89:src/btphy/ll.c **** 	}
+  90:src/btphy/ll.c **** 
+  91:src/btphy/ll.c **** 	/* Handle remote ARQN */
+  92:src/btphy/ll.c **** 	if (pkt->bb_hdr.flags & (1<<BTHDR_ARQN))
+  93:src/btphy/ll.c **** 	{
+  94:src/btphy/ll.c **** 		LL_DEBUG('a');
+  95:src/btphy/ll.c **** 		/* Stop retransmitting when we receive an ACK */
+  96:src/btphy/ll.c **** 		if (ll->cur_tx_msg != NULL)
+  97:src/btphy/ll.c **** 		{
+  98:src/btphy/ll.c **** 			msg_free(ll->cur_tx_msg);
+  99:src/btphy/ll.c **** 			ll->cur_tx_msg = NULL;
+ 100:src/btphy/ll.c **** 			/* Update my sequence number */
+ 101:src/btphy/ll.c **** 			ll->loc_seqn ^= 1;
+ 102:src/btphy/ll.c **** 		}
+ 103:src/btphy/ll.c **** 	}
+ 104:src/btphy/ll.c **** 	if (!(pkt->bb_hdr.flags & (1<<BTHDR_FLOW)))
+ 105:src/btphy/ll.c **** 	{
+ 106:src/btphy/ll.c **** 		LL_DEBUG('s');
+ 107:src/btphy/ll.c **** 	}
+ 108:src/btphy/ll.c **** 
+ 109:src/btphy/ll.c **** 	/* Handle remote SEQN */
+ 110:src/btphy/ll.c **** 	if (BBPKT_HAS_CRC(pkt))
+ 111:src/btphy/ll.c **** 	{
+ 112:src/btphy/ll.c **** 		// We already received this message
+ 113:src/btphy/ll.c **** 		if ((1&(pkt->bb_hdr.flags>>BTHDR_SEQN)) != ll->rmt_seqn)
+ 114:src/btphy/ll.c **** 		{
+ 115:src/btphy/ll.c **** 			LL_DEBUG('i');
+ 116:src/btphy/ll.c **** 			// just ignore it & ack in next slot
+ 117:src/btphy/ll.c **** 			ll->loc_arqn = 1;
+ 118:src/btphy/ll.c **** 		}
+ 119:src/btphy/ll.c **** 		else
+ 120:src/btphy/ll.c **** 		{
+ 121:src/btphy/ll.c **** 			if (BBPKT_GOOD_CRC(pkt))
+ 122:src/btphy/ll.c **** 			{
+ 123:src/btphy/ll.c **** 				LL_DEBUG('c');
+ 124:src/btphy/ll.c **** 				/* Send the message to host */
+ 125:src/btphy/ll.c **** 				if (btctl_tx_enqueue(msg) != 0)
+ 126:src/btphy/ll.c **** 				{
+ 127:src/btphy/ll.c **** 					DIE("txq full in master\n");
+ 128:src/btphy/ll.c **** 				}
+ 129:src/btphy/ll.c **** 				ll->rmt_seqn ^= 1;
+ 130:src/btphy/ll.c **** 				ll->loc_arqn = 1;
+ 131:src/btphy/ll.c **** 				do_free_msg = 0;
+ARM GAS  /tmp/ccdkPP25.s 			page 7
+
+
+ 132:src/btphy/ll.c **** 			}
+ 133:src/btphy/ll.c **** 			else{
+ 134:src/btphy/ll.c **** 				LL_DEBUG('b');
+ 135:src/btphy/ll.c **** 				// else ignore the packet 
+ 136:src/btphy/ll.c **** 			}
+ 137:src/btphy/ll.c **** 		}
+ 138:src/btphy/ll.c **** 	}
+ 139:src/btphy/ll.c **** 	// DEBUG
+ 140:src/btphy/ll.c **** 	else {
+ 141:src/btphy/ll.c **** 		if (pkt->bb_hdr.type == BB_TYPE_POLL)
+ 142:src/btphy/ll.c **** 		{
+ 143:src/btphy/ll.c **** 			LL_DEBUG('p');
+ 144:src/btphy/ll.c **** 		}
+ 145:src/btphy/ll.c **** #ifdef USE_LL_DEBUG
+ 146:src/btphy/ll.c **** 		else if (pkt->bb_hdr.type == BB_TYPE_NULL)
+ 147:src/btphy/ll.c **** 		{
+ 148:src/btphy/ll.c **** 			LL_DEBUG('n');
+ 149:src/btphy/ll.c **** 		}
+ 150:src/btphy/ll.c **** 		else{
+ 151:src/btphy/ll.c **** 			LL_DEBUG('?');
+ 152:src/btphy/ll.c **** 		}
+ 153:src/btphy/ll.c **** #endif
+ 154:src/btphy/ll.c **** 	}
+ 155:src/btphy/ll.c **** 	/* We can get there in two cases:
+ 156:src/btphy/ll.c **** 	 * - We're the master and will TX everytime
+ 157:src/btphy/ll.c **** 	 * - We're the slave and we must ack/crc
+ 158:src/btphy/ll.c **** 	 * In both case we'll tx
+ 159:src/btphy/ll.c **** 	 */
+ 160:src/btphy/ll.c **** 	if (ll->is_master || pkt->bb_hdr.type == BB_TYPE_POLL || ll->loc_arqn)
+ 161:src/btphy/ll.c **** 	{
+ 162:src/btphy/ll.c **** 		rc = 1;
+ 163:src/btphy/ll.c **** 	}
+ 164:src/btphy/ll.c **** end:
+ 165:src/btphy/ll.c **** 	if (do_free_msg)
+ 166:src/btphy/ll.c **** 		msg_free(msg);
+ 135              		.loc 1 166 3 is_stmt 1 view .LVU35
+ 136              	.LBB59:
+ 137              	.LBI59:
+ 138              		.file 3 "include/ubtbr/msg.h"
+   1:include/ubtbr/msg.h **** #ifndef __DEF_MSG_H
+   2:include/ubtbr/msg.h **** #define __DEF_MSG_H
+   3:include/ubtbr/msg.h **** #include <stdint.h>
+   4:include/ubtbr/msg.h **** 
+   5:include/ubtbr/msg.h **** typedef struct msg_s {
+   6:include/ubtbr/msg.h **** 	uint16_t len;
+   7:include/ubtbr/msg.h **** 	uint16_t data_len;
+   8:include/ubtbr/msg.h **** 	uint8_t *read;
+   9:include/ubtbr/msg.h **** 	uint8_t *write;
+  10:include/ubtbr/msg.h **** 	/* never move head */
+  11:include/ubtbr/msg.h **** 	uint8_t data[0];
+  12:include/ubtbr/msg.h **** } msg_t;
+  13:include/ubtbr/msg.h **** 
+  14:include/ubtbr/msg.h **** /* Allocate a msg_t wigh given room*/
+  15:include/ubtbr/msg.h **** static inline msg_t *msg_alloc(unsigned size)
+  16:include/ubtbr/msg.h **** {
+  17:include/ubtbr/msg.h **** 	msg_t *msg = (msg_t*)btctl_mem_alloc(sizeof(msg_t)+size);
+  18:include/ubtbr/msg.h **** 
+ARM GAS  /tmp/ccdkPP25.s 			page 8
+
+
+  19:include/ubtbr/msg.h **** 	msg->write = msg->data;
+  20:include/ubtbr/msg.h **** 	msg->read = msg->data;
+  21:include/ubtbr/msg.h **** 	msg->data_len = size;
+  22:include/ubtbr/msg.h **** 
+  23:include/ubtbr/msg.h **** 	return msg;
+  24:include/ubtbr/msg.h **** }
+  25:include/ubtbr/msg.h **** 
+  26:include/ubtbr/msg.h **** static inline void msg_free(msg_t *msg)
+ 139              		.loc 3 26 20 view .LVU36
+ 140              	.LBB60:
+  27:include/ubtbr/msg.h **** {
+  28:include/ubtbr/msg.h **** 	btctl_mem_free(msg);
+ 141              		.loc 3 28 2 view .LVU37
+ 142 0044 2046     		mov	r0, r4
+ 143 0046 FFF7FEFF 		bl	mem_pool_free
+ 144              	.LVL6:
+ 145              		.loc 3 28 2 is_stmt 0 view .LVU38
+ 146              	.LBE60:
+ 147              	.LBE59:
+ 167:src/btphy/ll.c **** 
+ 168:src/btphy/ll.c **** 	return rc;
+ 148              		.loc 1 168 2 is_stmt 1 view .LVU39
+ 149              	.L1:
+ 169:src/btphy/ll.c **** }
+ 150              		.loc 1 169 1 is_stmt 0 view .LVU40
+ 151 004a 3046     		mov	r0, r6
+ 152 004c 02B0     		add	sp, sp, #8
+ 153              		.cfi_remember_state
+ 154              		.cfi_def_cfa_offset 16
+ 155              		@ sp needed
+ 156 004e 70BD     		pop	{r4, r5, r6, pc}
+ 157              	.LVL7:
+ 158              	.L49:
+ 159              		.cfi_restore_state
+  75:src/btphy/ll.c **** 		/* Inform host of connection establishment */
+ 160              		.loc 1 75 3 is_stmt 1 view .LVU41
+  75:src/btphy/ll.c **** 		/* Inform host of connection establishment */
+ 161              		.loc 1 75 20 is_stmt 0 view .LVU42
+ 162 0050 0122     		movs	r2, #1
+  77:src/btphy/ll.c **** 	}
+ 163              		.loc 1 77 3 view .LVU43
+ 164 0052 197C     		ldrb	r1, [r3, #16]	@ zero_extendqisi2
+ 165              	.LVL8:
+  75:src/btphy/ll.c **** 		/* Inform host of connection establishment */
+ 166              		.loc 1 75 20 view .LVU44
+ 167 0054 1A70     		strb	r2, [r3]
+  77:src/btphy/ll.c **** 	}
+ 168              		.loc 1 77 3 view .LVU45
+ 169 0056 4901     		lsls	r1, r1, #5
+ 170 0058 0320     		movs	r0, #3
+ 171 005a 01F0E001 		and	r1, r1, #224
+  75:src/btphy/ll.c **** 		/* Inform host of connection establishment */
+ 172              		.loc 1 75 20 view .LVU46
+ 173 005e 0193     		str	r3, [sp, #4]
+  77:src/btphy/ll.c **** 	}
+ 174              		.loc 1 77 3 is_stmt 1 view .LVU47
+ 175 0060 FFF7FEFF 		bl	btctl_set_state
+ARM GAS  /tmp/ccdkPP25.s 			page 9
+
+
+ 176              	.LVL9:
+ 177              	.LBB61:
+ 178              	.LBB55:
+  55:include/ubtbr/btphy.h **** 	{
+ 179              		.loc 2 55 14 is_stmt 0 view .LVU48
+ 180 0064 394A     		ldr	r2, .L53
+ 181              	.LBE55:
+ 182              	.LBE61:
+  84:src/btphy/ll.c **** 	{
+ 183              		.loc 1 84 9 view .LVU49
+ 184 0066 019B     		ldr	r3, [sp, #4]
+ 185              	.LBB62:
+ 186              	.LBB56:
+  55:include/ubtbr/btphy.h **** 	{
+ 187              		.loc 2 55 14 view .LVU50
+ 188 0068 1178     		ldrb	r1, [r2]	@ zero_extendqisi2
+ 189              	.LBE56:
+ 190              	.LBE62:
+  84:src/btphy/ll.c **** 	{
+ 191              		.loc 1 84 9 view .LVU51
+ 192 006a 5878     		ldrb	r0, [r3, #1]	@ zero_extendqisi2
+  80:src/btphy/ll.c **** 	ll->rx_count ++;
+ 193              		.loc 1 80 2 is_stmt 1 view .LVU52
+ 194              	.LBB63:
+  53:include/ubtbr/btphy.h **** {
+ 195              		.loc 2 53 24 view .LVU53
+ 196              	.LBB57:
+  55:include/ubtbr/btphy.h **** 	{
+ 197              		.loc 2 55 2 view .LVU54
+ 198 006c 0329     		cmp	r1, #3
+ 199 006e DDD9     		bls	.L50
+ 200              	.LVL10:
+ 201              	.L14:
+  55:include/ubtbr/btphy.h **** 	{
+ 202              		.loc 2 55 2 is_stmt 0 view .LVU55
+ 203 0070 0529     		cmp	r1, #5
+ 204 0072 DDD0     		beq	.L15
+ 205              	.L16:
+  61:include/ubtbr/btphy.h **** 	default:
+  62:include/ubtbr/btphy.h **** 		return btphy.master_clkn;
+ 206              		.loc 2 62 3 is_stmt 1 view .LVU56
+ 207              		.loc 2 62 15 is_stmt 0 view .LVU57
+ 208 0074 5268     		ldr	r2, [r2, #4]
+ 209 0076 DCE7     		b	.L17
+ 210              	.L18:
+ 211              	.LBE57:
+ 212              	.LBE63:
+  92:src/btphy/ll.c **** 	{
+ 213              		.loc 1 92 2 is_stmt 1 view .LVU58
+  92:src/btphy/ll.c **** 	{
+ 214              		.loc 1 92 17 is_stmt 0 view .LVU59
+ 215 0078 A27E     		ldrb	r2, [r4, #26]	@ zero_extendqisi2
+  92:src/btphy/ll.c **** 	{
+ 216              		.loc 1 92 5 view .LVU60
+ 217 007a 9107     		lsls	r1, r2, #30
+ 218 007c 0CD5     		bpl	.L19
+  94:src/btphy/ll.c **** 		/* Stop retransmitting when we receive an ACK */
+ARM GAS  /tmp/ccdkPP25.s 			page 10
+
+
+ 219              		.loc 1 94 16 is_stmt 1 view .LVU61
+  96:src/btphy/ll.c **** 		{
+ 220              		.loc 1 96 3 view .LVU62
+  96:src/btphy/ll.c **** 		{
+ 221              		.loc 1 96 9 is_stmt 0 view .LVU63
+ 222 007e 9869     		ldr	r0, [r3, #24]
+  96:src/btphy/ll.c **** 		{
+ 223              		.loc 1 96 6 view .LVU64
+ 224 0080 50B1     		cbz	r0, .L19
+ 225 0082 0193     		str	r3, [sp, #4]
+  98:src/btphy/ll.c **** 			ll->cur_tx_msg = NULL;
+ 226              		.loc 1 98 4 is_stmt 1 view .LVU65
+ 227              	.LVL11:
+ 228              	.LBB64:
+ 229              	.LBI64:
+  26:include/ubtbr/msg.h **** {
+ 230              		.loc 3 26 20 view .LVU66
+ 231              	.LBB65:
+ 232              		.loc 3 28 2 view .LVU67
+ 233 0084 FFF7FEFF 		bl	mem_pool_free
+ 234              	.LVL12:
+ 235              		.loc 3 28 2 is_stmt 0 view .LVU68
+ 236              	.LBE65:
+ 237              	.LBE64:
+  99:src/btphy/ll.c **** 			/* Update my sequence number */
+ 238              		.loc 1 99 4 is_stmt 1 view .LVU69
+  99:src/btphy/ll.c **** 			/* Update my sequence number */
+ 239              		.loc 1 99 19 is_stmt 0 view .LVU70
+ 240 0088 0021     		movs	r1, #0
+ 101:src/btphy/ll.c **** 		}
+ 241              		.loc 1 101 17 view .LVU71
+ 242 008a 019B     		ldr	r3, [sp, #4]
+ 243 008c 9A7C     		ldrb	r2, [r3, #18]	@ zero_extendqisi2
+  99:src/btphy/ll.c **** 			/* Update my sequence number */
+ 244              		.loc 1 99 19 view .LVU72
+ 245 008e 9961     		str	r1, [r3, #24]
+ 101:src/btphy/ll.c **** 		}
+ 246              		.loc 1 101 4 is_stmt 1 view .LVU73
+ 101:src/btphy/ll.c **** 		}
+ 247              		.loc 1 101 17 is_stmt 0 view .LVU74
+ 248 0090 82F00102 		eor	r2, r2, #1
+ 249 0094 9A74     		strb	r2, [r3, #18]
+ 104:src/btphy/ll.c **** 	{
+ 250              		.loc 1 104 19 view .LVU75
+ 251 0096 A27E     		ldrb	r2, [r4, #26]	@ zero_extendqisi2
+ 252              	.L19:
+ 104:src/btphy/ll.c **** 	{
+ 253              		.loc 1 104 2 is_stmt 1 view .LVU76
+ 106:src/btphy/ll.c **** 	}
+ 254              		.loc 1 106 16 view .LVU77
+ 110:src/btphy/ll.c **** 	{
+ 255              		.loc 1 110 2 view .LVU78
+ 110:src/btphy/ll.c **** 	{
+ 256              		.loc 1 110 6 is_stmt 0 view .LVU79
+ 257 0098 617D     		ldrb	r1, [r4, #21]	@ zero_extendqisi2
+ 110:src/btphy/ll.c **** 	{
+ 258              		.loc 1 110 5 view .LVU80
+ARM GAS  /tmp/ccdkPP25.s 			page 11
+
+
+ 259 009a 4807     		lsls	r0, r1, #29
+ 260 009c 26D5     		bpl	.L45
+ 113:src/btphy/ll.c **** 		{
+ 261              		.loc 1 113 3 is_stmt 1 view .LVU81
+ 113:src/btphy/ll.c **** 		{
+ 262              		.loc 1 113 6 is_stmt 0 view .LVU82
+ 263 009e 587C     		ldrb	r0, [r3, #17]	@ zero_extendqisi2
+ 264 00a0 C2F38002 		ubfx	r2, r2, #2, #1
+ 265 00a4 9042     		cmp	r0, r2
+ 266 00a6 1FD0     		beq	.L23
+ 115:src/btphy/ll.c **** 			// just ignore it & ack in next slot
+ 267              		.loc 1 115 17 is_stmt 1 view .LVU83
+ 117:src/btphy/ll.c **** 		}
+ 268              		.loc 1 117 4 view .LVU84
+ 117:src/btphy/ll.c **** 		}
+ 269              		.loc 1 117 17 is_stmt 0 view .LVU85
+ 270 00a8 0122     		movs	r2, #1
+ 271 00aa DA74     		strb	r2, [r3, #19]
+ 143:src/btphy/ll.c **** 		}
+ 272              		.loc 1 143 17 is_stmt 1 view .LVU86
+ 160:src/btphy/ll.c **** 	{
+ 273              		.loc 1 160 2 view .LVU87
+ 274              	.L22:
+ 162:src/btphy/ll.c **** 	}
+ 275              		.loc 1 162 6 is_stmt 0 view .LVU88
+ 276 00ac 0126     		movs	r6, #1
+ 277              	.LVL13:
+ 162:src/btphy/ll.c **** 	}
+ 278              		.loc 1 162 6 view .LVU89
+ 279 00ae C9E7     		b	.L12
+ 280              	.LVL14:
+ 281              	.L48:
+  58:src/btphy/ll.c **** 		/* Check supervision timeout */
+ 282              		.loc 1 58 16 is_stmt 1 view .LVU90
+  60:src/btphy/ll.c **** 		if (clk_diff > SUPERVISION_TO)
+ 283              		.loc 1 60 3 view .LVU91
+ 284              	.LBB66:
+ 285              	.LBI66:
+  53:include/ubtbr/btphy.h **** {
+ 286              		.loc 2 53 24 view .LVU92
+ 287              	.LBB67:
+  55:include/ubtbr/btphy.h **** 	{
+ 288              		.loc 2 55 2 view .LVU93
+  55:include/ubtbr/btphy.h **** 	{
+ 289              		.loc 2 55 14 is_stmt 0 view .LVU94
+ 290 00b0 264A     		ldr	r2, .L53
+ 291 00b2 1178     		ldrb	r1, [r2]	@ zero_extendqisi2
+ 292              	.LVL15:
+  55:include/ubtbr/btphy.h **** 	{
+ 293              		.loc 2 55 2 view .LVU95
+ 294 00b4 0329     		cmp	r1, #3
+ 295 00b6 25D9     		bls	.L51
+ 296 00b8 0529     		cmp	r1, #5
+ 297 00ba 25D1     		bne	.L41
+ 298              	.L5:
+  60:include/ubtbr/btphy.h **** 	default:
+ 299              		.loc 2 60 3 is_stmt 1 view .LVU96
+ARM GAS  /tmp/ccdkPP25.s 			page 12
+
+
+ 300              	.LVL16:
+  60:include/ubtbr/btphy.h **** 	default:
+ 301              		.loc 2 60 3 is_stmt 0 view .LVU97
+ 302              	.LBE67:
+ 303              	.LBE66:
+  61:src/btphy/ll.c **** 		{
+ 304              		.loc 1 61 3 is_stmt 1 view .LVU98
+  60:src/btphy/ll.c **** 		if (clk_diff > SUPERVISION_TO)
+ 305              		.loc 1 60 12 is_stmt 0 discriminator 1 view .LVU99
+ 306 00bc 9168     		ldr	r1, [r2, #8]
+ 307 00be 9868     		ldr	r0, [r3, #8]
+ 308 00c0 091A     		subs	r1, r1, r0
+  61:src/btphy/ll.c **** 		{
+ 309              		.loc 1 61 6 view .LVU100
+ 310 00c2 B1F5486F 		cmp	r1, #3200
+ 311 00c6 BDD9     		bls	.L12
+ 312              	.LBB69:
+ 313              	.LBB70:
+  60:include/ubtbr/btphy.h **** 	default:
+ 314              		.loc 2 60 3 is_stmt 1 view .LVU101
+  60:include/ubtbr/btphy.h **** 	default:
+ 315              		.loc 2 60 15 is_stmt 0 view .LVU102
+ 316 00c8 9268     		ldr	r2, [r2, #8]
+ 317              	.LVL17:
+ 318              	.L11:
+  60:include/ubtbr/btphy.h **** 	default:
+ 319              		.loc 2 60 15 view .LVU103
+ 320              	.LBE70:
+ 321              	.LBE69:
+  64:src/btphy/ll.c **** 				ll->rx_count);
+ 322              		.loc 1 64 37 discriminator 1 view .LVU104
+ 323 00ca 5968     		ldr	r1, [r3, #4]
+  63:src/btphy/ll.c **** 				(btphy_cur_clkn()-ll->clkn_start-SUPERVISION_TO)/CLKN_RATE,
+ 324              		.loc 1 63 4 view .LVU105
+ 325 00cc 2048     		ldr	r0, .L53+4
+  64:src/btphy/ll.c **** 				ll->rx_count);
+ 326              		.loc 1 64 37 discriminator 1 view .LVU106
+ 327 00ce 511A     		subs	r1, r2, r1
+ 328 00d0 A1F54861 		sub	r1, r1, #3200
+  63:src/btphy/ll.c **** 				(btphy_cur_clkn()-ll->clkn_start-SUPERVISION_TO)/CLKN_RATE,
+ 329              		.loc 1 63 4 view .LVU107
+ 330 00d4 A0FB0101 		umull	r0, r1, r0, r1
+ 331 00d8 DA68     		ldr	r2, [r3, #12]
+ 332 00da 1E48     		ldr	r0, .L53+8
+ 333 00dc 890A     		lsrs	r1, r1, #10
+ 334 00de FFF7FEFF 		bl	cprintf
+ 335              	.LVL18:
+  67:src/btphy/ll.c **** 		}
+ 336              		.loc 1 67 4 is_stmt 1 view .LVU108
+  67:src/btphy/ll.c **** 		}
+ 337              		.loc 1 67 7 is_stmt 0 view .LVU109
+ 338 00e2 4FF0FF36 		mov	r6, #-1
+ 339 00e6 ADE7     		b	.L12
+ 340              	.LVL19:
+ 341              	.L23:
+ 121:src/btphy/ll.c **** 			{
+ 342              		.loc 1 121 4 is_stmt 1 view .LVU110
+ARM GAS  /tmp/ccdkPP25.s 			page 13
+
+
+ 121:src/btphy/ll.c **** 			{
+ 343              		.loc 1 121 7 is_stmt 0 view .LVU111
+ 344 00e8 0A07     		lsls	r2, r1, #28
+ 345 00ea 15D4     		bmi	.L24
+ 346              	.L45:
+ 143:src/btphy/ll.c **** 		}
+ 347              		.loc 1 143 17 is_stmt 1 view .LVU112
+ 160:src/btphy/ll.c **** 	{
+ 348              		.loc 1 160 2 view .LVU113
+ 160:src/btphy/ll.c **** 	{
+ 349              		.loc 1 160 5 is_stmt 0 view .LVU114
+ 350 00ec 5A78     		ldrb	r2, [r3, #1]	@ zero_extendqisi2
+ 351 00ee 002A     		cmp	r2, #0
+ 352 00f0 DCD1     		bne	.L22
+ 160:src/btphy/ll.c **** 	{
+ 353              		.loc 1 160 20 discriminator 1 view .LVU115
+ 354 00f2 627E     		ldrb	r2, [r4, #25]	@ zero_extendqisi2
+ 355 00f4 012A     		cmp	r2, #1
+ 356 00f6 D9D0     		beq	.L22
+ 160:src/btphy/ll.c **** 	{
+ 357              		.loc 1 160 56 discriminator 2 view .LVU116
+ 358 00f8 DB7C     		ldrb	r3, [r3, #19]	@ zero_extendqisi2
+ 359 00fa 2B43     		orrs	r3, r3, r5
+ 360 00fc 14BF     		ite	ne
+ 361 00fe 0126     		movne	r6, #1
+ 362              	.LVL20:
+ 160:src/btphy/ll.c **** 	{
+ 363              		.loc 1 160 56 discriminator 2 view .LVU117
+ 364 0100 0026     		moveq	r6, #0
+ 365              	.LVL21:
+ 165:src/btphy/ll.c **** 		msg_free(msg);
+ 366              		.loc 1 165 2 is_stmt 1 view .LVU118
+ 367 0102 9FE7     		b	.L12
+ 368              	.LVL22:
+ 369              	.L51:
+ 370              	.LBB72:
+ 371              	.LBB68:
+  55:include/ubtbr/btphy.h **** 	{
+ 372              		.loc 2 55 2 is_stmt 0 view .LVU119
+ 373 0104 0129     		cmp	r1, #1
+ 374 0106 D9D8     		bhi	.L5
+ 375              	.L41:
+ 376              		.loc 2 62 3 is_stmt 1 view .LVU120
+ 377              	.LVL23:
+ 378              		.loc 2 62 3 is_stmt 0 view .LVU121
+ 379              	.LBE68:
+ 380              	.LBE72:
+  61:src/btphy/ll.c **** 		{
+ 381              		.loc 1 61 3 is_stmt 1 view .LVU122
+  60:src/btphy/ll.c **** 		if (clk_diff > SUPERVISION_TO)
+ 382              		.loc 1 60 12 is_stmt 0 discriminator 1 view .LVU123
+ 383 0108 5168     		ldr	r1, [r2, #4]
+ 384 010a 9868     		ldr	r0, [r3, #8]
+ 385 010c 091A     		subs	r1, r1, r0
+  61:src/btphy/ll.c **** 		{
+ 386              		.loc 1 61 6 view .LVU124
+ 387 010e B1F5486F 		cmp	r1, #3200
+ARM GAS  /tmp/ccdkPP25.s 			page 14
+
+
+ 388 0112 97D9     		bls	.L12
+ 389              	.LBB73:
+ 390              	.LBB71:
+ 391              		.loc 2 62 3 is_stmt 1 view .LVU125
+ 392              		.loc 2 62 15 is_stmt 0 view .LVU126
+ 393 0114 5268     		ldr	r2, [r2, #4]
+ 394 0116 D8E7     		b	.L11
+ 395              	.LVL24:
+ 396              	.L24:
+ 397              		.loc 2 62 15 view .LVU127
+ 398              	.LBE71:
+ 399              	.LBE73:
+ 123:src/btphy/ll.c **** 				/* Send the message to host */
+ 400              		.loc 1 123 18 is_stmt 1 view .LVU128
+ 125:src/btphy/ll.c **** 				{
+ 401              		.loc 1 125 5 view .LVU129
+ 402              	.LBB74:
+ 403              	.LBI74:
+ 404              		.file 4 "include/ubtbr/btctl_intf.h"
+   1:include/ubtbr/btctl_intf.h **** #ifndef __BTCTL_INTF_H
+   2:include/ubtbr/btctl_intf.h **** #define __BTCTL_INTF_H
+   3:include/ubtbr/btctl_intf.h **** #include <ubtbr/bb_msg.h>
+   4:include/ubtbr/btctl_intf.h **** #include <ubtbr/queue.h>
+   5:include/ubtbr/btctl_intf.h **** #include <ubtbr/system.h>
+   6:include/ubtbr/btctl_intf.h **** #include <ubertooth_interface.h>
+   7:include/ubtbr/btctl_intf.h **** 
+   8:include/ubtbr/btctl_intf.h **** typedef struct btctl_s {
+   9:include/ubtbr/btctl_intf.h **** 	btctl_state_t state;
+  10:include/ubtbr/btctl_intf.h **** 	msg_queue_t rx_q;
+  11:include/ubtbr/btctl_intf.h **** 	msg_queue_t tx_q;
+  12:include/ubtbr/btctl_intf.h **** 	msg_queue_t acl_tx_q;
+  13:include/ubtbr/btctl_intf.h **** 	msg_t *eir_msg;
+  14:include/ubtbr/btctl_intf.h **** 	btctl_tx_pkt_t *eir_pkt;
+  15:include/ubtbr/btctl_intf.h **** } btctl_t;
+  16:include/ubtbr/btctl_intf.h **** 
+  17:include/ubtbr/btctl_intf.h **** extern btctl_t btctl;
+  18:include/ubtbr/btctl_intf.h **** 
+  19:include/ubtbr/btctl_intf.h **** void btctl_init(void);
+  20:include/ubtbr/btctl_intf.h **** int btctl_work(void);
+  21:include/ubtbr/btctl_intf.h **** 
+  22:include/ubtbr/btctl_intf.h **** void btctl_set_state(btctl_state_t state, btctl_reason_t reason);
+  23:include/ubtbr/btctl_intf.h **** 
+  24:include/ubtbr/btctl_intf.h **** static inline btctl_state_t btctl_get_state(void)
+  25:include/ubtbr/btctl_intf.h **** {
+  26:include/ubtbr/btctl_intf.h **** 	return btctl.state;
+  27:include/ubtbr/btctl_intf.h **** }
+  28:include/ubtbr/btctl_intf.h **** 
+  29:include/ubtbr/btctl_intf.h **** static inline btctl_tx_pkt_t *btctl_get_eir(void)
+  30:include/ubtbr/btctl_intf.h **** {
+  31:include/ubtbr/btctl_intf.h **** 	return btctl.eir_pkt;
+  32:include/ubtbr/btctl_intf.h **** }
+  33:include/ubtbr/btctl_intf.h **** 
+  34:include/ubtbr/btctl_intf.h **** static inline msg_t *btctl_msg_alloc(unsigned type)
+  35:include/ubtbr/btctl_intf.h **** {
+  36:include/ubtbr/btctl_intf.h **** 	msg_t *msg;
+  37:include/ubtbr/btctl_intf.h **** 	btctl_hdr_t *hdr;
+  38:include/ubtbr/btctl_intf.h **** 
+ARM GAS  /tmp/ccdkPP25.s 			page 15
+
+
+  39:include/ubtbr/btctl_intf.h **** 	/* maximum size ?*/
+  40:include/ubtbr/btctl_intf.h **** 	msg = msg_alloc(sizeof(btctl_hdr_t)+sizeof(btctl_rx_pkt_t)+MAX_ACL_PACKET_SIZE);
+  41:include/ubtbr/btctl_intf.h **** 	hdr = (btctl_hdr_t*) msg_put(msg, sizeof(*hdr));
+  42:include/ubtbr/btctl_intf.h **** 	hdr->type = type;
+  43:include/ubtbr/btctl_intf.h **** 
+  44:include/ubtbr/btctl_intf.h **** 	return msg;
+  45:include/ubtbr/btctl_intf.h **** }
+  46:include/ubtbr/btctl_intf.h **** 
+  47:include/ubtbr/btctl_intf.h **** static inline msg_t *safe_dequeue(msg_queue_t* q)
+  48:include/ubtbr/btctl_intf.h **** {
+  49:include/ubtbr/btctl_intf.h **** 	uint32_t flags = irq_save_disable();
+  50:include/ubtbr/btctl_intf.h **** 	msg_t *msg;
+  51:include/ubtbr/btctl_intf.h **** 
+  52:include/ubtbr/btctl_intf.h **** 	msg = msg_dequeue(q);
+  53:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+  54:include/ubtbr/btctl_intf.h **** 
+  55:include/ubtbr/btctl_intf.h **** 	return msg;
+  56:include/ubtbr/btctl_intf.h **** }
+  57:include/ubtbr/btctl_intf.h **** 
+  58:include/ubtbr/btctl_intf.h **** static inline int safe_enqueue(msg_queue_t *q, msg_t *msg)
+  59:include/ubtbr/btctl_intf.h **** {
+  60:include/ubtbr/btctl_intf.h **** 	uint32_t flags = irq_save_disable();
+  61:include/ubtbr/btctl_intf.h **** 	int rc;
+  62:include/ubtbr/btctl_intf.h **** 
+  63:include/ubtbr/btctl_intf.h **** 	rc = msg_enqueue(q, msg);
+  64:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+  65:include/ubtbr/btctl_intf.h **** 
+  66:include/ubtbr/btctl_intf.h **** 	return rc;
+  67:include/ubtbr/btctl_intf.h **** }
+  68:include/ubtbr/btctl_intf.h **** 
+  69:include/ubtbr/btctl_intf.h **** /* Called by usb driver to retreive next message to send to host */
+  70:include/ubtbr/btctl_intf.h **** static inline msg_t *btctl_tx_dequeue(void)
+  71:include/ubtbr/btctl_intf.h **** {
+  72:include/ubtbr/btctl_intf.h **** 	return safe_dequeue(&btctl.tx_q);
+  73:include/ubtbr/btctl_intf.h **** }
+  74:include/ubtbr/btctl_intf.h **** 
+  75:include/ubtbr/btctl_intf.h **** /* Enqueue a message for host */
+  76:include/ubtbr/btctl_intf.h **** static inline int btctl_tx_enqueue(msg_t *msg)
+ 405              		.loc 4 76 19 view .LVU130
+ 406              	.LBB75:
+  77:include/ubtbr/btctl_intf.h **** {
+  78:include/ubtbr/btctl_intf.h **** 	return safe_enqueue(&btctl.tx_q, msg);
+ 407              		.loc 4 78 2 view .LVU131
+ 408              	.LBB76:
+ 409              	.LBI76:
+  58:include/ubtbr/btctl_intf.h **** {
+ 410              		.loc 4 58 19 view .LVU132
+ 411              	.LBB77:
+  60:include/ubtbr/btctl_intf.h **** 	int rc;
+ 412              		.loc 4 60 2 view .LVU133
+ 413              	.LBB78:
+ 414              	.LBI78:
+ 415              		.file 5 "include/ubtbr/system.h"
+   1:include/ubtbr/system.h **** #ifndef __SYSTEM_H
+   2:include/ubtbr/system.h **** #define __SYSTEM_H
+   3:include/ubtbr/system.h **** #include <stdint.h>
+   4:include/ubtbr/system.h **** 
+ARM GAS  /tmp/ccdkPP25.s 			page 16
+
+
+   5:include/ubtbr/system.h **** static inline uint32_t irq_save_disable(void)
+ 416              		.loc 5 5 24 view .LVU134
+ 417              	.LBB79:
+   6:include/ubtbr/system.h **** {
+   7:include/ubtbr/system.h **** 	uint32_t primask;
+ 418              		.loc 5 7 2 view .LVU135
+   8:include/ubtbr/system.h **** 
+   9:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 419              		.loc 5 9 2 view .LVU136
+ 420 0118 0193     		str	r3, [sp, #4]
+ 421              		.syntax unified
+ 422              	@ 9 "include/ubtbr/system.h" 1
+ 423 011a EFF31085 			mrs    r5, primask
+ 424 011e 72B6     		cpsid  i
+ 425              	
+ 426              	@ 0 "" 2
+  10:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+  11:include/ubtbr/system.h **** 	"\tcpsid  i\n"
+  12:include/ubtbr/system.h **** 	: "=r" (primask)
+  13:include/ubtbr/system.h **** 	:
+  14:include/ubtbr/system.h **** 	: "memory");
+  15:include/ubtbr/system.h **** 
+  16:include/ubtbr/system.h **** 	return primask;
+ 427              		.loc 5 16 2 view .LVU137
+ 428              	.LVL25:
+ 429              		.loc 5 16 2 is_stmt 0 view .LVU138
+ 430              		.thumb
+ 431              		.syntax unified
+ 432              	.LBE79:
+ 433              	.LBE78:
+  61:include/ubtbr/btctl_intf.h **** 
+ 434              		.loc 4 61 2 is_stmt 1 view .LVU139
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 435              		.loc 4 63 2 view .LVU140
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 436              		.loc 4 63 7 is_stmt 0 view .LVU141
+ 437 0120 0D48     		ldr	r0, .L53+12
+ 438              	.LVL26:
+  63:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 439              		.loc 4 63 7 view .LVU142
+ 440 0122 2146     		mov	r1, r4
+ 441 0124 FFF7FEFF 		bl	msg_enqueue
+ 442              	.LVL27:
+  64:include/ubtbr/btctl_intf.h **** 
+ 443              		.loc 4 64 2 is_stmt 1 view .LVU143
+ 444              	.LBB80:
+ 445              	.LBI80:
+  17:include/ubtbr/system.h **** }
+  18:include/ubtbr/system.h **** 
+  19:include/ubtbr/system.h **** static inline void irq_restore(uint32_t primask)
+ 446              		.loc 5 19 20 view .LVU144
+ 447              	.LBB81:
+  20:include/ubtbr/system.h **** {
+  21:include/ubtbr/system.h **** 	__asm__ __volatile__ (
+ 448              		.loc 5 21 2 view .LVU145
+ 449              		.syntax unified
+ 450              	@ 21 "include/ubtbr/system.h" 1
+ARM GAS  /tmp/ccdkPP25.s 			page 17
+
+
+ 451 0128 85F31088 		msr primask, r5
+ 452              	@ 0 "" 2
+ 453              	.LVL28:
+ 454              		.loc 5 21 2 is_stmt 0 view .LVU146
+ 455              		.thumb
+ 456              		.syntax unified
+ 457              	.LBE81:
+ 458              	.LBE80:
+  66:include/ubtbr/btctl_intf.h **** }
+ 459              		.loc 4 66 2 is_stmt 1 view .LVU147
+  66:include/ubtbr/btctl_intf.h **** }
+ 460              		.loc 4 66 2 is_stmt 0 view .LVU148
+ 461              	.LBE77:
+ 462              	.LBE76:
+ 463              	.LBE75:
+ 464              	.LBE74:
+ 125:src/btphy/ll.c **** 				{
+ 465              		.loc 1 125 8 discriminator 1 view .LVU149
+ 466 012c 019B     		ldr	r3, [sp, #4]
+ 467 012e 48B9     		cbnz	r0, .L52
+ 129:src/btphy/ll.c **** 				ll->loc_arqn = 1;
+ 468              		.loc 1 129 5 is_stmt 1 view .LVU150
+ 130:src/btphy/ll.c **** 				do_free_msg = 0;
+ 469              		.loc 1 130 18 is_stmt 0 view .LVU151
+ 470 0130 0121     		movs	r1, #1
+ 129:src/btphy/ll.c **** 				ll->loc_arqn = 1;
+ 471              		.loc 1 129 18 view .LVU152
+ 472 0132 5A7C     		ldrb	r2, [r3, #17]	@ zero_extendqisi2
+ 162:src/btphy/ll.c **** 	}
+ 473              		.loc 1 162 6 view .LVU153
+ 474 0134 0E46     		mov	r6, r1
+ 475              	.LVL29:
+ 129:src/btphy/ll.c **** 				ll->loc_arqn = 1;
+ 476              		.loc 1 129 18 view .LVU154
+ 477 0136 4A40     		eors	r2, r2, r1
+ 478 0138 5A74     		strb	r2, [r3, #17]
+ 130:src/btphy/ll.c **** 				do_free_msg = 0;
+ 479              		.loc 1 130 5 is_stmt 1 view .LVU155
+ 130:src/btphy/ll.c **** 				do_free_msg = 0;
+ 480              		.loc 1 130 18 is_stmt 0 view .LVU156
+ 481 013a D974     		strb	r1, [r3, #19]
+ 131:src/btphy/ll.c **** 			}
+ 482              		.loc 1 131 5 is_stmt 1 view .LVU157
+ 483              	.LVL30:
+ 143:src/btphy/ll.c **** 		}
+ 484              		.loc 1 143 17 view .LVU158
+ 160:src/btphy/ll.c **** 	{
+ 485              		.loc 1 160 2 view .LVU159
+ 486 013c 85E7     		b	.L1
+ 487              	.LVL31:
+ 488              	.L47:
+  52:src/btphy/ll.c **** 	pkt = (btctl_rx_pkt_t *)h->data;
+ 489              		.loc 1 52 3 view .LVU160
+ 490 013e 0748     		ldr	r0, .L53+16
+ 491              	.LVL32:
+  52:src/btphy/ll.c **** 	pkt = (btctl_rx_pkt_t *)h->data;
+ 492              		.loc 1 52 3 is_stmt 0 view .LVU161
+ARM GAS  /tmp/ccdkPP25.s 			page 18
+
+
+ 493 0140 FFF7FEFF 		bl	die
+ 494              	.LVL33:
+ 495              	.L52:
+ 127:src/btphy/ll.c **** 				}
+ 496              		.loc 1 127 6 is_stmt 1 view .LVU162
+ 497 0144 0648     		ldr	r0, .L53+20
+ 498 0146 FFF7FEFF 		bl	die
+ 499              	.LVL34:
+ 500              	.L54:
+ 501 014a 00BF     		.align	2
+ 502              	.L53:
+ 503 014c 00000000 		.word	btphy
+ 504 0150 1F85EB51 		.word	1374389535
+ 505 0154 18000000 		.word	.LC1
+ 506 0158 2C000000 		.word	btctl+44
+ 507 015c 00000000 		.word	.LC0
+ 508 0160 3C000000 		.word	.LC2
+ 509              		.cfi_endproc
+ 510              	.LFE31:
+ 512              		.section	.rodata.str1.4
+ 513 0055 000000   		.align	2
+ 514              	.LC3:
+ 515 0058 4449457C 		.ascii	"DIE|BTCTL_TX_ACL_REQ expected\012\012\000"
+ 515      42544354 
+ 515      4C5F5458 
+ 515      5F41434C 
+ 515      5F524551 
+ 516              		.section	.text.ll_prepare_tx,"ax",%progbits
+ 517              		.align	1
+ 518              		.p2align 2,,3
+ 519              		.global	ll_prepare_tx
+ 520              		.syntax unified
+ 521              		.thumb
+ 522              		.thumb_func
+ 524              	ll_prepare_tx:
+ 525              	.LVL35:
+ 526              	.LFB32:
+ 170:src/btphy/ll.c **** 
+ 171:src/btphy/ll.c **** void ll_prepare_tx(link_layer_t *ll, bbhdr_t **tx_hdr, uint8_t **tx_data)
+ 172:src/btphy/ll.c **** {
+ 527              		.loc 1 172 1 view -0
+ 528              		.cfi_startproc
+ 529              		@ args = 0, pretend = 0, frame = 16
+ 530              		@ frame_needed = 0, uses_anonymous_args = 0
+ 531              		.loc 1 172 1 is_stmt 0 view .LVU164
+ 532 0000 10B5     		push	{r4, lr}
+ 533              		.cfi_def_cfa_offset 8
+ 534              		.cfi_offset 4, -8
+ 535              		.cfi_offset 14, -4
+ 536 0002 84B0     		sub	sp, sp, #16
+ 537              		.cfi_def_cfa_offset 24
+ 173:src/btphy/ll.c **** 	btctl_hdr_t *btctl_hdr;
+ 538              		.loc 1 173 2 is_stmt 1 view .LVU165
+ 174:src/btphy/ll.c **** 	btctl_tx_pkt_t *tx_pkt;
+ 539              		.loc 1 174 2 view .LVU166
+ 175:src/btphy/ll.c **** 
+ 176:src/btphy/ll.c **** 	if (ll->cur_tx_msg == NULL)
+ARM GAS  /tmp/ccdkPP25.s 			page 19
+
+
+ 540              		.loc 1 176 2 view .LVU167
+ 172:src/btphy/ll.c **** 	btctl_hdr_t *btctl_hdr;
+ 541              		.loc 1 172 1 is_stmt 0 view .LVU168
+ 542 0004 0446     		mov	r4, r0
+ 543              		.loc 1 176 8 view .LVU169
+ 544 0006 8069     		ldr	r0, [r0, #24]
+ 545              	.LVL36:
+ 546              		.loc 1 176 5 view .LVU170
+ 547 0008 A8B1     		cbz	r0, .L59
+ 548              	.LVL37:
+ 549              	.L56:
+ 177:src/btphy/ll.c **** 	{
+ 178:src/btphy/ll.c **** 		/* Try dequeue next acl tx packet */
+ 179:src/btphy/ll.c **** 		ll->cur_tx_msg=btctl_acl_tx_dequeue();
+ 180:src/btphy/ll.c **** 		if (ll->cur_tx_msg){
+ 181:src/btphy/ll.c **** 			LL_DEBUG('Q');
+ 182:src/btphy/ll.c **** 		}
+ 183:src/btphy/ll.c **** 	}
+ 184:src/btphy/ll.c **** 	// If no packet needs to be sent, send POLL/NULL instead
+ 185:src/btphy/ll.c **** 	if (ll->cur_tx_msg == NULL)
+ 186:src/btphy/ll.c **** 	{
+ 187:src/btphy/ll.c **** 		ll->tx_hdr.lt_addr = ll->lt_addr;
+ 188:src/btphy/ll.c **** 		if (ll->is_master)
+ 189:src/btphy/ll.c **** 		{
+ 190:src/btphy/ll.c **** 			LL_DEBUG('P');
+ 191:src/btphy/ll.c **** 			ll->tx_hdr.type = BB_TYPE_POLL;
+ 192:src/btphy/ll.c **** 		}
+ 193:src/btphy/ll.c **** 		else
+ 194:src/btphy/ll.c **** 		{
+ 195:src/btphy/ll.c **** 			LL_DEBUG('N');
+ 196:src/btphy/ll.c **** 			ll->tx_hdr.type = BB_TYPE_NULL;
+ 197:src/btphy/ll.c **** 		}
+ 198:src/btphy/ll.c **** 		*tx_hdr = &ll->tx_hdr;
+ 199:src/btphy/ll.c **** 		*tx_data = NULL;
+ 200:src/btphy/ll.c **** 	}
+ 201:src/btphy/ll.c **** 	else{
+ 202:src/btphy/ll.c **** 		LL_DEBUG('T');
+ 550              		.loc 1 202 16 is_stmt 1 view .LVU171
+ 203:src/btphy/ll.c **** 		btctl_hdr = (btctl_hdr_t*)ll->cur_tx_msg->data;
+ 551              		.loc 1 203 3 view .LVU172
+ 204:src/btphy/ll.c **** 		if (btctl_hdr->type != BTCTL_TX_ACL_REQ)
+ 552              		.loc 1 204 3 view .LVU173
+ 553              		.loc 1 204 6 is_stmt 0 view .LVU174
+ 554 000a 037B     		ldrb	r3, [r0, #12]	@ zero_extendqisi2
+ 555 000c 1B2B     		cmp	r3, #27
+ 556 000e 2DD1     		bne	.L60
+ 205:src/btphy/ll.c **** 			DIE("BTCTL_TX_ACL_REQ expected\n");
+ 206:src/btphy/ll.c **** 		tx_pkt = (btctl_tx_pkt_t*)btctl_hdr->data;
+ 557              		.loc 1 206 3 is_stmt 1 view .LVU175
+ 207:src/btphy/ll.c **** 		*tx_hdr =  &tx_pkt->bb_hdr;
+ 558              		.loc 1 207 3 view .LVU176
+ 559              		.loc 1 207 14 is_stmt 0 view .LVU177
+ 560 0010 00F1100C 		add	ip, r0, #16
+ 208:src/btphy/ll.c **** 		*tx_data = tx_pkt->bt_data;
+ 561              		.loc 1 208 3 is_stmt 1 view .LVU178
+ 562              		.loc 1 208 14 is_stmt 0 view .LVU179
+ 563 0014 1430     		adds	r0, r0, #20
+ARM GAS  /tmp/ccdkPP25.s 			page 20
+
+
+ 564              	.L57:
+ 198:src/btphy/ll.c **** 		*tx_data = NULL;
+ 565              		.loc 1 198 11 view .LVU180
+ 566 0016 C1F800C0 		str	ip, [r1]
+ 209:src/btphy/ll.c **** 	}
+ 210:src/btphy/ll.c **** 
+ 211:src/btphy/ll.c **** 	/* Write ll flags in tx header */
+ 212:src/btphy/ll.c **** 	(*tx_hdr)->flags =
+ 213:src/btphy/ll.c **** 		(ll->loc_arqn<<BTHDR_ARQN)
+ 214:src/btphy/ll.c **** 		 | (ll->loc_seqn<<BTHDR_SEQN)
+ 215:src/btphy/ll.c **** 		 | (1<<BTHDR_FLOW);
+ 216:src/btphy/ll.c **** 	ll->loc_arqn = 0;
+ 567              		.loc 1 216 15 view .LVU181
+ 568 001a 0021     		movs	r1, #0
+ 199:src/btphy/ll.c **** 	}
+ 569              		.loc 1 199 12 view .LVU182
+ 570 001c 1060     		str	r0, [r2]
+ 212:src/btphy/ll.c **** 		(ll->loc_arqn<<BTHDR_ARQN)
+ 571              		.loc 1 212 2 is_stmt 1 view .LVU183
+ 214:src/btphy/ll.c **** 		 | (1<<BTHDR_FLOW);
+ 572              		.loc 1 214 4 is_stmt 0 view .LVU184
+ 573 001e A37C     		ldrb	r3, [r4, #18]	@ zero_extendqisi2
+ 574 0020 E27C     		ldrb	r2, [r4, #19]	@ zero_extendqisi2
+ 575 0022 9B00     		lsls	r3, r3, #2
+ 576 0024 43EA4203 		orr	r3, r3, r2, lsl #1
+ 215:src/btphy/ll.c **** 	ll->loc_arqn = 0;
+ 577              		.loc 1 215 4 view .LVU185
+ 578 0028 43F00103 		orr	r3, r3, #1
+ 212:src/btphy/ll.c **** 		(ll->loc_arqn<<BTHDR_ARQN)
+ 579              		.loc 1 212 19 view .LVU186
+ 580 002c 8CF80230 		strb	r3, [ip, #2]
+ 581              		.loc 1 216 2 is_stmt 1 view .LVU187
+ 582              		.loc 1 216 15 is_stmt 0 view .LVU188
+ 583 0030 E174     		strb	r1, [r4, #19]
+ 217:src/btphy/ll.c **** }
+ 584              		.loc 1 217 1 view .LVU189
+ 585 0032 04B0     		add	sp, sp, #16
+ 586              		.cfi_remember_state
+ 587              		.cfi_def_cfa_offset 8
+ 588              		@ sp needed
+ 589 0034 10BD     		pop	{r4, pc}
+ 590              	.LVL38:
+ 591              	.L59:
+ 592              		.cfi_restore_state
+ 179:src/btphy/ll.c **** 		if (ll->cur_tx_msg){
+ 593              		.loc 1 179 3 is_stmt 1 view .LVU190
+ 594              	.LBB82:
+ 595              	.LBI82:
+  79:include/ubtbr/btctl_intf.h **** }
+  80:include/ubtbr/btctl_intf.h **** 
+  81:include/ubtbr/btctl_intf.h **** /* Dequeue a message from host */
+  82:include/ubtbr/btctl_intf.h **** static inline msg_t *btctl_rx_dequeue(void)
+  83:include/ubtbr/btctl_intf.h **** {
+  84:include/ubtbr/btctl_intf.h **** 	return safe_dequeue(&btctl.rx_q);
+  85:include/ubtbr/btctl_intf.h **** }
+  86:include/ubtbr/btctl_intf.h **** 
+  87:include/ubtbr/btctl_intf.h **** /* Called by usb driver with last message received from host */
+ARM GAS  /tmp/ccdkPP25.s 			page 21
+
+
+  88:include/ubtbr/btctl_intf.h **** static inline int btctl_rx_enqueue(msg_t *msg)
+  89:include/ubtbr/btctl_intf.h **** {
+  90:include/ubtbr/btctl_intf.h **** 	return safe_enqueue(&btctl.rx_q, msg);
+  91:include/ubtbr/btctl_intf.h **** }
+  92:include/ubtbr/btctl_intf.h **** 
+  93:include/ubtbr/btctl_intf.h **** /* Called by connected task to retreive next packet to send */
+  94:include/ubtbr/btctl_intf.h **** static inline msg_t *btctl_acl_tx_dequeue(void)
+ 596              		.loc 4 94 22 view .LVU191
+ 597              	.LBB83:
+  95:include/ubtbr/btctl_intf.h **** {
+  96:include/ubtbr/btctl_intf.h **** 	return safe_dequeue(&btctl.acl_tx_q);
+ 598              		.loc 4 96 2 view .LVU192
+ 599              	.LBB84:
+ 600              	.LBI84:
+  47:include/ubtbr/btctl_intf.h **** {
+ 601              		.loc 4 47 22 view .LVU193
+ 602              	.LBB85:
+  49:include/ubtbr/btctl_intf.h **** 	msg_t *msg;
+ 603              		.loc 4 49 2 view .LVU194
+ 604              	.LBB86:
+ 605              	.LBI86:
+   5:include/ubtbr/system.h **** {
+ 606              		.loc 5 5 24 view .LVU195
+ 607              	.LBB87:
+   7:include/ubtbr/system.h **** 
+ 608              		.loc 5 7 2 view .LVU196
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 609              		.loc 5 9 2 view .LVU197
+ 610 0036 CDE90212 		strd	r1, r2, [sp, #8]
+ 611              		.syntax unified
+ 612              	@ 9 "include/ubtbr/system.h" 1
+ 613 003a EFF31083 			mrs    r3, primask
+ 614 003e 72B6     		cpsid  i
+ 615              	
+ 616              	@ 0 "" 2
+ 617              		.thumb
+ 618              		.syntax unified
+ 619              	.LBE87:
+ 620              	.LBE86:
+  52:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 621              		.loc 4 52 8 is_stmt 0 view .LVU198
+ 622 0040 0C48     		ldr	r0, .L61
+ 623              	.LVL39:
+ 624              	.LBB89:
+ 625              	.LBB88:
+   9:include/ubtbr/system.h **** 	"\tmrs    %0, primask\n"
+ 626              		.loc 5 9 2 view .LVU199
+ 627 0042 0193     		str	r3, [sp, #4]
+  16:include/ubtbr/system.h **** }
+ 628              		.loc 5 16 2 is_stmt 1 view .LVU200
+ 629              	.LVL40:
+  16:include/ubtbr/system.h **** }
+ 630              		.loc 5 16 2 is_stmt 0 view .LVU201
+ 631              	.LBE88:
+ 632              	.LBE89:
+  50:include/ubtbr/btctl_intf.h **** 
+ 633              		.loc 4 50 2 is_stmt 1 view .LVU202
+ARM GAS  /tmp/ccdkPP25.s 			page 22
+
+
+  52:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 634              		.loc 4 52 2 view .LVU203
+  52:include/ubtbr/btctl_intf.h **** 	irq_restore(flags);
+ 635              		.loc 4 52 8 is_stmt 0 view .LVU204
+ 636 0044 FFF7FEFF 		bl	msg_dequeue
+ 637              	.LVL41:
+  53:include/ubtbr/btctl_intf.h **** 
+ 638              		.loc 4 53 2 is_stmt 1 view .LVU205
+ 639              	.LBB90:
+ 640              	.LBI90:
+  19:include/ubtbr/system.h **** {
+ 641              		.loc 5 19 20 view .LVU206
+ 642              	.LBB91:
+ 643              		.loc 5 21 2 view .LVU207
+ 644 0048 019B     		ldr	r3, [sp, #4]
+ 645              		.syntax unified
+ 646              	@ 21 "include/ubtbr/system.h" 1
+ 647 004a 83F31088 		msr primask, r3
+ 648              	@ 0 "" 2
+ 649              	.LVL42:
+ 650              		.loc 5 21 2 is_stmt 0 view .LVU208
+ 651              		.thumb
+ 652              		.syntax unified
+ 653              	.LBE91:
+ 654              	.LBE90:
+  55:include/ubtbr/btctl_intf.h **** }
+ 655              		.loc 4 55 2 is_stmt 1 view .LVU209
+  55:include/ubtbr/btctl_intf.h **** }
+ 656              		.loc 4 55 2 is_stmt 0 view .LVU210
+ 657              	.LBE85:
+ 658              	.LBE84:
+ 659              	.LBE83:
+ 660              	.LBE82:
+ 179:src/btphy/ll.c **** 		if (ll->cur_tx_msg){
+ 661              		.loc 1 179 17 discriminator 1 view .LVU211
+ 662 004e A061     		str	r0, [r4, #24]
+ 180:src/btphy/ll.c **** 			LL_DEBUG('Q');
+ 663              		.loc 1 180 3 is_stmt 1 view .LVU212
+ 181:src/btphy/ll.c **** 		}
+ 664              		.loc 1 181 17 view .LVU213
+ 185:src/btphy/ll.c **** 	{
+ 665              		.loc 1 185 2 view .LVU214
+ 185:src/btphy/ll.c **** 	{
+ 666              		.loc 1 185 5 is_stmt 0 view .LVU215
+ 667 0050 DDE90212 		ldrd	r1, r2, [sp, #8]
+ 668 0054 0028     		cmp	r0, #0
+ 669 0056 D8D1     		bne	.L56
+ 187:src/btphy/ll.c **** 		if (ll->is_master)
+ 670              		.loc 1 187 3 is_stmt 1 view .LVU216
+ 187:src/btphy/ll.c **** 		if (ll->is_master)
+ 671              		.loc 1 187 22 is_stmt 0 view .LVU217
+ 672 0058 237C     		ldrb	r3, [r4, #16]	@ zero_extendqisi2
+ 198:src/btphy/ll.c **** 		*tx_data = NULL;
+ 673              		.loc 1 198 13 view .LVU218
+ 674 005a 04F1140C 		add	ip, r4, #20
+ 187:src/btphy/ll.c **** 		if (ll->is_master)
+ 675              		.loc 1 187 22 view .LVU219
+ARM GAS  /tmp/ccdkPP25.s 			page 23
+
+
+ 676 005e 2375     		strb	r3, [r4, #20]
+ 188:src/btphy/ll.c **** 		{
+ 677              		.loc 1 188 3 is_stmt 1 view .LVU220
+ 188:src/btphy/ll.c **** 		{
+ 678              		.loc 1 188 6 is_stmt 0 view .LVU221
+ 679 0060 6378     		ldrb	r3, [r4, #1]	@ zero_extendqisi2
+ 680 0062 1B1A     		subs	r3, r3, r0
+ 681 0064 18BF     		it	ne
+ 682 0066 0123     		movne	r3, #1
+ 683 0068 6375     		strb	r3, [r4, #21]
+ 198:src/btphy/ll.c **** 		*tx_data = NULL;
+ 684              		.loc 1 198 3 is_stmt 1 view .LVU222
+ 199:src/btphy/ll.c **** 	}
+ 685              		.loc 1 199 3 view .LVU223
+ 686 006a D4E7     		b	.L57
+ 687              	.LVL43:
+ 688              	.L60:
+ 205:src/btphy/ll.c **** 		tx_pkt = (btctl_tx_pkt_t*)btctl_hdr->data;
+ 689              		.loc 1 205 4 view .LVU224
+ 690 006c 0248     		ldr	r0, .L61+4
+ 691 006e FFF7FEFF 		bl	die
+ 692              	.LVL44:
+ 693              	.L62:
+ 694 0072 00BF     		.align	2
+ 695              	.L61:
+ 696 0074 54000000 		.word	btctl+84
+ 697 0078 58000000 		.word	.LC3
+ 698              		.cfi_endproc
+ 699              	.LFE32:
+ 701              		.section	.text.ll_reset,"ax",%progbits
+ 702              		.align	1
+ 703              		.p2align 2,,3
+ 704              		.global	ll_reset
+ 705              		.syntax unified
+ 706              		.thumb
+ 707              		.thumb_func
+ 709              	ll_reset:
+ 710              	.LVL45:
+ 711              	.LFB33:
+ 218:src/btphy/ll.c **** 
+ 219:src/btphy/ll.c **** void ll_reset(link_layer_t *ll)
+ 220:src/btphy/ll.c **** {
+ 712              		.loc 1 220 1 view -0
+ 713              		.cfi_startproc
+ 714              		@ args = 0, pretend = 0, frame = 8
+ 715              		@ frame_needed = 0, uses_anonymous_args = 0
+ 716              		.loc 1 220 1 is_stmt 0 view .LVU226
+ 717 0000 00B5     		push	{lr}
+ 718              		.cfi_def_cfa_offset 4
+ 719              		.cfi_offset 14, -4
+ 720 0002 83B0     		sub	sp, sp, #12
+ 721              		.cfi_def_cfa_offset 16
+ 221:src/btphy/ll.c **** 	// Todo : free msg_t*
+ 222:src/btphy/ll.c **** 	if (ll->cur_tx_msg)
+ 722              		.loc 1 222 2 is_stmt 1 view .LVU227
+ 220:src/btphy/ll.c **** 	// Todo : free msg_t*
+ 723              		.loc 1 220 1 is_stmt 0 view .LVU228
+ARM GAS  /tmp/ccdkPP25.s 			page 24
+
+
+ 724 0004 0346     		mov	r3, r0
+ 725              		.loc 1 222 8 view .LVU229
+ 726 0006 8069     		ldr	r0, [r0, #24]
+ 727              	.LVL46:
+ 728              		.loc 1 222 5 view .LVU230
+ 729 0008 28B1     		cbz	r0, .L63
+ 223:src/btphy/ll.c **** 	{
+ 224:src/btphy/ll.c **** 		msg_free(ll->cur_tx_msg);
+ 730              		.loc 1 224 3 is_stmt 1 view .LVU231
+ 731              	.LVL47:
+ 732              	.LBB92:
+ 733              	.LBI92:
+  26:include/ubtbr/msg.h **** {
+ 734              		.loc 3 26 20 view .LVU232
+ 735              	.LBB93:
+ 736              		.loc 3 28 2 view .LVU233
+ 737 000a 0193     		str	r3, [sp, #4]
+ 738 000c FFF7FEFF 		bl	mem_pool_free
+ 739              	.LVL48:
+ 740              		.loc 3 28 2 is_stmt 0 view .LVU234
+ 741              	.LBE93:
+ 742              	.LBE92:
+ 225:src/btphy/ll.c **** 		ll->cur_tx_msg = NULL;
+ 743              		.loc 1 225 3 is_stmt 1 view .LVU235
+ 744              		.loc 1 225 18 is_stmt 0 view .LVU236
+ 745 0010 0022     		movs	r2, #0
+ 746 0012 019B     		ldr	r3, [sp, #4]
+ 747 0014 9A61     		str	r2, [r3, #24]
+ 748              	.LVL49:
+ 749              	.L63:
+ 226:src/btphy/ll.c **** 	}
+ 227:src/btphy/ll.c **** }
+ 750              		.loc 1 227 1 view .LVU237
+ 751 0016 03B0     		add	sp, sp, #12
+ 752              		.cfi_def_cfa_offset 4
+ 753              		@ sp needed
+ 754 0018 00BD     		pop	{pc}
+ 755              		.cfi_endproc
+ 756              	.LFE33:
+ 758 001a 00BF     		.section	.text.ll_init,"ax",%progbits
+ 759              		.align	1
+ 760              		.p2align 2,,3
+ 761              		.global	ll_init
+ 762              		.syntax unified
+ 763              		.thumb
+ 764              		.thumb_func
+ 766              	ll_init:
+ 767              	.LVL50:
+ 768              	.LFB34:
+ 228:src/btphy/ll.c **** 
+ 229:src/btphy/ll.c **** void ll_init(link_layer_t *ll, uint8_t is_master, uint8_t lt_addr)
+ 230:src/btphy/ll.c **** {
+ 769              		.loc 1 230 1 is_stmt 1 view -0
+ 770              		.cfi_startproc
+ 771              		@ args = 0, pretend = 0, frame = 0
+ 772              		@ frame_needed = 0, uses_anonymous_args = 0
+ 773              		.loc 1 230 1 is_stmt 0 view .LVU239
+ARM GAS  /tmp/ccdkPP25.s 			page 25
+
+
+ 774 0000 00B5     		push	{lr}
+ 775              		.cfi_def_cfa_offset 4
+ 776              		.cfi_offset 14, -4
+ 231:src/btphy/ll.c **** 	ll->is_master = is_master;
+ 777              		.loc 1 231 2 is_stmt 1 view .LVU240
+ 232:src/btphy/ll.c **** 	ll->is_connected = 0;
+ 778              		.loc 1 232 19 is_stmt 0 view .LVU241
+ 779 0002 0023     		movs	r3, #0
+ 233:src/btphy/ll.c **** 
+ 234:src/btphy/ll.c **** 	/* Link flags */
+ 235:src/btphy/ll.c **** 	ll->lt_addr = lt_addr;
+ 780              		.loc 1 235 14 view .LVU242
+ 781 0004 4FF0010E 		mov	lr, #1
+ 782              	.LBB94:
+ 783              	.LBB95:
+  55:include/ubtbr/btphy.h **** 	{
+ 784              		.loc 2 55 14 view .LVU243
+ 785 0008 DFF83CC0 		ldr	ip, .L73
+ 786              	.LBE95:
+ 787              	.LBE94:
+ 232:src/btphy/ll.c **** 	ll->is_connected = 0;
+ 788              		.loc 1 232 19 view .LVU244
+ 789 000c 0370     		strb	r3, [r0]
+ 236:src/btphy/ll.c **** 	ll->rmt_seqn = 1;
+ 237:src/btphy/ll.c **** 	ll->loc_seqn = 1;
+ 238:src/btphy/ll.c **** 	ll->loc_arqn = 0;
+ 239:src/btphy/ll.c **** 
+ 240:src/btphy/ll.c **** 	/* TX message */
+ 241:src/btphy/ll.c **** 	ll->cur_tx_msg = NULL;
+ 790              		.loc 1 241 17 view .LVU245
+ 791 000e 8361     		str	r3, [r0, #24]
+ 242:src/btphy/ll.c **** 
+ 243:src/btphy/ll.c **** 	/* Stats / timeout */
+ 244:src/btphy/ll.c **** 	ll->rx_count = 0;
+ 792              		.loc 1 244 15 view .LVU246
+ 793 0010 C360     		str	r3, [r0, #12]
+ 235:src/btphy/ll.c **** 	ll->rmt_seqn = 1;
+ 794              		.loc 1 235 14 view .LVU247
+ 795 0012 62F30703 		bfi	r3, r2, #0, #8
+ 796              	.LBB100:
+ 797              	.LBB96:
+  55:include/ubtbr/btphy.h **** 	{
+ 798              		.loc 2 55 14 view .LVU248
+ 799 0016 9CF80020 		ldrb	r2, [ip]	@ zero_extendqisi2
+ 800              	.LVL51:
+  55:include/ubtbr/btphy.h **** 	{
+ 801              		.loc 2 55 14 view .LVU249
+ 802              	.LBE96:
+ 803              	.LBE100:
+ 235:src/btphy/ll.c **** 	ll->rmt_seqn = 1;
+ 804              		.loc 1 235 14 view .LVU250
+ 805 001a 6EF30F23 		bfi	r3, lr, #8, #8
+ 806 001e 6EF31743 		bfi	r3, lr, #16, #8
+ 807              	.LBB101:
+ 808              	.LBB97:
+  55:include/ubtbr/btphy.h **** 	{
+ 809              		.loc 2 55 2 view .LVU251
+ARM GAS  /tmp/ccdkPP25.s 			page 26
+
+
+ 810 0022 032A     		cmp	r2, #3
+ 811              	.LBE97:
+ 812              	.LBE101:
+ 231:src/btphy/ll.c **** 	ll->is_connected = 0;
+ 813              		.loc 1 231 16 view .LVU252
+ 814 0024 4170     		strb	r1, [r0, #1]
+ 232:src/btphy/ll.c **** 
+ 815              		.loc 1 232 2 is_stmt 1 view .LVU253
+ 235:src/btphy/ll.c **** 	ll->rmt_seqn = 1;
+ 816              		.loc 1 235 2 view .LVU254
+ 236:src/btphy/ll.c **** 	ll->loc_seqn = 1;
+ 817              		.loc 1 236 2 view .LVU255
+ 237:src/btphy/ll.c **** 	ll->loc_arqn = 0;
+ 818              		.loc 1 237 2 view .LVU256
+ 238:src/btphy/ll.c **** 
+ 819              		.loc 1 238 2 view .LVU257
+ 235:src/btphy/ll.c **** 	ll->rmt_seqn = 1;
+ 820              		.loc 1 235 14 is_stmt 0 view .LVU258
+ 821 0026 0361     		str	r3, [r0, #16]
+ 241:src/btphy/ll.c **** 
+ 822              		.loc 1 241 2 is_stmt 1 view .LVU259
+ 823              		.loc 1 244 2 view .LVU260
+ 245:src/btphy/ll.c **** 	ll->clkn_last_rx = ll->clkn_start = btphy_cur_clkn();
+ 824              		.loc 1 245 2 view .LVU261
+ 825              	.LBB102:
+ 826              	.LBI94:
+  53:include/ubtbr/btphy.h **** {
+ 827              		.loc 2 53 24 view .LVU262
+ 828              	.LBB98:
+  55:include/ubtbr/btphy.h **** 	{
+ 829              		.loc 2 55 2 view .LVU263
+ 830 0028 06D8     		bhi	.L69
+ 831 002a 7245     		cmp	r2, lr
+ 832 002c 06D9     		bls	.L71
+ 833              	.L70:
+  60:include/ubtbr/btphy.h **** 	default:
+ 834              		.loc 2 60 3 view .LVU264
+  60:include/ubtbr/btphy.h **** 	default:
+ 835              		.loc 2 60 15 is_stmt 0 view .LVU265
+ 836 002e DCF80830 		ldr	r3, [ip, #8]
+ 837              	.LBE98:
+ 838              	.LBE102:
+ 839              		.loc 1 245 19 discriminator 1 view .LVU266
+ 840 0032 C0E90133 		strd	r3, r3, [r0, #4]
+ 246:src/btphy/ll.c **** }
+ 841              		.loc 1 246 1 view .LVU267
+ 842 0036 00BD     		pop	{pc}
+ 843              	.L69:
+ 844              	.LBB103:
+ 845              	.LBB99:
+  55:include/ubtbr/btphy.h **** 	{
+ 846              		.loc 2 55 2 view .LVU268
+ 847 0038 052A     		cmp	r2, #5
+ 848 003a F8D0     		beq	.L70
+ 849              	.L71:
+ 850              		.loc 2 62 3 is_stmt 1 view .LVU269
+ 851              		.loc 2 62 15 is_stmt 0 view .LVU270
+ARM GAS  /tmp/ccdkPP25.s 			page 27
+
+
+ 852 003c DCF80430 		ldr	r3, [ip, #4]
+ 853              	.LBE99:
+ 854              	.LBE103:
+ 245:src/btphy/ll.c **** }
+ 855              		.loc 1 245 19 discriminator 1 view .LVU271
+ 856 0040 C0E90133 		strd	r3, r3, [r0, #4]
+ 857              		.loc 1 246 1 view .LVU272
+ 858 0044 00BD     		pop	{pc}
+ 859              	.L74:
+ 860 0046 00BF     		.align	2
+ 861              	.L73:
+ 862 0048 00000000 		.word	btphy
+ 863              		.cfi_endproc
+ 864              	.LFE34:
+ 866              		.text
+ 867              	.Letext0:
+ 868              		.file 6 "/usr/arm-none-eabi/include/machine/_default_types.h"
+ 869              		.file 7 "/usr/arm-none-eabi/include/sys/_stdint.h"
+ 870              		.file 8 "../../host/libubertooth/src/ubertooth_interface.h"
+ 871              		.file 9 "include/ubtbr/queue.h"
+ 872              		.file 10 "include/ubtbr/bb.h"
+ 873              		.file 11 "include/ubtbr/ll.h"
+ 874              		.file 12 "include/ubtbr/mem_pool.h"
+ 875              		.file 13 "include/ubtbr/debug.h"
+ARM GAS  /tmp/ccdkPP25.s 			page 28
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 ll.c
+     /tmp/ccdkPP25.s:19     .rodata.str1.4:00000000 $d
+     /tmp/ccdkPP25.s:29     .text.ll_process_rx:00000000 $t
+     /tmp/ccdkPP25.s:36     .text.ll_process_rx:00000000 ll_process_rx
+     /tmp/ccdkPP25.s:503    .text.ll_process_rx:0000014c $d
+     /tmp/ccdkPP25.s:517    .text.ll_prepare_tx:00000000 $t
+     /tmp/ccdkPP25.s:524    .text.ll_prepare_tx:00000000 ll_prepare_tx
+     /tmp/ccdkPP25.s:696    .text.ll_prepare_tx:00000074 $d
+     /tmp/ccdkPP25.s:702    .text.ll_reset:00000000 $t
+     /tmp/ccdkPP25.s:709    .text.ll_reset:00000000 ll_reset
+     /tmp/ccdkPP25.s:759    .text.ll_init:00000000 $t
+     /tmp/ccdkPP25.s:766    .text.ll_init:00000000 ll_init
+     /tmp/ccdkPP25.s:862    .text.ll_init:00000048 $d
+
+UNDEFINED SYMBOLS
+mem_pool_free
+btctl_set_state
+cprintf
+msg_enqueue
+die
+btphy
+btctl
+msg_dequeue
