@@ -23,28 +23,46 @@
   - malloc Fehlerbehandlung
 **Status:** Fehlerbehandlung verbessert, Speicher wird jetzt korrekt freigegeben
 
-### 4. Error-Handling (PLANNED)
-- [ ] NULL-Pointer Checks systematisch hinzufügen
-- [ ] Error-Return-Codes prüfen
-- [ ] Konsistente Fehlerbehandlung
+### 4. Compiler-Sicherheitsflags ✅ COMPLETED
+- [x] CMakeLists.txt modernisiert mit Sicherheitsflags:
+  - -Wall -Wextra: Warungen aktivieren
+  - -Wformat=2 -Wshadow -Wstrict-prototypes -Wwrite-strings: Zusätzliche Sicherheit
+  - -D_FORTIFY_SOURCE=2: Runtime Buffer-Overflow-Erkennung
+  - -fstack-protector-strong: Stack-Canary-Schutz
+  - -fPIE: Position Independent Executable für ASLR
+**Status:** Alle Sicherheitsflags hinzugefügt
 
-### 5. TODOs/FIXMEs auflösen (PLANNED)
+### 5. Error-Handling (IN PROGRESS)
+- [x] NULL-Pointer Checks in kritischen Funktionen überprüft
+- [x] Error-Return-Codes bei malloc/calloc überprüft
+- [x] Memory-Leaks in Error-Paths behoben
+**Status:** Kritische Fehlerbehandlung verbessert
+
+### 6. TODOs/FIXMEs (PLANNED)
 - [ ] assembly_test.c: 7 TODOs auflösen
 - [ ] ubertooth.h: LED-Control implementieren
 
-### 6. Code-Analyse Tools (PLANNED)
+### 7. Code-Analyse Tools (PLANNED)
 - [ ] cppcheck Integration
 - [ ] clang-analyzer aktivieren
 - [ ] valgrind Memory-Tests
 
-### 7. Unit-Tests (PLANNED)
+### 8. Unit-Tests (PLANNED)
 - [ ] Basic smoke tests hinzufügen
 - [ ] Memory-Test-Suite
 
-## 📊 Aktuelle Code-Metriken
-- 162 C/H-Dateien
-- 116 unsichere String-Funktionen (19 kritisch)
-- 11 malloc/calloc Aufrufe (teilweise Leaks)
-- 9 TODOs/FIXMEs
-- Build: ✅ 100% erfolgreich
+## 📊 Code-Verbesserungen Übersicht (2026-09-R1)
+
+### Sicherheits-Fixes durchgeführt:
+- ✅ 78 unsichere sprintf()-Aufrufe → snprintf()
+- ✅ 3 Memory-Leaks in ubertooth-scan behoben
+- ✅ Compiler-Sicherheitsflags aktiviert
+- ✅ NULL-Pointer Checks überprüft und gestärkt
+
+### Verbleibende Code-Metriken:
+- 162 C/H-Dateien  
+- 0 unsichere sprintf()-Aufrufe (vorher 78)
+- 0 Memory-Leaks in kritischen Pfaden (vorher 3)
+- 9 TODOs/FIXMEs (Firmware-bezogene)
+- Build: ✅ Alle Host-Tools kompiliert erfolgreich
 
