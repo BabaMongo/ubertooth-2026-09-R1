@@ -152,7 +152,10 @@ void extra_info(int dd, int dev_id, bdaddr_t* bdaddr)
 
 	if (hci_read_clock_offset(dd, handle, &offset, 1000) < 0) {
 		perror("Reading clock offset failed");
-		exit(1);
+		free(cr);
+		if (cc)
+			hci_disconnect(dd, handle, HCI_OE_USER_ENDED_CONNECTION, 10000);
+		return;
 	}
 
 	printf("\tClock offset: 0x%4.4x\n", btohs(offset));
@@ -275,13 +278,14 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "malloc failed for inquiry info\n");
 		} else {
 			num_rsp = hci_inquiry(dev_id, len, max_rsp, NULL, &ii, flags);
-			if( num_rsp < 0 )
+			if( num_rsp < 0 ) {
 				perror("hci_inquiry");
-
-			for (i = 0; i < num_rsp; i++) {
-				ba2str(&(ii+i)->bdaddr, addr);
-				print_name_and_class(dev_handle, dev_id, &(ii+i)->bdaddr, addr,
-				                     extended);
+			} else {
+				for (i = 0; i < num_rsp; i++) {
+					ba2str(&(ii+i)->bdaddr, addr);
+					print_name_and_class(dev_handle, dev_id, &(ii+i)->bdaddr, addr,
+					                     extended);
+				}
 			}
 			free(ii);
 			ii = NULL;
