@@ -8,6 +8,10 @@ greatscottgadgets/ubertooth).
 
 Version: 2026-09-R1 – Kompatibel mit libubertooth 2026-09-R1
 
+ORIGINAL SOURCE:
+  Basiert auf: https://github.com/Brunoido90/ubertooth_hack
+  Danke an Brunoido90 für die ursprüngliche ubertooth_tool.py Implementierung
+
 SPRACHEN:
   - Eingebaute Sprachen: Deutsch (Standard), Englisch
   - Beliebig viele weitere Sprachen per JSON-Sprachpaket:
@@ -27,6 +31,21 @@ SECURITY (2026-09-R1):
   - Memory leaks fixed in error paths
   - Compiler security flags enabled (-fstack-protector-strong, -fPIE)
   - Enhanced NULL-pointer checking
+
+UPDATES & MODIFICATIONS (2026-09-R1):
+  - Aktualisiert für Kompatibilität mit libubertooth 2026-09-R1
+  - Internationalisierung (i18n) erweitert – Deutsch und Englisch vollständig
+  - Automatisches Laden von Sprachpaketen aus "langs/" Verzeichnis
+  - Live-Sprachumschaltung ohne Neustart der Anwendung
+  - Verbesserte Fehlerbehandlung für fehlende Tools
+  - Sicherheitsgehärteter Build mit Buffer-Overflow-Schutz
+  - Erweiterte NULL-Pointer-Überprüfungen
+  - Automatische Radio-Reset-Funktionalität nach Tool-Beendigung
+  - Timeout-Management für lange laufende Operationen
+  - Detached-Mode für GUI-externe Tool-Ausführung
+  - Wireshark-Live-Pipe-Integration für Real-Time-Packet-Analyse
+  - Vollständige Befehlsvorschau mit Live-Aktualisierung
+  - Export-Funktionen für Befehle und Logs
 
 Erfordert Root und mindestens einen angeschlossenen Ubertooth One/Zero.
 """
