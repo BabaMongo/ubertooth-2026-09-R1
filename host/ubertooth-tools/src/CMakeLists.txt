@@ -19,6 +19,12 @@
 # Boston, MA 02110-1301, USA.
 #
 
+# Security compiler flags for enhanced code safety and detection
+add_compile_options(-Wall -Wextra)
+add_compile_options(-Wformat=2 -Wshadow -Wstrict-prototypes -Wwrite-strings)
+add_compile_options(-D_FORTIFY_SOURCE=2 -fstack-protector-strong -fPIE)
+add_compile_options(-O2)
+
 set(INSTALL_DEFAULT_BINDIR "bin" CACHE STRING
 	"Bin install path, relative to CMAKE_INSTALL_PREFIX")
 
